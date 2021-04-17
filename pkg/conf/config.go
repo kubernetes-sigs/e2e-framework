@@ -24,31 +24,31 @@ import (
 
 type Config = types.Config
 
-type TestConfig struct {
+type EnvConfig struct {
 	namespace string
 	kubecfg *rest.Config
 }
 
-func New() Config {
-	return &TestConfig{}
+func New() *EnvConfig {
+	return &EnvConfig{}
 }
 
 // NewWithKubeCfgFile is a convenience constructor that will
 // create a Kubernetes *rest.Config from a file
-func NewWithKubecfgFile(filePath string) (Config, error){
+func NewWithKubecfgFile(filePath string) (*EnvConfig, error){
 	return nil, nil
 }
 
-func (c *TestConfig) WithConfig(cfg *rest.Config) Config{
+func (c *EnvConfig) WithConfig(cfg *rest.Config) *EnvConfig{
 	c.kubecfg = cfg
 	return c
 }
 
-func (c *TestConfig) WithNamespace(ns string) Config{
+func (c *EnvConfig) WithNamespace(ns string) *EnvConfig{
 	c.namespace = ns
 	return c
 }
 
-func (c *TestConfig) Env() (types.Environment, error) {
+func (c *EnvConfig) Env() (types.Environment, error) {
 	return nil, nil
 }

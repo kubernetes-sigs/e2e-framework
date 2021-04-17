@@ -40,6 +40,41 @@ type Environment interface {
 	Run(*testing.M) int
 }
 
-type Feature interface {
+type State uint8
+const (
+	Alpha State = iota
+	Beta
+	Stable
+)
 
+type Feature interface {
+	// Name is a descriptive text for the feature
+	Name() string
+	// State is the state of the feature {alpha|beta|stable}
+	State() State
+	// Steps testing tasks to test the feature
+	Steps() []Step
+}
+
+type Level uint8
+
+const (
+	LevelSetup Level = iota
+	LevelRequired
+	LevelMustAssert
+	LevelMustNotAssert
+	LevelShouldAssert
+	LevelShouldNotAssert
+	LevelMayAssert
+	LevelTeardown
+)
+
+type StepFunc func (context.Context, *testing.T, *Config)
+type Step interface {
+	// Name is the step name
+	Name() string
+	// Level action level {setup|requirement|assertion|teardown}
+	Level() Level
+	// Func is the operation for the step
+	Func() StepFunc
 }

@@ -15,5 +15,5 @@ limitations under the License.
 */
 
 // Package features hosts types that are used to define
-// a feature test.
+// a feature tests and other related types.
 package features

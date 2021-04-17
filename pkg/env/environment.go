@@ -25,36 +25,40 @@ import (
 )
 
 type Environment = types.Environment
-type Func = types.Environment
+type Func = types.EnvFunc
 
 type testEnv struct {
-
+	cfg types.Config
 }
 
-func (t testEnv) Config() types.Config {
+func New(cfg types.Config) types.Environment {
+	return &testEnv{cfg:cfg}
+}
+
+func (e *testEnv) Config() types.Config {
+	return e.cfg
+}
+
+func (e *testEnv) Setup(ctx context.Context, f ...Func) error {
 	panic("implement me")
 }
 
-func (t testEnv) Setup(ctx context.Context, f ...Func) error {
+func (e *testEnv) BeforeTest(ctx context.Context, t2 *testing.T, f ...Func) {
 	panic("implement me")
 }
 
-func (t testEnv) BeforeTest(ctx context.Context, t2 *testing.T, f ...Func) {
+func (e *testEnv) Test(ctx context.Context, t2 *testing.T, feature features.Feature) {
 	panic("implement me")
 }
 
-func (t testEnv) Test(ctx context.Context, t2 *testing.T, feature features.Feature) {
+func (e *testEnv) AfterTest(ctx context.Context, t2 *testing.T, f ...Func) {
 	panic("implement me")
 }
 
-func (t testEnv) AfterTest(ctx context.Context, t2 *testing.T, f ...Func) {
+func (e *testEnv) Finish(ctx context.Context, f ...Func) error {
 	panic("implement me")
 }
 
-func (t testEnv) Finish(ctx context.Context, f ...Func) error {
-	panic("implement me")
-}
-
-func (t testEnv) Run(m *testing.M) int {
+func (e *testEnv) Run(m *testing.M) int {
 	panic("implement me")
 }
