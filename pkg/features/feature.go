@@ -17,81 +17,62 @@ limitations under the License.
 package features
 
 import (
-	"fmt"
-
 	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
 
-type State = types.State
+type Labels = types.Labels
 type Feature = types.Feature
 type Step = types.Step
 type Func = types.StepFunc
 type Level = types.Level
 
 
-// FeatureBuilder represents is a type to define a
-// teatable feature
-type FeatureBuilder struct {
-	feat *featureTest
-}
-
-func New(name string) *FeatureBuilder {
-	return &FeatureBuilder{feat: newTestFeature(name)}
-}
-
-func (b *FeatureBuilder) State(s State) *FeatureBuilder {
-	b.feat.state = s
-	return b
-}
-
-// Setup defines a single step applied prior to feature test.
-// Subsequent calls to Setup will overwrite previous one.
-func (b *FeatureBuilder) Setup(fn Func) *FeatureBuilder {
-	b.feat.setup =  newStep(fmt.Sprintf("%s-setup", b.feat.name), types.LevelSetup, fn)
-	return b
-}
-
-// Teardown defines a single step applied prior test completion.
-// Subsequent calls to Teardown will overwrite previous one.
-func (b *FeatureBuilder) Teardown(fn Func) *FeatureBuilder {
-	b.feat.teardown =  newStep(fmt.Sprintf("%s-teardown", b.feat.name), types.LevelTeardown, fn)
-	return b
-}
-
-
-func (b *FeatureBuilder) Assess(desc string, fn Func) *FeatureBuilder {
-	i := len(b.feat.assessments)
-	stepName := fmt.Sprintf(desc, b.feat.name, i)
-	b.feat.assessments = append(b.feat.assessments, newStep(stepName, types.LevelRequired, fn))
-	return b
-}
-
-func (b *FeatureBuilder) Feature() types.Feature {
-	return b.feat
-}
 
 type featureTest struct {
 	name string
-	state State
-	setup types.Step
-	teardown types.Step
-	assessments []types.Step
+	labels types.Labels
+	steps []types.Step
 }
 
 func newTestFeature(name string) *featureTest {
-	return &featureTest{name: name}
+	return &featureTest{name: name, labels: make(types.Labels)}
 }
 
 func (f *featureTest) Name() string {
 	return f.name
 }
 
-func (f *featureTest) State() State {
-	return f.state
+func (f *featureTest) Labels() types.Labels {
+	return f.labels
 }
 
 func (f *featureTest) Steps() []types.Step {
-	return append(append([]types.Step{f.setup}, f.assessments...), f.teardown)
+	return f.steps
+}
+
+func (f *featureTest) GetSetups() []types.Step {
+	return f.getStepsByLevel(types.LevelSetup)
+}
+
+func (f *featureTest) GetAssessments() []types.Step {
+	return f.getStepsByLevel(types.LevelAssess)
+}
+
+func (f *featureTest) GetTeardowns() []types.Step {
+	return f.getStepsByLevel(types.LevelTeardown)
+}
+
+func (f *featureTest) getStepsByLevel(l types.Level) []Step {
+	if f.steps == nil {
+		return nil
+	}
+	var result []Step
+	for _, s := range f.Steps() {
+		if s.Level() == l {
+			result = append(result, s)
+		}
+	}
+	return result
 }
 
 type testStep struct {

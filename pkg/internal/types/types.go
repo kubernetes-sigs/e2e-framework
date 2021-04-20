@@ -27,7 +27,7 @@ type Environment interface {
 	// BeforeTest registers funcs that are executed before each Env.Test(...)
 	BeforeTest(context.Context, *testing.T, ...EnvFunc)
 
-	//Test executes a test feature
+	// Test executes a test feature
 	Test(context.Context, *testing.T, Feature)
 
 	// AfterTest registers funcs that are executed after each Env.Test(...)
@@ -36,22 +36,16 @@ type Environment interface {
 	// Finish registers funcs that are executed at the end.
 	Finish(context.Context, ...EnvFunc) error
 
-	// Launches the test suite from within a TestMain
+	// Run Launches the test suite from within a TestMain
 	Run(*testing.M) int
 }
 
-type State uint8
-const (
-	Alpha State = iota
-	Beta
-	Stable
-)
-
+type Labels map[string]string
 type Feature interface {
 	// Name is a descriptive text for the feature
 	Name() string
-	// State is the state of the feature {alpha|beta|stable}
-	State() State
+	// Labels returns a map of feature labels
+	Labels() Labels
 	// Steps testing tasks to test the feature
 	Steps() []Step
 }
@@ -60,16 +54,11 @@ type Level uint8
 
 const (
 	LevelSetup Level = iota
-	LevelRequired
-	LevelMustAssert
-	LevelMustNotAssert
-	LevelShouldAssert
-	LevelShouldNotAssert
-	LevelMayAssert
+	LevelAssess
 	LevelTeardown
 )
 
-type StepFunc func (context.Context, *testing.T, *Config)
+type StepFunc func (context.Context, *testing.T, Config)
 type Step interface {
 	// Name is the step name
 	Name() string

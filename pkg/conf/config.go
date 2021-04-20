@@ -35,7 +35,7 @@ func New() *EnvConfig {
 
 // NewWithKubeCfgFile is a convenience constructor that will
 // create a Kubernetes *rest.Config from a file
-func NewWithKubecfgFile(filePath string) (*EnvConfig, error){
+func NewWithKubeCfgFile(filePath string) (*EnvConfig, error){
 	return nil, nil
 }
 
