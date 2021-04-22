@@ -21,10 +21,11 @@ import (
 	"testing"
 
 	"sigs.k8s.io/e2e-framework/pkg/conf"
+	"sigs.k8s.io/e2e-framework/pkg/features"
 	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
 
-func TestNew(t *testing.T) {
+func TestEnv_New(t *testing.T) {
 	e := newTestEnv(conf.New())
 	if e.Config() == nil {
 		t.Error("missing config")
@@ -39,125 +40,175 @@ func TestEnv_APIMethods(t *testing.T) {
 	tests := []struct {
 		name  string
 		setup func(*testing.T) *testEnv
-		eval  func(*testing.T, *testEnv)
+		roles map[actionRole]int
 	}{
 		{
 			name: "empty actions",
 			setup: func(t *testing.T) *testEnv{
 				return newTestEnv(conf.New())
 			},
-			eval: func(t *testing.T, e *testEnv){
-				if len(e.GetSetupActions()) != 0 {
-					t.Error("setup actions should be 0")
-				}
-				if len(e.GetBeforeActions()) != 0 {
-					t.Error("before actions should be 0")
-				}
-				if len(e.GetAfterActions()) != 0 {
-					t.Error("after actions should be 0")
-				}
-				if len(e.GetFinishActions()) != 0 {
-					t.Error("finish actions should be 0")
-				}
-			},
+			roles: map[actionRole]int{roleSetup: 0, roleBefore:0, roleAfter:0, roleFinish:0},
 		},
 		{
 			name: "setup actions",
 			setup: func(t *testing.T) *testEnv{
 				env := newTestEnv(conf.New())
-				env.Setup(context.Background(), func(ctx context.Context, conf types.Config) error {
+				env.Setup(func(ctx context.Context, conf types.Config) error {
 					return nil
-				}).Setup(context.Background(), func (ctx context.Context, conf types.Config) error {
+				}).Setup(func (ctx context.Context, conf types.Config) error {
 					return nil
 				})
 				return env
 			},
-			eval: func(t *testing.T, e *testEnv){
-				if len(e.GetSetupActions()) != 2 {
-					t.Error("setup actions should be 2")
-				}
-			},
+			roles: map[actionRole]int{roleSetup: 2, roleBefore:0, roleAfter:0, roleFinish:0},
 		},
 		{
 			name: "before actions",
 			setup: func(t *testing.T) *testEnv{
 				env := newTestEnv(conf.New())
-				env.BeforeTest(context.Background(), func(ctx context.Context, conf types.Config) error {
+				env.BeforeTest(func(ctx context.Context, conf types.Config) error {
 					return nil
 				})
 				return env
 			},
-			eval: func(t *testing.T, e *testEnv){
-				if len(e.GetBeforeActions()) != 1 {
-					t.Error("before actions should be 1")
-				}
-			},
+			roles: map[actionRole]int{roleSetup: 0, roleBefore:1, roleAfter:0, roleFinish:0},
 		},
 		{
 			name: "after actions",
 			setup: func(t *testing.T) *testEnv{
 				env := newTestEnv(conf.New())
-				env.AfterTest(context.Background(), func(ctx context.Context, conf types.Config) error {
+				env.AfterTest(func(ctx context.Context, conf types.Config) error {
 					return nil
 				})
 				return env
 			},
-			eval: func(t *testing.T, e *testEnv){
-				if len(e.GetAfterActions()) != 1 {
-					t.Error("after actions should be 1")
-				}
-			},
+			roles: map[actionRole]int{roleSetup: 0, roleBefore:0, roleAfter:1, roleFinish:0},
 		},
 		{
 			name: "finish actions",
 			setup: func(t *testing.T) *testEnv{
 				env := newTestEnv(conf.New())
-				env.Finish(context.Background(), func(ctx context.Context, conf types.Config) error {
+				env.Finish(func(ctx context.Context, conf types.Config) error {
 					return nil
 				})
 				return env
 			},
-			eval: func(t *testing.T, e *testEnv){
-				if len(e.GetFinishActions()) != 1 {
-					t.Error("finish actions should be 1")
-				}
-			},
+			roles: map[actionRole]int{roleSetup: 0, roleBefore:0, roleAfter:0, roleFinish:1},
 		},
 		{
 			name: "all actions",
 			setup: func(t *testing.T) *testEnv{
 				env := newTestEnv(conf.New())
-				env.Setup(context.Background(), func(ctx context.Context, conf types.Config) error {
+				env.Setup(func(ctx context.Context, conf types.Config) error {
 					return nil
-				}).BeforeTest(context.Background(), func(ctx context.Context, config types.Config) error {
+				}).BeforeTest(func(ctx context.Context, config types.Config) error {
 					return nil
-				}).AfterTest(context.Background(), func(ctx context.Context, config types.Config) error {
+				}).AfterTest(func(ctx context.Context, config types.Config) error {
 					return nil
-				}).Finish(context.Background(), func(ctx context.Context, config types.Config) error {
+				}).Finish(func(ctx context.Context, config types.Config) error {
 					return nil
 				})
 				return env
 			},
-			eval: func(t *testing.T, e *testEnv){
-				if len(e.GetSetupActions()) != 1 {
-					t.Error("setup actions should be 1")
-				}
-				if len(e.GetBeforeActions()) != 1 {
-					t.Error("before actions should be 1")
-				}
-				if len(e.GetAfterActions()) != 1 {
-					t.Error("after actions should be 1")
-				}
-				if len(e.GetFinishActions()) != 1 {
-					t.Error("finish actions should be 1")
-				}
-			},
+			roles: map[actionRole]int{roleSetup: 1, roleBefore:1, roleAfter:1, roleFinish:1},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T){
-			test.eval(t, test.setup(t))
+			env := test.setup(t)
+			for role, count := range test.roles {
+				actual := len(env.getActionsByRole(role))
+				if actual != count {
+					t.Errorf("unexpected number of actions %d for role %d", actual, role)
+				}
+			}
 		})
 	}
 }
+
+func TestEnv_Test(t *testing.T) {
+	tests := []struct {
+		name string
+		ctx context.Context
+		setup func(*testing.T, context.Context)int
+		expected int
+	}{
+		{
+			name: "feature only",
+			ctx: context.TODO(),
+			expected: 42,
+			setup: func(t *testing.T, ctx context.Context) (val int){
+				env := newTestEnv(conf.New())
+				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, config types.Config) {
+					val = 42
+				})
+				env.Test(ctx, t, f.Feature())
+				return
+			},
+		},
+		{
+			name: "with before-test",
+			ctx: context.TODO(),
+			expected: 86,
+			setup: func(t *testing.T, ctx context.Context) (val int){
+				env := newTestEnv(conf.New())
+				env.BeforeTest(func(ctx context.Context, config types.Config) error {
+					val = 44
+					return nil
+				})
+				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, config types.Config) {
+					val = 42 + val
+				})
+				env.Test(ctx, t, f.Feature())
+				return
+			},
+		},
+		{
+			name: "with after-test",
+			ctx: context.TODO(),
+			expected: 66,
+			setup: func(t *testing.T, ctx context.Context) (val int){
+				env := newTestEnv(conf.New())
+				env.AfterTest(func(ctx context.Context, config types.Config) error {
+					val = val - 20
+					return nil
+				}).BeforeTest(func(ctx context.Context, config types.Config) error {
+					val = 44
+					return nil
+				})
+				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, config types.Config) {
+					val = 42 + val
+				})
+				env.Test(ctx, t, f.Feature())
+				return
+			},
+		},
+		{
+			name: "with before-after-test",
+			ctx: context.TODO(),
+			expected: 44,
+			setup: func(t *testing.T, ctx context.Context) (val int){
+				env := newTestEnv(conf.New())
+				env.AfterTest(func(ctx context.Context, config types.Config) error {
+					val = 44
+					return nil
+				})
+				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, config types.Config) {
+					val = 42 + val
+				})
+				env.Test(ctx, t, f.Feature())
+				return
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T){
+			result := test.setup(t, test.ctx)
+			if result != test.expected {
+				t.Error("unexpected result: ", result)
+			}
+		})
+	}
+}
+

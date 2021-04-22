@@ -22,22 +22,22 @@ type Environment interface {
 
 	// Setup registers environment operations that are executed once
 	// prior to the environment being ready and prior to any test.
-	Setup(context.Context, ...EnvFunc) Environment
+	Setup(...EnvFunc) Environment
 
 	// BeforeTest registers funcs that are executed before each Env.Test(...)
-	BeforeTest(context.Context, ...EnvFunc) Environment
+	BeforeTest(...EnvFunc) Environment
 
 	// Test executes a test feature
 	Test(context.Context, *testing.T, Feature)
 
 	// AfterTest registers funcs that are executed after each Env.Test(...)
-	AfterTest(context.Context, ...EnvFunc) Environment
+	AfterTest(...EnvFunc) Environment
 
 	// Finish registers funcs that are executed at the end.
-	Finish(context.Context, ...EnvFunc) Environment
+	Finish(...EnvFunc) Environment
 
 	// Run Launches the test suite from within a TestMain
-	Run(*testing.M) int
+	Run(context.Context, *testing.M) int
 }
 
 type Labels map[string]string

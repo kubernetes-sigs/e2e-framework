@@ -28,51 +28,26 @@ type Level = types.Level
 
 
 
-type featureTest struct {
+type defaultFeature struct {
 	name string
 	labels types.Labels
 	steps []types.Step
 }
 
-func newTestFeature(name string) *featureTest {
-	return &featureTest{name: name, labels: make(types.Labels)}
+func newDefaultFeature(name string) *defaultFeature {
+	return &defaultFeature{name: name, labels: make(types.Labels)}
 }
 
-func (f *featureTest) Name() string {
+func (f *defaultFeature) Name() string {
 	return f.name
 }
 
-func (f *featureTest) Labels() types.Labels {
+func (f *defaultFeature) Labels() types.Labels {
 	return f.labels
 }
 
-func (f *featureTest) Steps() []types.Step {
+func (f *defaultFeature) Steps() []types.Step {
 	return f.steps
-}
-
-func (f *featureTest) GetSetups() []types.Step {
-	return f.getStepsByLevel(types.LevelSetup)
-}
-
-func (f *featureTest) GetAssessments() []types.Step {
-	return f.getStepsByLevel(types.LevelAssess)
-}
-
-func (f *featureTest) GetTeardowns() []types.Step {
-	return f.getStepsByLevel(types.LevelTeardown)
-}
-
-func (f *featureTest) getStepsByLevel(l types.Level) []Step {
-	if f.steps == nil {
-		return nil
-	}
-	var result []Step
-	for _, s := range f.Steps() {
-		if s.Level() == l {
-			result = append(result, s)
-		}
-	}
-	return result
 }
 
 type testStep struct {
@@ -99,4 +74,17 @@ func (s *testStep) Level() Level {
 
 func (s *testStep) Func() Func {
 	return s.fn
+}
+
+func GetStepsByLevel(steps []types.Step, l types.Level) []types.Step {
+	if steps == nil {
+		return nil
+	}
+	var result []Step
+	for _, s := range steps {
+		if s.Level() == l {
+			result = append(result, s)
+		}
+	}
+	return result
 }

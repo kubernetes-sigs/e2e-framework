@@ -25,11 +25,11 @@ import (
 // FeatureBuilder represents is a type to define a
 // testable feature
 type FeatureBuilder struct {
-	feat *featureTest
+	feat *defaultFeature
 }
 
 func New(name string) *FeatureBuilder {
-	return &FeatureBuilder{feat: newTestFeature(name)}
+	return &FeatureBuilder{feat: newDefaultFeature(name)}
 }
 
 // WithLabel adds a test label key/value pair

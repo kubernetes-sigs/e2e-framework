@@ -18,6 +18,7 @@ package conf
 
 import (
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/e2e-framework/pkg/env"
 
 	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
@@ -50,5 +51,5 @@ func (c *EnvConfig) WithNamespace(ns string) *EnvConfig{
 }
 
 func (c *EnvConfig) Env() (types.Environment, error) {
-	return nil, nil
+	return env.New(c), nil
 }
