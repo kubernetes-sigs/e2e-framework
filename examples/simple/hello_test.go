@@ -37,7 +37,7 @@ func TestHello(t *testing.T) {
 	e := env.New(conf.New())
 	feat := features.New("Hello Feature").
 		WithLabel("type", "simple").
-		Assess("test message", func(ctx context.Context, t *testing.T, config conf.Config) {
+		Assess("test message", func(ctx context.Context, t *testing.T, config *conf.Config) {
 			result := Hello("foo")
 			if result != "Hello foo" {
 				t.Error("unexpected message")
@@ -55,10 +55,10 @@ func TestHello_WithSetup(t *testing.T) {
 	var name string
 	feat := features.New("Hello Feature").
 		WithLabel("type", "simple").
-		Setup(func(ctx context.Context, t *testing.T, config conf.Config) {
+		Setup(func(ctx context.Context, t *testing.T, config *conf.Config) {
 			name = "foobar"
 		}).
-		Assess("test message", func(ctx context.Context, t *testing.T, config conf.Config) {
+		Assess("test message", func(ctx context.Context, t *testing.T, config *conf.Config) {
 			result := Hello(name)
 			if result != "Hello foobar" {
 				t.Error("unexpected message")

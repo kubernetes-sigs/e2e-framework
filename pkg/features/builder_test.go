@@ -20,6 +20,7 @@ import (
 	"context"
 	"testing"
 
+	"sigs.k8s.io/e2e-framework/pkg/conf"
 	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
 
@@ -69,7 +70,7 @@ func TestFeatureBuilder(t *testing.T) {
 		{
 			name: "one setup",
 			setup: func(t *testing.T) types.Feature {
-				return New("test").Setup(func(ctx context.Context, t *testing.T, config types.Config) {
+				return New("test").Setup(func(ctx context.Context, t *testing.T, config *conf.Config) {
 					// test
 				}).Feature()
 			},
@@ -87,9 +88,9 @@ func TestFeatureBuilder(t *testing.T) {
 		{
 			name: "multiple setups",
 			setup: func(t *testing.T) types.Feature {
-				return New("test").Setup(func(ctx context.Context, t *testing.T, config types.Config) {
+				return New("test").Setup(func(ctx context.Context, t *testing.T, config *conf.Config) {
 					// test
-				}).Setup(func(ctx context.Context, t *testing.T, config types.Config) {
+				}).Setup(func(ctx context.Context, t *testing.T, config *conf.Config) {
 					// test
 				}).Feature()
 			},
@@ -107,7 +108,7 @@ func TestFeatureBuilder(t *testing.T) {
 		{
 			name: "one teardown",
 			setup: func(t *testing.T) types.Feature {
-				return New("test").Teardown(func(ctx context.Context, t *testing.T, config types.Config) {
+				return New("test").Teardown(func(ctx context.Context, t *testing.T, config *conf.Config) {
 					// test
 				}).Feature()
 			},
@@ -125,9 +126,9 @@ func TestFeatureBuilder(t *testing.T) {
 		{
 			name: "multiple teardowns",
 			setup: func(t *testing.T) types.Feature {
-				return New("test").Teardown(func(ctx context.Context, t *testing.T, config types.Config) {
+				return New("test").Teardown(func(ctx context.Context, t *testing.T, config *conf.Config) {
 					// test
-				}).Teardown(func(ctx context.Context, t *testing.T, config types.Config) {
+				}).Teardown(func(ctx context.Context, t *testing.T, config *conf.Config) {
 					// test
 				}).Feature()
 			},
@@ -145,7 +146,7 @@ func TestFeatureBuilder(t *testing.T) {
 		{
 			name: "single assessment",
 			setup: func(t *testing.T) types.Feature {
-				return New("test").Assess("Some test", func(ctx context.Context, t *testing.T, config types.Config) {
+				return New("test").Assess("Some test", func(ctx context.Context, t *testing.T, config *conf.Config) {
 					// test
 				}).Feature()
 			},
@@ -163,9 +164,9 @@ func TestFeatureBuilder(t *testing.T) {
 		{
 			name: "multiple assessments",
 			setup: func(t *testing.T) types.Feature {
-				return New("test").Assess("some test", func(ctx context.Context, t *testing.T, config types.Config) {
+				return New("test").Assess("some test", func(ctx context.Context, t *testing.T, config *conf.Config) {
 					// test
-				}).Assess("some tets 2", func(ctx context.Context, t *testing.T, config types.Config) {
+				}).Assess("some tets 2", func(ctx context.Context, t *testing.T, config *conf.Config) {
 					// test
 				}).Feature()
 			},
@@ -183,13 +184,13 @@ func TestFeatureBuilder(t *testing.T) {
 		{
 			name: "all steps",
 			setup: func(t *testing.T) types.Feature {
-				return New("test").Setup(func(ctx context.Context, t *testing.T, config types.Config) {
+				return New("test").Setup(func(ctx context.Context, t *testing.T, config *conf.Config) {
 					// test
-				}).Assess("some tets 2", func(ctx context.Context, t *testing.T, config types.Config) {
+				}).Assess("some tets 2", func(ctx context.Context, t *testing.T, config *conf.Config) {
 					// test
-				}).Assess("some tets 3", func(ctx context.Context, t *testing.T, config types.Config) {
+				}).Assess("some tets 3", func(ctx context.Context, t *testing.T, config *conf.Config) {
 					// test
-				}).Teardown(func(ctx context.Context, t *testing.T, config types.Config) {
+				}).Teardown(func(ctx context.Context, t *testing.T, config *conf.Config) {
 					// test
 				}).Feature()
 			},

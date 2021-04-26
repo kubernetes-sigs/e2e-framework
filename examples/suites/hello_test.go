@@ -32,7 +32,7 @@ func Hello(name string) string {
 func TestHello(t *testing.T) {
 	feat := features.New("Hello Feature").
 		WithLabel("type", "simple").
-		Assess("test message", func(ctx context.Context, t *testing.T, config conf.Config) {
+		Assess("test message", func(ctx context.Context, t *testing.T, config *conf.Config) {
 			result := Hello("foo")
 			if result != "Hello foo" {
 				t.Error("unexpected message")
