@@ -18,38 +18,29 @@ package conf
 
 import (
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/e2e-framework/pkg/env"
-
-	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
 
-type Config = types.Config
-
-type EnvConfig struct {
+type Config struct {
 	namespace string
 	kubecfg *rest.Config
 }
 
-func New() *EnvConfig {
-	return &EnvConfig{}
+func New() *Config {
+	return &Config{}
 }
 
 // NewWithKubeCfgFile is a convenience constructor that will
 // create a Kubernetes *rest.Config from a file
-func NewWithKubeCfgFile(filePath string) (*EnvConfig, error){
+func NewWithKubeCfgFile(filePath string) (*Config, error){
 	return nil, nil
 }
 
-func (c *EnvConfig) WithConfig(cfg *rest.Config) *EnvConfig{
+func (c *Config) WithConfig(cfg *rest.Config) *Config {
 	c.kubecfg = cfg
 	return c
 }
 
-func (c *EnvConfig) WithNamespace(ns string) *EnvConfig{
+func (c *Config) WithNamespace(ns string) *Config {
 	c.namespace = ns
 	return c
-}
-
-func (c *EnvConfig) Env() (types.Environment, error) {
-	return env.New(c), nil
 }

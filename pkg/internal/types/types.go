@@ -19,22 +19,20 @@ package types
 import (
 	"context"
 	"testing"
-)
 
-// Config configures and exposes an test environment
-type Config interface {
-	Env() (Environment, error)
-}
+	"sigs.k8s.io/e2e-framework/pkg/conf"
+)
 
 // EnvFunc represents a user-defined operation that
 // can be used to customized the behavior of the
 // environment.
-type EnvFunc func(context.Context, Config) error
+type EnvFunc func(context.Context, *conf.Config) error
 
 // Environment represents an environment where
 // features can be tested.
 type Environment interface {
-	Config() Config
+	Config() *conf.Config
+	Context() context.Context
 
 	// Setup registers environment operations that are executed once
 	// prior to the environment being ready and prior to any test.
@@ -74,7 +72,8 @@ const (
 	LevelTeardown
 )
 
-type StepFunc func (context.Context, *testing.T, Config)
+type StepFunc func (context.Context, *testing.T, *conf.Config)
+
 type Step interface {
 	// Name is the step name
 	Name() string

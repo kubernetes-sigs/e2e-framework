@@ -22,7 +22,6 @@ import (
 
 	"sigs.k8s.io/e2e-framework/pkg/conf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
-	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
 
 func TestEnv_New(t *testing.T) {
@@ -53,9 +52,9 @@ func TestEnv_APIMethods(t *testing.T) {
 			name: "setup actions",
 			setup: func(t *testing.T) *testEnv{
 				env := newTestEnv(conf.New())
-				env.Setup(func(ctx context.Context, conf types.Config) error {
+				env.Setup(func(ctx context.Context, conf *conf.Config) error {
 					return nil
-				}).Setup(func (ctx context.Context, conf types.Config) error {
+				}).Setup(func (ctx context.Context, conf *conf.Config) error {
 					return nil
 				})
 				return env
@@ -66,7 +65,7 @@ func TestEnv_APIMethods(t *testing.T) {
 			name: "before actions",
 			setup: func(t *testing.T) *testEnv{
 				env := newTestEnv(conf.New())
-				env.BeforeTest(func(ctx context.Context, conf types.Config) error {
+				env.BeforeTest(func(ctx context.Context, conf *conf.Config) error {
 					return nil
 				})
 				return env
@@ -77,7 +76,7 @@ func TestEnv_APIMethods(t *testing.T) {
 			name: "after actions",
 			setup: func(t *testing.T) *testEnv{
 				env := newTestEnv(conf.New())
-				env.AfterTest(func(ctx context.Context, conf types.Config) error {
+				env.AfterTest(func(ctx context.Context, conf *conf.Config) error {
 					return nil
 				})
 				return env
@@ -88,7 +87,7 @@ func TestEnv_APIMethods(t *testing.T) {
 			name: "finish actions",
 			setup: func(t *testing.T) *testEnv{
 				env := newTestEnv(conf.New())
-				env.Finish(func(ctx context.Context, conf types.Config) error {
+				env.Finish(func(ctx context.Context, conf *conf.Config) error {
 					return nil
 				})
 				return env
@@ -99,13 +98,13 @@ func TestEnv_APIMethods(t *testing.T) {
 			name: "all actions",
 			setup: func(t *testing.T) *testEnv{
 				env := newTestEnv(conf.New())
-				env.Setup(func(ctx context.Context, conf types.Config) error {
+				env.Setup(func(ctx context.Context, conf *conf.Config) error {
 					return nil
-				}).BeforeTest(func(ctx context.Context, config types.Config) error {
+				}).BeforeTest(func(ctx context.Context, config *conf.Config) error {
 					return nil
-				}).AfterTest(func(ctx context.Context, config types.Config) error {
+				}).AfterTest(func(ctx context.Context, config *conf.Config) error {
 					return nil
-				}).Finish(func(ctx context.Context, config types.Config) error {
+				}).Finish(func(ctx context.Context, config *conf.Config) error {
 					return nil
 				})
 				return env
@@ -140,7 +139,7 @@ func TestEnv_Test(t *testing.T) {
 			expected: 42,
 			setup: func(t *testing.T, ctx context.Context) (val int){
 				env := newTestEnv(conf.New())
-				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, config types.Config) {
+				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, config *conf.Config) {
 					val = 42
 				})
 				env.Test(ctx, t, f.Feature())
@@ -153,11 +152,11 @@ func TestEnv_Test(t *testing.T) {
 			expected: 86,
 			setup: func(t *testing.T, ctx context.Context) (val int){
 				env := newTestEnv(conf.New())
-				env.BeforeTest(func(ctx context.Context, config types.Config) error {
+				env.BeforeTest(func(ctx context.Context, config *conf.Config) error {
 					val = 44
 					return nil
 				})
-				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, config types.Config) {
+				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, config *conf.Config) {
 					val = 42 + val
 				})
 				env.Test(ctx, t, f.Feature())
@@ -170,14 +169,14 @@ func TestEnv_Test(t *testing.T) {
 			expected: 66,
 			setup: func(t *testing.T, ctx context.Context) (val int){
 				env := newTestEnv(conf.New())
-				env.AfterTest(func(ctx context.Context, config types.Config) error {
+				env.AfterTest(func(ctx context.Context, config *conf.Config) error {
 					val = val - 20
 					return nil
-				}).BeforeTest(func(ctx context.Context, config types.Config) error {
+				}).BeforeTest(func(ctx context.Context, config *conf.Config) error {
 					val = 44
 					return nil
 				})
-				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, config types.Config) {
+				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, config *conf.Config) {
 					val = 42 + val
 				})
 				env.Test(ctx, t, f.Feature())
@@ -190,11 +189,11 @@ func TestEnv_Test(t *testing.T) {
 			expected: 44,
 			setup: func(t *testing.T, ctx context.Context) (val int){
 				env := newTestEnv(conf.New())
-				env.AfterTest(func(ctx context.Context, config types.Config) error {
+				env.AfterTest(func(ctx context.Context, config *conf.Config) error {
 					val = 44
 					return nil
 				})
-				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, config types.Config) {
+				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, config *conf.Config) {
 					val = 42 + val
 				})
 				env.Test(ctx, t, f.Feature())

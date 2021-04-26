@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"testing"
 
+	"sigs.k8s.io/e2e-framework/pkg/conf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
@@ -31,20 +32,31 @@ type Func = types.EnvFunc
 type actionRole uint8
 
 type testEnv struct {
-	cfg     types.Config
+	ctx context.Context
+	cfg     *conf.Config
 	actions []action
 }
 
-func New(cfg types.Config) types.Environment {
+func New(cfg *conf.Config) types.Environment {
 	return newTestEnv(cfg)
 }
 
-func newTestEnv(cfg types.Config) *testEnv {
-	return &testEnv{cfg: cfg}
+func NewWithContext(ctx context.Context, cfg *conf.Config) types.Environment {
+	env := newTestEnv(cfg)
+	env.ctx = ctx
+	return env
 }
 
-func (e *testEnv) Config() types.Config {
+func newTestEnv(cfg *conf.Config) *testEnv {
+	return &testEnv{cfg: cfg, ctx: context.Background()}
+}
+
+func (e *testEnv) Config() *conf.Config {
 	return e.cfg
+}
+
+func (e *testEnv) Context() context.Context {
+	return e.ctx
 }
 
 func (e *testEnv) Setup(funcs ...Func) types.Environment {

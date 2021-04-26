@@ -37,7 +37,7 @@ func TestAction_Run(t *testing.T) {
 			ctx : context.WithValue(context.TODO(), 0, 1),
 			setup: func(ctx context.Context) (val int, err error) {
 				funcs := []types.EnvFunc{
-					func(ctx context.Context, config types.Config) error {
+					func(ctx context.Context, config *conf.Config) error {
 						val = 12
 						return nil
 					},
@@ -52,11 +52,11 @@ func TestAction_Run(t *testing.T) {
 			ctx : context.WithValue(context.TODO(), 0, 1),
 			setup: func(ctx context.Context) (val int, err error) {
 				funcs := []types.EnvFunc{
-					func(ctx context.Context, config types.Config) error {
+					func(ctx context.Context, config *conf.Config) error {
 						val = 12
 						return nil
 					},
-					func(ctx context.Context, config types.Config) error {
+					func(ctx context.Context, config *conf.Config) error {
 						val = val * 2
 						return nil
 					},
@@ -71,12 +71,12 @@ func TestAction_Run(t *testing.T) {
 			ctx : context.WithValue(context.TODO(), 0, 1),
 			setup: func(ctx context.Context) (val int, err error) {
 				funcs := []types.EnvFunc{
-					func(ctx context.Context, config types.Config) error {
+					func(ctx context.Context, config *conf.Config) error {
 						i := ctx.Value(0).(int) + 2
 						val = i
 						return nil
 					},
-					func(ctx context.Context, config types.Config) error {
+					func(ctx context.Context, config *conf.Config) error {
 						val = val + 3
 						return nil
 					},

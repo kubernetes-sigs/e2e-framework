@@ -19,6 +19,7 @@ package env
 import (
 	"context"
 
+	"sigs.k8s.io/e2e-framework/pkg/conf"
 	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
 
@@ -36,7 +37,7 @@ type action struct {
 	funcs []types.EnvFunc
 }
 
-func (a action) run(ctx context.Context, cfg types.Config) error  {
+func (a action) run(ctx context.Context, cfg *conf.Config) error  {
 	for _, f := range a.funcs {
 		if f == nil {
 			continue
