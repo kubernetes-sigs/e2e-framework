@@ -36,14 +36,16 @@ type action struct {
 	funcs []types.EnvFunc
 }
 
-func (a action) run(ctx context.Context) error  {
+func (a action) run(ctx context.Context) (context.Context, error)  {
 	for _, f := range a.funcs {
 		if f == nil {
 			continue
 		}
-		if err := f(ctx); err != nil {
-			return err
+		var err error
+		ctx, err = f(ctx)
+		if err != nil {
+			return ctx, err
 		}
 	}
-	return nil
+	return ctx, nil
 }

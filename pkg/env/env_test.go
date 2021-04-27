@@ -52,10 +52,10 @@ func TestEnv_APIMethods(t *testing.T) {
 			name: "setup actions",
 			setup: func(t *testing.T) *testEnv{
 				env := newTestEnv(conf.New())
-				env.Setup(func(ctx context.Context) error {
-					return nil
-				}).Setup(func (ctx context.Context) error {
-					return nil
+				env.Setup(func(ctx context.Context) (context.Context, error) {
+					return ctx, nil
+				}).Setup(func (ctx context.Context) (context.Context, error) {
+					return ctx, nil
 				})
 				return env
 			},
@@ -65,8 +65,8 @@ func TestEnv_APIMethods(t *testing.T) {
 			name: "before actions",
 			setup: func(t *testing.T) *testEnv{
 				env := newTestEnv(conf.New())
-				env.BeforeTest(func(ctx context.Context) error {
-					return nil
+				env.BeforeTest(func(ctx context.Context) (context.Context, error) {
+					return ctx, nil
 				})
 				return env
 			},
@@ -76,8 +76,8 @@ func TestEnv_APIMethods(t *testing.T) {
 			name: "after actions",
 			setup: func(t *testing.T) *testEnv{
 				env := newTestEnv(conf.New())
-				env.AfterTest(func(ctx context.Context) error {
-					return nil
+				env.AfterTest(func(ctx context.Context) (context.Context, error) {
+					return ctx, nil
 				})
 				return env
 			},
@@ -87,8 +87,8 @@ func TestEnv_APIMethods(t *testing.T) {
 			name: "finish actions",
 			setup: func(t *testing.T) *testEnv{
 				env := newTestEnv(conf.New())
-				env.Finish(func(ctx context.Context) error {
-					return nil
+				env.Finish(func(ctx context.Context) (context.Context, error) {
+					return ctx, nil
 				})
 				return env
 			},
@@ -98,14 +98,14 @@ func TestEnv_APIMethods(t *testing.T) {
 			name: "all actions",
 			setup: func(t *testing.T) *testEnv{
 				env := newTestEnv(conf.New())
-				env.Setup(func(ctx context.Context) error {
-					return nil
-				}).BeforeTest(func(ctx context.Context) error {
-					return nil
-				}).AfterTest(func(ctx context.Context) error {
-					return nil
-				}).Finish(func(ctx context.Context) error {
-					return nil
+				env.Setup(func(ctx context.Context) (context.Context, error) {
+					return ctx, nil
+				}).BeforeTest(func(ctx context.Context) (context.Context, error) {
+					return ctx, nil
+				}).AfterTest(func(ctx context.Context) (context.Context, error) {
+					return ctx, nil
+				}).Finish(func(ctx context.Context) (context.Context, error) {
+					return ctx, nil
 				})
 				return env
 			},
@@ -152,9 +152,9 @@ func TestEnv_Test(t *testing.T) {
 			expected: 86,
 			setup: func(t *testing.T, ctx context.Context) (val int){
 				env := newTestEnv(conf.New())
-				env.BeforeTest(func(ctx context.Context) error {
+				env.BeforeTest(func(ctx context.Context) (context.Context, error) {
 					val = 44
-					return nil
+					return ctx, nil
 				})
 				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, config *conf.Config) {
 					val = 42 + val
@@ -169,12 +169,12 @@ func TestEnv_Test(t *testing.T) {
 			expected: 66,
 			setup: func(t *testing.T, ctx context.Context) (val int){
 				env := newTestEnv(conf.New())
-				env.AfterTest(func(ctx context.Context) error {
+				env.AfterTest(func(ctx context.Context) (context.Context, error) {
 					val = val - 20
-					return nil
-				}).BeforeTest(func(ctx context.Context) error {
+					return ctx, nil
+				}).BeforeTest(func(ctx context.Context) (context.Context, error) {
 					val = 44
-					return nil
+					return ctx, nil
 				})
 				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, config *conf.Config) {
 					val = 42 + val
@@ -189,9 +189,9 @@ func TestEnv_Test(t *testing.T) {
 			expected: 44,
 			setup: func(t *testing.T, ctx context.Context) (val int){
 				env := newTestEnv(conf.New())
-				env.AfterTest(func(ctx context.Context) error {
+				env.AfterTest(func(ctx context.Context) (context.Context, error) {
 					val = 44
-					return nil
+					return ctx, nil
 				})
 				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, config *conf.Config) {
 					val = 42 + val

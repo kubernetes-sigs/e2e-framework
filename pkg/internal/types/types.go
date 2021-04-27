@@ -25,8 +25,9 @@ import (
 
 // EnvFunc represents a user-defined operation that
 // can be used to customized the behavior of the
-// environment.
-type EnvFunc func(context.Context) error
+// environment. Changes to context are expected to surface
+// to caller.
+type EnvFunc func(context.Context) (context.Context, error)
 
 // Environment represents an environment where
 // features can be tested.
@@ -41,8 +42,9 @@ type Environment interface {
 	// BeforeTest registers funcs that are executed before each Env.Test(...)
 	BeforeTest(...EnvFunc) Environment
 
-	// Test executes a test feature
-	Test(context.Context, *testing.T, Feature)
+	// Test executes a test feature defined in a TestXXX function
+	// This method surfaces context for further updates.
+	Test(context.Context, *testing.T, Feature) context.Context
 
 	// AfterTest registers funcs that are executed after each Env.Test(...)
 	AfterTest(...EnvFunc) Environment

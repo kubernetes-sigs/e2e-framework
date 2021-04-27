@@ -30,8 +30,8 @@ var (
 func TestMain(m *testing.M) {
 	global = env.New(conf.New())
 	ctx := context.WithValue(context.TODO(), 1, "bazz")
-	global.BeforeTest(func(ctx context.Context) error {
-		return nil
+	global.BeforeTest(func(ctx context.Context) (context.Context, error) {
+		return ctx, nil
 	})
 	global.Run(ctx, m)
 }

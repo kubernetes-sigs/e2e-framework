@@ -18,7 +18,7 @@ package env
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"testing"
 
 	"sigs.k8s.io/e2e-framework/pkg/conf"
@@ -83,23 +83,25 @@ func (e *testEnv) BeforeTest(funcs ...Func) types.Environment {
 //
 // BeforeTest and AfterTest operations are executed before and after
 // the feature is tested respectively.
-func (e *testEnv) Test(ctx context.Context, t *testing.T, feature types.Feature) {
+func (e *testEnv) Test(ctx context.Context, t *testing.T, feature types.Feature) context.Context {
 	befores := e.GetBeforeActions()
+	var err error
 	for _, action := range befores {
-		if err := action.run(ctx); err != nil {
-
+		if ctx, err = action.run(ctx); err != nil {
 			t.Fatalf("BeforeTest failure: %s: %v", feature.Name(), err)
 		}
 	}
 
-	e.execFeature(ctx, t, feature)
+	ctx = e.execFeature(ctx, t, feature)
 
 	afters := e.GetAfterActions()
 	for _, action := range afters {
-		if err := action.run(ctx); err != nil {
+		if ctx, err = action.run(ctx); err != nil {
 			t.Fatalf("AfterTest failure: %s: %v", feature.Name(), err)
 		}
 	}
+
+	return ctx
 }
 
 func (e *testEnv) AfterTest(funcs ...Func) types.Environment {
@@ -126,20 +128,23 @@ func (e *testEnv) Finish(funcs ...Func) types.Environment {
 //
 func (e *testEnv) Run(ctx context.Context, m *testing.M) int {
 	setups := e.GetSetupActions()
+	// fail fast on setup, upon err exit
 	for _, setup := range setups {
-		if err := setup.run(ctx); err != nil{
-			fmt.Println(err)
-			return 100
+		// context not surfaced further
+		if _, err := setup.run(ctx); err != nil{
+			log.Fatal(err)
 		}
 	}
 
 	exitCode := m.Run()
 
 	finishes := e.GetFinishActions()
+	// attempt to gracefully clean up.
+	// Upon error, log and continue.
 	for _, fin := range finishes {
-		if err := fin.run(ctx); err != nil{
-			fmt.Println(err)
-			return 200
+		// context not surfaced further
+		if _, err := fin.run(ctx); err != nil{
+			log.Println(err)
 		}
 	}
 
@@ -175,7 +180,7 @@ func (e *testEnv) GetFinishActions() []action {
 	return e.getActionsByRole(roleFinish)
 }
 
-func (e *testEnv) execFeature(ctx context.Context, t *testing.T, f types.Feature) {
+func (e *testEnv) execFeature(ctx context.Context, t *testing.T, f types.Feature) context.Context {
 	featName := f.Name()
 	// feature-level subtest
 	t.Run(featName, func(t *testing.T) {
@@ -199,4 +204,6 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, f types.Feature
 			teardown.Func()(ctx, t, e.Config())
 		}
 	})
+
+	return ctx
 }
