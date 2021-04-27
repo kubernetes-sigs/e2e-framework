@@ -76,10 +76,14 @@ func (e *testEnv) BeforeTest(funcs ...Func) types.Environment {
 }
 
 // Test executes a feature test from within a TestXXX function.
-// A feature setups and teardowns are executed at the same *testing.T
+//
+// Feature setups and teardowns are executed at the same *testing.T
 // contextual level as the test that invoked this method. Assessments
 // are executed as a subtests of the feature.  This approach allows
 // features/assessments to be filtered using go test -run flag.
+//
+// Feature tests will have access to and able to update the context
+// passed to it. The updated context is returned by this call.
 //
 // BeforeTest and AfterTest operations are executed before and after
 // the feature is tested respectively.
@@ -187,21 +191,21 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, f types.Feature
 		// setups run at feature-level
 		setups := features.GetStepsByLevel(f.Steps(), types.LevelSetup)
 		for _, setup := range setups {
-			setup.Func()(ctx, t, e.Config())
+			ctx = setup.Func()(ctx, t)
 		}
 
 		// assessments run as feature/assessment sub level
 		assessments := features.GetStepsByLevel(f.Steps(), types.LevelAssess)
 		for _, assess := range assessments {
 			t.Run(assess.Name(), func(t *testing.T){
-				assess.Func()(ctx, t, e.Config())
+				ctx = assess.Func()(ctx, t)
 			})
 		}
 
 		// teardowns run at feature-level
 		teardowns := features.GetStepsByLevel(f.Steps(), types.LevelTeardown)
 		for _, teardown := range teardowns {
-			teardown.Func()(ctx, t, e.Config())
+			ctx = teardown.Func()(ctx, t)
 		}
 	})
 

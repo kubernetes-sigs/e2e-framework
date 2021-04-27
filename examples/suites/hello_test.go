@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"testing"
 
-	"sigs.k8s.io/e2e-framework/pkg/conf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
@@ -30,14 +29,20 @@ func Hello(name string) string {
 }
 
 func TestHello(t *testing.T) {
+	name := "unknown"
+	if testenv.Context() != nil {
+		name = testenv.Context().Value(1).(string)
+	}
+
 	feat := features.New("Hello Feature").
 		WithLabel("type", "simple").
-		Assess("test message", func(ctx context.Context, t *testing.T, config *conf.Config) {
-			result := Hello("foo")
-			if result != "Hello foo" {
+		Assess("test message", func(ctx context.Context, t *testing.T) context.Context{
+			result := Hello(name)
+			if result != "Hello bazz" {
 				t.Error("unexpected message")
 			}
+			return ctx
 		}).Feature()
 
-	global.Test(context.TODO(), t, feat)
+	testenv.Test(testenv.Context(), t, feat)
 }

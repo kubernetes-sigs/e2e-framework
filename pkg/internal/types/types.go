@@ -75,7 +75,7 @@ const (
 	LevelTeardown
 )
 
-type StepFunc func (context.Context, *testing.T, *conf.Config)
+type StepFunc func (context.Context, *testing.T) context.Context
 
 type Step interface {
 	// Name is the step name

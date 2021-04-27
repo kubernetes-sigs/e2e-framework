@@ -139,8 +139,9 @@ func TestEnv_Test(t *testing.T) {
 			expected: 42,
 			setup: func(t *testing.T, ctx context.Context) (val int){
 				env := newTestEnv(conf.New())
-				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, config *conf.Config) {
+				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T) context.Context {
 					val = 42
+					return ctx
 				})
 				env.Test(ctx, t, f.Feature())
 				return
@@ -156,8 +157,9 @@ func TestEnv_Test(t *testing.T) {
 					val = 44
 					return ctx, nil
 				})
-				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, config *conf.Config) {
+				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T) context.Context {
 					val = 42 + val
+					return ctx
 				})
 				env.Test(ctx, t, f.Feature())
 				return
@@ -176,8 +178,9 @@ func TestEnv_Test(t *testing.T) {
 					val = 44
 					return ctx, nil
 				})
-				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, config *conf.Config) {
+				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T) context.Context {
 					val = 42 + val
+					return ctx
 				})
 				env.Test(ctx, t, f.Feature())
 				return
@@ -193,8 +196,9 @@ func TestEnv_Test(t *testing.T) {
 					val = 44
 					return ctx, nil
 				})
-				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, config *conf.Config) {
+				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T) context.Context {
 					val = 42 + val
+					return ctx
 				})
 				env.Test(ctx, t, f.Feature())
 				return

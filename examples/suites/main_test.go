@@ -25,13 +25,14 @@ import (
 )
 
 var (
-	global env.Environment
+	testenv env.Environment
 )
+
 func TestMain(m *testing.M) {
-	global = env.New(conf.New())
 	ctx := context.WithValue(context.TODO(), 1, "bazz")
-	global.BeforeTest(func(ctx context.Context) (context.Context, error) {
+	testenv = env.NewWithContext(ctx, conf.New())
+	testenv.BeforeTest(func(ctx context.Context) (context.Context, error) {
 		return ctx, nil
 	})
-	global.Run(ctx, m)
+	testenv.Run(ctx, m)
 }
