@@ -26,7 +26,7 @@ import (
 // EnvFunc represents a user-defined operation that
 // can be used to customized the behavior of the
 // environment.
-type EnvFunc func(context.Context, *conf.Config) error
+type EnvFunc func(context.Context) error
 
 // Environment represents an environment where
 // features can be tested.
@@ -55,6 +55,7 @@ type Environment interface {
 }
 
 type Labels map[string]string
+
 type Feature interface {
 	// Name is a descriptive text for the feature
 	Name() string

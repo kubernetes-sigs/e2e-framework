@@ -86,7 +86,8 @@ func (e *testEnv) BeforeTest(funcs ...Func) types.Environment {
 func (e *testEnv) Test(ctx context.Context, t *testing.T, feature types.Feature) {
 	befores := e.GetBeforeActions()
 	for _, action := range befores {
-		if err := action.run(ctx, e.cfg); err != nil {
+		if err := action.run(ctx); err != nil {
+
 			t.Fatalf("BeforeTest failure: %s: %v", feature.Name(), err)
 		}
 	}
@@ -95,7 +96,7 @@ func (e *testEnv) Test(ctx context.Context, t *testing.T, feature types.Feature)
 
 	afters := e.GetAfterActions()
 	for _, action := range afters {
-		if err := action.run(ctx, e.cfg); err != nil {
+		if err := action.run(ctx); err != nil {
 			t.Fatalf("AfterTest failure: %s: %v", feature.Name(), err)
 		}
 	}
@@ -126,7 +127,7 @@ func (e *testEnv) Finish(funcs ...Func) types.Environment {
 func (e *testEnv) Run(ctx context.Context, m *testing.M) int {
 	setups := e.GetSetupActions()
 	for _, setup := range setups {
-		if err := setup.run(ctx, e.Config()); err != nil{
+		if err := setup.run(ctx); err != nil{
 			fmt.Println(err)
 			return 100
 		}
@@ -136,7 +137,7 @@ func (e *testEnv) Run(ctx context.Context, m *testing.M) int {
 
 	finishes := e.GetFinishActions()
 	for _, fin := range finishes {
-		if err := fin.run(ctx, e.Config()); err != nil{
+		if err := fin.run(ctx); err != nil{
 			fmt.Println(err)
 			return 200
 		}

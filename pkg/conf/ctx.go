@@ -14,36 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package env
+package conf
 
 import (
 	"context"
-
-	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
 
-const(
-	roleSetup = iota
-	roleBefore
-	roleAfter
-	roleFinish
-)
+type cfgKey struct{}
 
-// action a group env functions
-type action struct {
-	role actionRole
-	ctx context.Context
-	funcs []types.EnvFunc
-}
-
-func (a action) run(ctx context.Context) error  {
-	for _, f := range a.funcs {
-		if f == nil {
-			continue
-		}
-		if err := f(ctx); err != nil {
-			return err
-		}
+// FromContext extracts a *Config value from ctx.
+// If *Config is not found, it returns nil.
+func FromContext(ctx context.Context) *Config{
+	if ctx == nil {
+		return nil
+	}
+	if cfg, ok := ctx.Value(cfgKey{}).(*Config); ok {
+		return cfg
 	}
 	return nil
+}
+
+// WithContext returns ctx with a config stored.
+func WithContext(ctx context.Context, cfg *Config) context.Context {
+	return context.WithValue(ctx, cfgKey{}, cfg)
 }

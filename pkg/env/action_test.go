@@ -20,7 +20,6 @@ import (
 	"context"
 	"testing"
 
-	"sigs.k8s.io/e2e-framework/pkg/conf"
 	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
 
@@ -37,12 +36,12 @@ func TestAction_Run(t *testing.T) {
 			ctx : context.WithValue(context.TODO(), 0, 1),
 			setup: func(ctx context.Context) (val int, err error) {
 				funcs := []types.EnvFunc{
-					func(ctx context.Context, config *conf.Config) error {
+					func(ctx context.Context) error {
 						val = 12
 						return nil
 					},
 				}
-				err = action{role: roleSetup, funcs: funcs}.run(ctx, conf.New())
+				err = action{role: roleSetup, funcs: funcs}.run(ctx)
 				return
 			},
 			expected: 12,
@@ -52,16 +51,16 @@ func TestAction_Run(t *testing.T) {
 			ctx : context.WithValue(context.TODO(), 0, 1),
 			setup: func(ctx context.Context) (val int, err error) {
 				funcs := []types.EnvFunc{
-					func(ctx context.Context, config *conf.Config) error {
+					func(ctx context.Context) error {
 						val = 12
 						return nil
 					},
-					func(ctx context.Context, config *conf.Config) error {
+					func(ctx context.Context) error {
 						val = val * 2
 						return nil
 					},
 				}
-				err = action{role: roleSetup, funcs: funcs}.run(ctx, conf.New())
+				err = action{role: roleSetup, funcs: funcs}.run(ctx)
 				return
 			},
 			expected: 24,
@@ -71,17 +70,17 @@ func TestAction_Run(t *testing.T) {
 			ctx : context.WithValue(context.TODO(), 0, 1),
 			setup: func(ctx context.Context) (val int, err error) {
 				funcs := []types.EnvFunc{
-					func(ctx context.Context, config *conf.Config) error {
+					func(ctx context.Context) error {
 						i := ctx.Value(0).(int) + 2
 						val = i
 						return nil
 					},
-					func(ctx context.Context, config *conf.Config) error {
+					func(ctx context.Context) error {
 						val = val + 3
 						return nil
 					},
 				}
-				err = action{role: roleSetup, funcs: funcs}.run(ctx, conf.New())
+				err = action{role: roleSetup, funcs: funcs}.run(ctx)
 				return
 			},
 			expected: 6,
