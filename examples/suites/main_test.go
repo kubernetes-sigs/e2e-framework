@@ -20,17 +20,17 @@ import (
 	"context"
 	"testing"
 
-	"sigs.k8s.io/e2e-framework/pkg/conf"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 )
 
 var (
 	testenv env.Environment
+	ctx = context.Background()
 )
 
 func TestMain(m *testing.M) {
-	ctx := context.WithValue(context.TODO(), 1, "bazz")
-	testenv = env.NewWithContext(ctx, conf.New())
+	ctx = context.WithValue(ctx, 1, "bazz")
+	testenv = env.New()
 	testenv.BeforeTest(func(ctx context.Context) (context.Context, error) {
 		return ctx, nil
 	})

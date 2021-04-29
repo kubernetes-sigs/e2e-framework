@@ -33,7 +33,6 @@ type EnvFunc func(context.Context) (context.Context, error)
 // features can be tested.
 type Environment interface {
 	Config() *conf.Config
-	Context() context.Context
 
 	// Setup registers environment operations that are executed once
 	// prior to the environment being ready and prior to any test.

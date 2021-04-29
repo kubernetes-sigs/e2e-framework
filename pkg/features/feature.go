@@ -17,6 +17,8 @@ limitations under the License.
 package features
 
 import (
+	"regexp"
+
 	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
 
@@ -83,6 +85,19 @@ func GetStepsByLevel(steps []types.Step, l types.Level) []types.Step {
 	var result []Step
 	for _, s := range steps {
 		if s.Level() == l {
+			result = append(result, s)
+		}
+	}
+	return result
+}
+
+func FilterStepsByName(steps []types.Step, regexName *regexp.Regexp) []types.Step {
+	if steps == nil {
+		return nil
+	}
+	var result []Step
+	for _, s := range steps {
+		if regexName.MatchString(s.Name()) {
 			result = append(result, s)
 		}
 	}

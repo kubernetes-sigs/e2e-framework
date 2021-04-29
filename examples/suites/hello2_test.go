@@ -18,27 +18,39 @@ package suites
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
+	"sigs.k8s.io/e2e-framework/pkg/conf"
+	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func Hello(name string) string {
-	return fmt.Sprintf("Hello %s", name)
-}
-
-func TestHello(t *testing.T) {
-	name := ctx.Value(1).(string)
+// This test shows how to filter assessment tests
+func TestHello_WithFilters(t *testing.T) {
+	env := env.NewWithConfig(conf.New().WithAssessmentRegex("add-*"))
 	feat := features.New("Hello Feature").
-		WithLabel("type", "simple").
-		Assess("test message", func(ctx context.Context, t *testing.T) context.Context{
-			result := Hello(name)
+		Assess("add-bazz", func(ctx context.Context, t *testing.T) context.Context{
+			result := Hello("bazz")
 			if result != "Hello bazz" {
 				t.Error("unexpected message")
 			}
 			return ctx
-		}).Feature()
+		}).
+		Assess("repeat-msg", func(ctx context.Context, t *testing.T) context.Context{
+			result := Hello(Hello("bat"))
+			if result != "Hello Hello bat" {
+				t.Error("unexpected message")
+			}
+			return ctx
+		}).
+		Assess("add-bat", func(ctx context.Context, t *testing.T) context.Context{
+			result := Hello("bat")
+			if result != "Hello bat" {
+				t.Error("unexpected message")
+			}
+			return ctx
+		}).
+		Feature()
 
-	testenv.Test(ctx, t, feat)
+	env.Test(ctx, t, feat)
 }

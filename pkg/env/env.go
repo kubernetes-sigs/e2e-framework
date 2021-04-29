@@ -32,31 +32,27 @@ type Func = types.EnvFunc
 type actionRole uint8
 
 type testEnv struct {
-	ctx context.Context
 	cfg     *conf.Config
 	actions []action
 }
 
-func New(cfg *conf.Config) types.Environment {
-	return newTestEnv(cfg)
+// New creates a test environment with no config attached.
+func New() types.Environment {
+	return &testEnv{cfg: conf.New()}
 }
 
-func NewWithContext(ctx context.Context, cfg *conf.Config) types.Environment {
-	env := newTestEnv(cfg)
-	env.ctx = ctx
-	return env
+// NewWithConfig convenience constructor function that takes
+// a default *conf.Config
+func NewWithConfig(cfg *conf.Config) types.Environment {
+	return &testEnv{cfg: cfg}
 }
 
 func newTestEnv(cfg *conf.Config) *testEnv {
-	return &testEnv{cfg: cfg, ctx: context.Background()}
+	return &testEnv{cfg: cfg}
 }
 
 func (e *testEnv) Config() *conf.Config {
 	return e.cfg
-}
-
-func (e *testEnv) Context() context.Context {
-	return e.ctx
 }
 
 func (e *testEnv) Setup(funcs ...Func) types.Environment {
@@ -135,7 +131,7 @@ func (e *testEnv) Run(ctx context.Context, m *testing.M) int {
 	// fail fast on setup, upon err exit
 	for _, setup := range setups {
 		// context not surfaced further
-		if _, err := setup.run(ctx); err != nil{
+		if _, err := setup.run(ctx); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -147,7 +143,7 @@ func (e *testEnv) Run(ctx context.Context, m *testing.M) int {
 	// Upon error, log and continue.
 	for _, fin := range finishes {
 		// context not surfaced further
-		if _, err := fin.run(ctx); err != nil{
+		if _, err := fin.run(ctx); err != nil {
 			log.Println(err)
 		}
 	}
@@ -186,8 +182,13 @@ func (e *testEnv) GetFinishActions() []action {
 
 func (e *testEnv) execFeature(ctx context.Context, t *testing.T, f types.Feature) context.Context {
 	featName := f.Name()
+
 	// feature-level subtest
 	t.Run(featName, func(t *testing.T) {
+		if e.cfg.FeatureRegex() != nil && !e.cfg.FeatureRegex().MatchString(featName){
+			t.Skipf(`Skipping feature "%s": name not matched`, featName)
+		}
+
 		// setups run at feature-level
 		setups := features.GetStepsByLevel(f.Steps(), types.LevelSetup)
 		for _, setup := range setups {
@@ -196,8 +197,12 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, f types.Feature
 
 		// assessments run as feature/assessment sub level
 		assessments := features.GetStepsByLevel(f.Steps(), types.LevelAssess)
+
 		for _, assess := range assessments {
-			t.Run(assess.Name(), func(t *testing.T){
+			t.Run(assess.Name(), func(t *testing.T) {
+				if e.cfg.AssessmentRegex() != nil && !e.cfg.AssessmentRegex().MatchString(assess.Name()){
+					t.Skipf(`Skipping assessment "%s": name not matched`, assess.Name())
+				}
 				ctx = assess.Func()(ctx, t)
 			})
 		}

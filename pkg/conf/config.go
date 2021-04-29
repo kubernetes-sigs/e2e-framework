@@ -17,30 +17,92 @@ limitations under the License.
 package conf
 
 import (
+	"regexp"
+
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/e2e-framework/pkg/flags"
 )
 
+type Filter struct {
+	Assessment string
+	Feature string
+	Labels map[string]string
+}
 type Config struct {
+	// kube
 	namespace string
-	kubecfg *rest.Config
+	kubecfg   *rest.Config
+
+	assessmentRegex *regexp.Regexp
+	featureRegex *regexp.Regexp
+	labels map[string] string
 }
 
 func New() *Config {
 	return &Config{}
 }
 
+// NewFromFlags creates a Config with parsed
+// flag values pre-populated.
+func NewFromFlags() (*Config, error) {
+	flags, err := flags.Parse()
+	if err != nil {
+		return nil, err
+	}
+	cfg := New()
+	if flags.Assessment() != "" {
+		cfg.assessmentRegex = regexp.MustCompile(flags.Assessment())
+	}
+	if flags.Feature() != "" {
+		cfg.featureRegex = regexp.MustCompile(flags.Feature())
+	}
+	cfg.labels = flags.Labels()
+
+	return cfg, nil
+}
+
 // NewWithKubeCfgFile is a convenience constructor that will
 // create a Kubernetes *rest.Config from a file
-func NewWithKubeCfgFile(filePath string) (*Config, error){
+func NewWithKubeCfgFile(filePath string) (*Config, error) {
 	return nil, nil
 }
 
-func (c *Config) WithConfig(cfg *rest.Config) *Config {
+func (c *Config) WithKubeConfig(cfg *rest.Config) *Config {
 	c.kubecfg = cfg
 	return c
+}
+
+func (c *Config) KubeConfig() *rest.Config {
+	return c.kubecfg
 }
 
 func (c *Config) WithNamespace(ns string) *Config {
 	c.namespace = ns
 	return c
+}
+
+func (c *Config) Namespace() string {
+	return c.namespace
+}
+
+func (c *Config) WithAssessmentRegex(regex string) *Config {
+	c.assessmentRegex = regexp.MustCompile(regex)
+	return c
+}
+
+func (c *Config) AssessmentRegex() *regexp.Regexp {
+	return c.assessmentRegex
+}
+
+func (c *Config) WithFeatureRegex(regex string) *Config {
+	c.featureRegex = regexp.MustCompile(regex)
+	return c
+}
+
+func (c *Config) FeatureRegex() *regexp.Regexp {
+	return c.featureRegex
+}
+
+func (c *Config) Labels() map[string]string {
+	return c.labels
 }

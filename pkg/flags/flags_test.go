@@ -25,27 +25,27 @@ func TestParse(t *testing.T) {
 	tests := []struct {
 		name string
 		args []string
-		flags *TestFlags
+		flags *Flags
 	}{
 		{
 			name: "with feature only",
 			args: []string{"-feature", "networking"},
-			flags: &TestFlags{feature:"networking"},
+			flags: &Flags{feature: "networking"},
 		},
 		{
 			name: "with assessment only",
 			args: []string{"-assess", "volume test"},
-			flags: &TestFlags{assess:"volume test"},
+			flags: &Flags{assess: "volume test"},
 		},
 		{
 			name: "with labels only",
 			args: []string{"-labels", "k0=v0"},
-			flags: &TestFlags{labels:LabelsMap{"k0": "v0"}},
+			flags: &Flags{labels: LabelsMap{"k0": "v0"}},
 		},
 		{
 			name: "with all",
 			args: []string{"-assess", "volume test", "--feature", "beta", "--labels","k0=v0, k1=v1, k2=v2"},
-			flags: &TestFlags{assess:"volume test", feature:"beta", labels: LabelsMap{"k0":"v0", "k1":"v1", "k2":"v2"}},
+			flags: &Flags{assess: "volume test", feature:"beta", labels: LabelsMap{"k0": "v0", "k1":"v1", "k2":"v2"}},
 		},
 	}
 

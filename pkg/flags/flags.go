@@ -28,29 +28,29 @@ const(
 	flagAssessName = "assess"
 	flagLabelsName = "labels"
 )
-type TestFlags struct {
+type Flags struct {
 	feature string
 	assess string
 	labels LabelsMap
 }
 
-func (f *TestFlags) Feature() string {
+func (f *Flags) Feature() string {
 	return f.feature
 }
 
-func (f *TestFlags) Assessment() string {
+func (f *Flags) Assessment() string {
 	return f.assess
 }
 
-func (f *TestFlags) Labels() LabelsMap {
+func (f *Flags) Labels() LabelsMap {
 	return f.labels
 }
 
-func Parse() (*TestFlags, error){
+func Parse() (*Flags, error){
 	return parseFlags(os.Args[0], os.Args[1:])
 }
 
-func parseFlags(cmdName string, flags []string) (*TestFlags, error){
+func parseFlags(cmdName string, flags []string) (*Flags, error){
 	var feature string
 	var assess string
 	labels := make(LabelsMap)
@@ -63,7 +63,7 @@ func parseFlags(cmdName string, flags []string) (*TestFlags, error){
 		return nil, err
 	}
 
-	return &TestFlags{feature:feature, assess: assess, labels:labels}, nil
+	return &Flags{feature: feature, assess: assess, labels:labels}, nil
 }
 
 type LabelsMap map[string]string
