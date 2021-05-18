@@ -36,7 +36,6 @@ verify-go-mod: ## Runs the go module linter
 verify-golangci-lint: ## Runs all golang linters
 	./hack/verify-golangci-lint.sh
 
-
 ##@ Dependencies
 
 .SILENT: update-deps update-deps-go
@@ -53,6 +52,12 @@ update-deps-go: ## Update all golang dependencies for this repo
 	go mod verify
 	$(MAKE) test-go-unit
 	./hack/update-all.sh
+
+##@ Tests
+
+.PHONY: test
+test: ## Runs golang unit tests
+	./hack/test-go.sh
 
 ##@ Helpers
 

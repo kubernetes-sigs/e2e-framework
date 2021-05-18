@@ -32,7 +32,6 @@ const (
 // action a group env functions
 type action struct {
 	role  actionRole
-	ctx   context.Context // nolint
 	funcs []types.EnvFunc
 }
 
