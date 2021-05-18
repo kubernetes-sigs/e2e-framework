@@ -25,8 +25,7 @@ NOCOLOR:=\\033[0m
 
 .PHONY: verify verify-boilerplate verify-golangci-lint verify-go-mod
 
-# TODO: enable verify-build / golangci-lint / go-mod once we have go code in :)
-verify: verify-boilerplate # verify-build verify-golangci-lint verify-go-mod ## Runs verification scripts to ensure correct execution
+verify: verify-boilerplate verify-golangci-lint verify-go-mod ## Runs verification scripts to ensure correct execution
 
 verify-boilerplate: ## Runs the file header check
 	./hack/verify-boilerplate.sh
