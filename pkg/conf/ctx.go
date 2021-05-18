@@ -24,7 +24,7 @@ type cfgKey struct{}
 
 // FromContext extracts a *Config value from ctx.
 // If *Config is not found, it returns nil.
-func FromContext(ctx context.Context) *Config{
+func FromContext(ctx context.Context) *Config {
 	if ctx == nil {
 		return nil
 	}

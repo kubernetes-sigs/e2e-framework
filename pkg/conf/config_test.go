@@ -23,7 +23,7 @@ import (
 )
 
 func TestConfig_UseRESTConfig(t *testing.T) {
-	cfg := New().WithConfig(&rest.Config{})
+	cfg := New().WithKubeConfig(&rest.Config{})
 	if cfg.kubecfg == nil {
 		t.Errorf("kubecfg is nil")
 	}
@@ -32,7 +32,7 @@ func TestConfig_UseRESTConfig(t *testing.T) {
 func TestConfig_UseNamespace(t *testing.T) {
 	cfg := New().WithNamespace("testns")
 
-	if cfg.namespace != "testns"{
+	if cfg.namespace != "testns" {
 		t.Errorf("unexpected config namespace: %s", cfg.namespace)
 	}
 }

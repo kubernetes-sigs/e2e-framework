@@ -180,7 +180,7 @@ func TestEnv_Test(t *testing.T) {
 					return ctx, nil
 				})
 				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T) context.Context {
-					val = 42 + val
+					val += 42
 					return ctx
 				})
 				env.Test(ctx, t, f.Feature())
@@ -194,14 +194,14 @@ func TestEnv_Test(t *testing.T) {
 			setup: func(t *testing.T, ctx context.Context) (val int) {
 				env := newTestEnv(conf.New())
 				env.AfterTest(func(ctx context.Context) (context.Context, error) {
-					val = val - 20
+					val -= 20
 					return ctx, nil
 				}).BeforeTest(func(ctx context.Context) (context.Context, error) {
 					val = 44
 					return ctx, nil
 				})
 				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T) context.Context {
-					val = 42 + val
+					val += 42
 					return ctx
 				})
 				env.Test(ctx, t, f.Feature())
@@ -235,15 +235,15 @@ func TestEnv_Test(t *testing.T) {
 				env := newTestEnv(conf.New().WithAssessmentRegex("add-*"))
 				f := features.New("test-feat").
 					Assess("add-one", func(ctx context.Context, t *testing.T) context.Context {
-						val = val+1
+						val++
 						return ctx
 					}).
 					Assess("add-two", func(ctx context.Context, t *testing.T) context.Context {
-						val = val + 2
+						val += 2
 						return ctx
 					}).
 					Assess("take-one", func(ctx context.Context, t *testing.T) context.Context {
-						val = val - 1
+						val--
 						return ctx
 					})
 				env.Test(ctx, t, f.Feature())

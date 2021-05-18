@@ -35,17 +35,17 @@ func TestNew(t *testing.T) {
 
 func TestFeatureBuilder(t *testing.T) {
 	tests := []struct {
-		name string
+		name  string
 		setup func(*testing.T) types.Feature
-		eval func(*testing.T, types.Feature)
+		eval  func(*testing.T, types.Feature)
 	}{
 		{
 			name: "empty feature",
 			setup: func(t *testing.T) types.Feature {
 				return New("empty").Feature()
 			},
-			eval: func(t *testing.T, f types.Feature){
-				ft := f.(*defaultFeature)
+			eval: func(t *testing.T, f types.Feature) {
+				ft := f.(*defaultFeature) // nolint
 				if len(ft.labels) != 0 {
 					t.Error("unexpected labels len:", len(ft.labels))
 				}
@@ -57,10 +57,10 @@ func TestFeatureBuilder(t *testing.T) {
 		{
 			name: "with labels",
 			setup: func(t *testing.T) types.Feature {
-				return New("test").WithLabel("a","b").WithLabel("c", "d").Feature()
+				return New("test").WithLabel("a", "b").WithLabel("c", "d").Feature()
 			},
-			eval: func(t *testing.T, f types.Feature){
-				ft := f.(*defaultFeature)
+			eval: func(t *testing.T, f types.Feature) {
+				ft := f.(*defaultFeature) // nolint
 				if len(ft.labels) != 2 {
 					t.Error("unexpected labels len:", len(ft.labels))
 				}
@@ -74,9 +74,9 @@ func TestFeatureBuilder(t *testing.T) {
 					return ctx
 				}).Feature()
 			},
-			eval: func(t *testing.T, f types.Feature){
-				ft := f.(*defaultFeature)
-				setups := GetStepsByLevel(ft.Steps(),types.LevelSetup)
+			eval: func(t *testing.T, f types.Feature) {
+				ft := f.(*defaultFeature) // nolint
+				setups := GetStepsByLevel(ft.Steps(), types.LevelSetup)
 				if len(setups) != 1 {
 					t.Errorf("unexpected number of setup functions: %d", len(setups))
 				}
@@ -85,7 +85,7 @@ func TestFeatureBuilder(t *testing.T) {
 				}
 			},
 		},
-		{
+		{ // nolint
 			name: "multiple setups",
 			setup: func(t *testing.T) types.Feature {
 				return New("test").Setup(func(ctx context.Context, t *testing.T) context.Context {
@@ -96,13 +96,13 @@ func TestFeatureBuilder(t *testing.T) {
 					return ctx
 				}).Feature()
 			},
-			eval: func(t *testing.T, f types.Feature){
-				ft := f.(*defaultFeature)
-				setups := GetStepsByLevel(ft.Steps(),types.LevelSetup)
+			eval: func(t *testing.T, f types.Feature) {
+				ft := f.(*defaultFeature) // nolint
+				setups := GetStepsByLevel(ft.Steps(), types.LevelSetup)
 				if len(setups) != 2 {
 					t.Errorf("unexpected number of setup functions: %d", len(setups))
 				}
-				if len(ft.Steps()) != 2  {
+				if len(ft.Steps()) != 2 {
 					t.Errorf("unexpected number of steps %d", len(ft.Steps()))
 				}
 			},
@@ -115,18 +115,18 @@ func TestFeatureBuilder(t *testing.T) {
 					return ctx
 				}).Feature()
 			},
-			eval: func(t *testing.T, f types.Feature){
-				ft := f.(*defaultFeature)
-				teardowns := GetStepsByLevel(ft.Steps(),types.LevelTeardown)
+			eval: func(t *testing.T, f types.Feature) {
+				ft := f.(*defaultFeature) // nolint
+				teardowns := GetStepsByLevel(ft.Steps(), types.LevelTeardown)
 				if len(teardowns) != 1 {
 					t.Errorf("unexpected number of teardown functions: %d", len(teardowns))
 				}
-				if len(ft.Steps()) != 1  {
+				if len(ft.Steps()) != 1 {
 					t.Errorf("unexpected number of steps %d", len(ft.Steps()))
 				}
 			},
 		},
-		{
+		{ // nolint
 			name: "multiple teardowns",
 			setup: func(t *testing.T) types.Feature {
 				return New("test").Teardown(func(ctx context.Context, t *testing.T) context.Context {
@@ -137,13 +137,13 @@ func TestFeatureBuilder(t *testing.T) {
 					return ctx
 				}).Feature()
 			},
-			eval: func(t *testing.T, f types.Feature){
-				ft := f.(*defaultFeature)
-				teardowns := GetStepsByLevel(ft.Steps(),types.LevelTeardown)
+			eval: func(t *testing.T, f types.Feature) {
+				ft := f.(*defaultFeature) // nolint
+				teardowns := GetStepsByLevel(ft.Steps(), types.LevelTeardown)
 				if len(teardowns) != 2 {
 					t.Errorf("unexpected number of setup functions: %d", len(teardowns))
 				}
-				if len(ft.Steps()) != 2  {
+				if len(ft.Steps()) != 2 {
 					t.Errorf("unexpected number of steps %d", len(ft.Steps()))
 				}
 			},
@@ -156,13 +156,13 @@ func TestFeatureBuilder(t *testing.T) {
 					return ctx
 				}).Feature()
 			},
-			eval: func(t *testing.T, f types.Feature){
-				ft := f.(*defaultFeature)
-				assessments := GetStepsByLevel(ft.Steps(),types.LevelAssess)
+			eval: func(t *testing.T, f types.Feature) {
+				ft := f.(*defaultFeature) // nolint
+				assessments := GetStepsByLevel(ft.Steps(), types.LevelAssess)
 				if len(assessments) != 1 {
 					t.Errorf("unexpected number of assessment function: %d", len(assessments))
 				}
-				if len(ft.Steps()) != 1  {
+				if len(ft.Steps()) != 1 {
 					t.Errorf("unexpected number of steps %d", len(ft.Steps()))
 				}
 			},
@@ -178,13 +178,13 @@ func TestFeatureBuilder(t *testing.T) {
 					return ctx
 				}).Feature()
 			},
-			eval: func(t *testing.T, f types.Feature){
-				ft := f.(*defaultFeature)
-				assessments := GetStepsByLevel(ft.Steps(),types.LevelAssess)
+			eval: func(t *testing.T, f types.Feature) {
+				ft := f.(*defaultFeature) // nolint
+				assessments := GetStepsByLevel(ft.Steps(), types.LevelAssess)
 				if len(assessments) != 2 {
 					t.Errorf("unexpected number of setup functions: %d", len(assessments))
 				}
-				if len(ft.Steps()) != 2  {
+				if len(ft.Steps()) != 2 {
 					t.Errorf("unexpected number of steps %d", len(ft.Steps()))
 				}
 			},
@@ -206,9 +206,9 @@ func TestFeatureBuilder(t *testing.T) {
 					return ctx
 				}).Feature()
 			},
-			eval: func(t *testing.T, f types.Feature){
-				ft := f.(*defaultFeature)
-				if len(ft.Steps()) != 4  {
+			eval: func(t *testing.T, f types.Feature) {
+				ft := f.(*defaultFeature) // nolint
+				if len(ft.Steps()) != 4 {
 					t.Errorf("unexpected number of steps %d", len(ft.Steps()))
 				}
 			},
@@ -216,7 +216,7 @@ func TestFeatureBuilder(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T){
+		t.Run(test.name, func(t *testing.T) {
 			test.eval(t, test.setup(t))
 		})
 	}

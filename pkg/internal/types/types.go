@@ -69,12 +69,15 @@ type Feature interface {
 type Level uint8
 
 const (
+	// LevelSetup when doing the setup phase
 	LevelSetup Level = iota
+	// LevelAssess when doing the assess phase
 	LevelAssess
+	// LevelTeardown when doing the teardown phase
 	LevelTeardown
 )
 
-type StepFunc func (context.Context, *testing.T) context.Context
+type StepFunc func(context.Context, *testing.T) context.Context
 
 type Step interface {
 	// Name is the step name

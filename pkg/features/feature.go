@@ -22,18 +22,18 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
 
-type Labels = types.Labels
-type Feature = types.Feature
-type Step = types.Step
-type Func = types.StepFunc
-type Level = types.Level
-
-
+type (
+	Labels  = types.Labels
+	Feature = types.Feature
+	Step    = types.Step
+	Func    = types.StepFunc
+	Level   = types.Level
+)
 
 type defaultFeature struct {
-	name string
+	name   string
 	labels types.Labels
-	steps []types.Step
+	steps  []types.Step
 }
 
 func newDefaultFeature(name string) *defaultFeature {
@@ -53,16 +53,16 @@ func (f *defaultFeature) Steps() []types.Step {
 }
 
 type testStep struct {
-	name string
+	name  string
 	level Level
-	fn Func
+	fn    Func
 }
 
 func newStep(name string, level Level, fn Func) *testStep {
 	return &testStep{
-		name: name,
+		name:  name,
 		level: level,
-		fn: fn,
+		fn:    fn,
 	}
 }
 
@@ -88,6 +88,7 @@ func GetStepsByLevel(steps []types.Step, l types.Level) []types.Step {
 			result = append(result, s)
 		}
 	}
+
 	return result
 }
 
@@ -101,5 +102,6 @@ func FilterStepsByName(steps []types.Step, regexName *regexp.Regexp) []types.Ste
 			result = append(result, s)
 		}
 	}
+
 	return result
 }

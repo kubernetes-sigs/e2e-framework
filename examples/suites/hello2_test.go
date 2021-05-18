@@ -29,21 +29,21 @@ import (
 func TestHello_WithFilters(t *testing.T) {
 	env := env.NewWithConfig(conf.New().WithAssessmentRegex("add-*"))
 	feat := features.New("Hello Feature").
-		Assess("add-bazz", func(ctx context.Context, t *testing.T) context.Context{
+		Assess("add-bazz", func(ctx context.Context, t *testing.T) context.Context {
 			result := Hello("bazz")
 			if result != "Hello bazz" {
 				t.Error("unexpected message")
 			}
 			return ctx
 		}).
-		Assess("repeat-msg", func(ctx context.Context, t *testing.T) context.Context{
+		Assess("repeat-msg", func(ctx context.Context, t *testing.T) context.Context {
 			result := Hello(Hello("bat"))
 			if result != "Hello Hello bat" {
 				t.Error("unexpected message")
 			}
 			return ctx
 		}).
-		Assess("add-bat", func(ctx context.Context, t *testing.T) context.Context{
+		Assess("add-bat", func(ctx context.Context, t *testing.T) context.Context {
 			result := Hello("bat")
 			if result != "Hello bat" {
 				t.Error("unexpected message")

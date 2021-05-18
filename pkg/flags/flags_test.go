@@ -23,34 +23,34 @@ import (
 
 func TestParse(t *testing.T) {
 	tests := []struct {
-		name string
-		args []string
+		name  string
+		args  []string
 		flags *Flags
 	}{
 		{
-			name: "with feature only",
-			args: []string{"-feature", "networking"},
+			name:  "with feature only",
+			args:  []string{"-feature", "networking"},
 			flags: &Flags{feature: "networking"},
 		},
 		{
-			name: "with assessment only",
-			args: []string{"-assess", "volume test"},
+			name:  "with assessment only",
+			args:  []string{"-assess", "volume test"},
 			flags: &Flags{assess: "volume test"},
 		},
 		{
-			name: "with labels only",
-			args: []string{"-labels", "k0=v0"},
+			name:  "with labels only",
+			args:  []string{"-labels", "k0=v0"},
 			flags: &Flags{labels: LabelsMap{"k0": "v0"}},
 		},
 		{
-			name: "with all",
-			args: []string{"-assess", "volume test", "--feature", "beta", "--labels","k0=v0, k1=v1, k2=v2"},
-			flags: &Flags{assess: "volume test", feature:"beta", labels: LabelsMap{"k0": "v0", "k1":"v1", "k2":"v2"}},
+			name:  "with all",
+			args:  []string{"-assess", "volume test", "--feature", "beta", "--labels", "k0=v0, k1=v1, k2=v2"},
+			flags: &Flags{assess: "volume test", feature: "beta", labels: LabelsMap{"k0": "v0", "k1": "v1", "k2": "v2"}},
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T){
+		t.Run(test.name, func(t *testing.T) {
 			testFlags, err := parseFlags(os.Args[0], test.args)
 			if err != nil {
 				t.Fatal(err)
