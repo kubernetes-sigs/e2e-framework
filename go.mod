@@ -3,6 +3,9 @@ module sigs.k8s.io/e2e-framework
 go 1.16
 
 require (
-	k8s.io/apimachinery v0.21.0
-	k8s.io/client-go v0.21.0
+	github.com/vladimirvivien/gexe v0.1.0
+	k8s.io/api v0.21.1
+	k8s.io/apimachinery v0.21.1
+	k8s.io/client-go v0.21.1
+	sigs.k8s.io/controller-runtime v0.9.0
 )
