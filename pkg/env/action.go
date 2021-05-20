@@ -22,7 +22,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
 
-const(
+const (
 	roleSetup = iota
 	roleBefore
 	roleAfter
@@ -31,21 +31,22 @@ const(
 
 // action a group env functions
 type action struct {
-	role actionRole
-	ctx context.Context
+	role  actionRole
 	funcs []types.EnvFunc
 }
 
-func (a action) run(ctx context.Context) (context.Context, error)  {
+func (a action) run(ctx context.Context) (context.Context, error) {
 	for _, f := range a.funcs {
 		if f == nil {
 			continue
 		}
+
 		var err error
 		ctx, err = f(ctx)
 		if err != nil {
 			return ctx, err
 		}
 	}
+
 	return ctx, nil
 }

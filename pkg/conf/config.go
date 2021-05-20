@@ -25,17 +25,18 @@ import (
 
 type Filter struct {
 	Assessment string
-	Feature string
-	Labels map[string]string
+	Feature    string
+	Labels     map[string]string
 }
+
 type Config struct {
 	// kube
 	namespace string
 	kubecfg   *rest.Config
 
 	assessmentRegex *regexp.Regexp
-	featureRegex *regexp.Regexp
-	labels map[string] string
+	featureRegex    *regexp.Regexp
+	labels          map[string]string
 }
 
 func New() *Config {
@@ -45,18 +46,19 @@ func New() *Config {
 // NewFromFlags creates a Config with parsed
 // flag values pre-populated.
 func NewFromFlags() (*Config, error) {
-	flags, err := flags.Parse()
+	newFlags, err := flags.Parse()
 	if err != nil {
 		return nil, err
 	}
+
 	cfg := New()
-	if flags.Assessment() != "" {
-		cfg.assessmentRegex = regexp.MustCompile(flags.Assessment())
+	if newFlags.Assessment() != "" {
+		cfg.assessmentRegex = regexp.MustCompile(newFlags.Assessment())
 	}
-	if flags.Feature() != "" {
-		cfg.featureRegex = regexp.MustCompile(flags.Feature())
+	if newFlags.Feature() != "" {
+		cfg.featureRegex = regexp.MustCompile(newFlags.Feature())
 	}
-	cfg.labels = flags.Labels()
+	cfg.labels = newFlags.Labels()
 
 	return cfg, nil
 }

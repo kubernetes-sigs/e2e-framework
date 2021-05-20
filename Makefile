@@ -25,8 +25,7 @@ NOCOLOR:=\\033[0m
 
 .PHONY: verify verify-boilerplate verify-golangci-lint verify-go-mod
 
-# TODO: enable verify-build / golangci-lint / go-mod once we have go code in :)
-verify: verify-boilerplate # verify-build verify-golangci-lint verify-go-mod ## Runs verification scripts to ensure correct execution
+verify: verify-boilerplate verify-golangci-lint verify-go-mod ## Runs verification scripts to ensure correct execution
 
 verify-boilerplate: ## Runs the file header check
 	./hack/verify-boilerplate.sh
@@ -36,7 +35,6 @@ verify-go-mod: ## Runs the go module linter
 
 verify-golangci-lint: ## Runs all golang linters
 	./hack/verify-golangci-lint.sh
-
 
 ##@ Dependencies
 
@@ -54,6 +52,12 @@ update-deps-go: ## Update all golang dependencies for this repo
 	go mod verify
 	$(MAKE) test-go-unit
 	./hack/update-all.sh
+
+##@ Tests
+
+.PHONY: test
+test: ## Runs golang unit tests
+	./hack/test-go.sh
 
 ##@ Helpers
 

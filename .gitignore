@@ -1,2 +1,4 @@
 /bin/*
 .idea
+/coverage.html
+/coverage.out

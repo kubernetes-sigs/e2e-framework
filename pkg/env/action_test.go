@@ -23,17 +23,19 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
 
+type ctxKey struct{}
+
 func TestAction_Run(t *testing.T) {
 	tests := []struct {
-		name string
-		ctx context.Context
-		setup func (context.Context) (int, error)
-		expected int
+		name       string
+		ctx        context.Context
+		setup      func(context.Context) (int, error)
+		expected   int
 		shouldFail bool
 	}{
 		{
-			name : "single-step action",
-			ctx : context.WithValue(context.TODO(), 0, 1),
+			name: "single-step action",
+			ctx:  context.WithValue(context.TODO(), &ctxKey{}, 1),
 			setup: func(ctx context.Context) (val int, err error) {
 				funcs := []types.EnvFunc{
 					func(ctx context.Context) (context.Context, error) {
@@ -47,8 +49,8 @@ func TestAction_Run(t *testing.T) {
 			expected: 12,
 		},
 		{
-			name : "multi-step action",
-			ctx : context.WithValue(context.TODO(), 0, 1),
+			name: "multi-step action",
+			ctx:  context.WithValue(context.TODO(), &ctxKey{}, 1),
 			setup: func(ctx context.Context) (val int, err error) {
 				funcs := []types.EnvFunc{
 					func(ctx context.Context) (context.Context, error) {
@@ -56,27 +58,27 @@ func TestAction_Run(t *testing.T) {
 						return ctx, nil
 					},
 					func(ctx context.Context) (context.Context, error) {
-						val = val * 2
+						val *= 2
 						return ctx, nil
 					},
 				}
-				_ , err = action{role: roleSetup, funcs: funcs}.run(ctx)
+				_, err = action{role: roleSetup, funcs: funcs}.run(ctx)
 				return
 			},
 			expected: 24,
 		},
 		{
-			name : "read from context",
-			ctx : context.WithValue(context.TODO(), 0, 1),
+			name: "read from context",
+			ctx:  context.WithValue(context.TODO(), &ctxKey{}, 1),
 			setup: func(ctx context.Context) (val int, err error) {
 				funcs := []types.EnvFunc{
 					func(ctx context.Context) (context.Context, error) {
-						i := ctx.Value(0).(int) + 2
+						i := ctx.Value(&ctxKey{}).(int) + 2
 						val = i
 						return ctx, nil
 					},
 					func(ctx context.Context) (context.Context, error) {
-						val = val + 3
+						val += 3
 						return ctx, nil
 					},
 				}
@@ -88,10 +90,10 @@ func TestAction_Run(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T){
+		t.Run(test.name, func(t *testing.T) {
 			result, err := test.setup(test.ctx)
-			if !test.shouldFail && err != nil{
-				t.Fatalf("unexpected failure: %v",err)
+			if !test.shouldFail && err != nil {
+				t.Fatalf("unexpected failure: %v", err)
 			}
 			if result != test.expected {
 				t.Error("unexpected value:", result)

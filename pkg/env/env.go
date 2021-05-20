@@ -26,10 +26,12 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
 
-type Environment = types.Environment
-type Func = types.EnvFunc
+type (
+	Environment = types.Environment
+	Func        = types.EnvFunc
 
-type actionRole uint8
+	actionRole uint8
+)
 
 type testEnv struct {
 	cfg     *conf.Config
@@ -116,6 +118,7 @@ func (e *testEnv) Finish(funcs ...Func) types.Environment {
 	if len(funcs) == 0 {
 		return e
 	}
+
 	e.actions = append(e.actions, action{role: roleFinish, funcs: funcs})
 	return e
 }
@@ -155,12 +158,14 @@ func (e *testEnv) getActionsByRole(r actionRole) []action {
 	if e.actions == nil {
 		return nil
 	}
+
 	var result []action
 	for _, a := range e.actions {
 		if a.role == r {
 			result = append(result, a)
 		}
 	}
+
 	return result
 }
 
@@ -185,7 +190,7 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, f types.Feature
 
 	// feature-level subtest
 	t.Run(featName, func(t *testing.T) {
-		if e.cfg.FeatureRegex() != nil && !e.cfg.FeatureRegex().MatchString(featName){
+		if e.cfg.FeatureRegex() != nil && !e.cfg.FeatureRegex().MatchString(featName) {
 			t.Skipf(`Skipping feature "%s": name not matched`, featName)
 		}
 
@@ -200,7 +205,7 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, f types.Feature
 
 		for _, assess := range assessments {
 			t.Run(assess.Name(), func(t *testing.T) {
-				if e.cfg.AssessmentRegex() != nil && !e.cfg.AssessmentRegex().MatchString(assess.Name()){
+				if e.cfg.AssessmentRegex() != nil && !e.cfg.AssessmentRegex().MatchString(assess.Name()) {
 					t.Skipf(`Skipping assessment "%s": name not matched`, assess.Name())
 				}
 				ctx = assess.Func()(ctx, t)

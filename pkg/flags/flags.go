@@ -23,15 +23,16 @@ import (
 	"strings"
 )
 
-const(
+const (
 	flagFeatureName = "feature"
-	flagAssessName = "assess"
-	flagLabelsName = "labels"
+	flagAssessName  = "assess"
+	flagLabelsName  = "labels"
 )
+
 type Flags struct {
 	feature string
-	assess string
-	labels LabelsMap
+	assess  string
+	labels  LabelsMap
 }
 
 func (f *Flags) Feature() string {
@@ -46,11 +47,11 @@ func (f *Flags) Labels() LabelsMap {
 	return f.labels
 }
 
-func Parse() (*Flags, error){
+func Parse() (*Flags, error) {
 	return parseFlags(os.Args[0], os.Args[1:])
 }
 
-func parseFlags(cmdName string, flags []string) (*Flags, error){
+func parseFlags(cmdName string, flags []string) (*Flags, error) {
 	var feature string
 	var assess string
 	labels := make(LabelsMap)
@@ -63,7 +64,7 @@ func parseFlags(cmdName string, flags []string) (*Flags, error){
 		return nil, err
 	}
 
-	return &Flags{feature: feature, assess: assess, labels:labels}, nil
+	return &Flags{feature: feature, assess: assess, labels: labels}, nil
 }
 
 type LabelsMap map[string]string
@@ -77,7 +78,7 @@ func (m LabelsMap) Set(val string) error {
 	// label: []string{"key=value",...}
 	for _, label := range strings.Split(val, ",") {
 		// split into k,v
-		kv := strings.Split(label,"=")
+		kv := strings.Split(label, "=")
 		if len(kv) != 2 {
 			return fmt.Errorf("label format error: %s", label)
 		}
