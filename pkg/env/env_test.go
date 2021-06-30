@@ -250,6 +250,39 @@ func TestEnv_Test(t *testing.T) {
 				return
 			},
 		},
+		{
+			name:     "with before-test, after-test using context",
+			ctx:      context.TODO(),
+			expected: 46,
+			setup: func(t *testing.T, ctx context.Context) int {
+				env := newTestEnv(conf.New())
+				// TODO: add test case using env.Setup once context propagation is supported from Setup
+				env.BeforeTest(func(ctx context.Context) (context.Context, error) {
+					return context.WithValue(ctx, &ctxKey{}, 44), nil
+				})
+				env.AfterTest(func(ctx context.Context) (context.Context, error) {
+					val, ok := ctx.Value(&ctxKey{}).(int)
+					if !ok {
+						t.Fatal("context value was not int")
+					}
+					val++
+
+					return context.WithValue(ctx, &ctxKey{}, val), nil
+				})
+				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T) context.Context {
+					val, ok := ctx.Value(&ctxKey{}).(int)
+					if !ok {
+						t.Fatal("context value was not int")
+					}
+					val++
+
+					return context.WithValue(ctx, &ctxKey{}, val)
+				})
+
+				ctx = env.Test(ctx, t, f.Feature())
+				return ctx.Value(&ctxKey{}).(int)
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
