@@ -49,18 +49,15 @@ The environment component is the heart of the framework. It allows devlopers to 
 
 The following shows a proposed type for the environment:
 
-```go=
+```go
 // EnvFunc is an operation applied during/after environment setup
-type EnvFunc func(context.Context, klient.Config) (context.Context, error)
+type EnvFunc func(context.Context, envconf.Config) (context.Context, error)
 
 type Environment interface {
-    // Config returns the associated klient.Config value
-    Config() klient.Config
+    // Config returns the associated environment configuration
+    Config() envconf.Config
     
-    // Context returns the environment context
-    Context() context.Context
-    
-    // WithContext returns an environment with an updated context
+    // WithContext returns a new environment with an updated context
     WithContext(context.Context) Environment
     
     // Setup registers environment operations that are executed once
@@ -89,18 +86,18 @@ This design assumes that the `Environment` type and associated functions are hos
 
 #### Environment constructor functions
 The `Environment` type could be created with the following constructor functions:
-```go=
-// env.New creates env.Environment with default context.Context 
-// and a default klient.Config
-env.New() 
+```go
+// env.New creates a new env.Environment with default context.Context 
+// and environment config
+env.New() Environment
 
 // env.NewWithConfig creates env.Environment with a specified 
-// klient.Config and a default context.Context
-env.NewWithConfig(klient.Config)
+// environment config and a default context.Context
+env.NewWithConfig(enviconf.Config) Environment
 
 // env.NewWithContext creates an environment with a specified
-// klient.Config and context.Context
-env.NewWithContext(context.Context, klient.Config)
+// environment Config and context.Context
+env.NewWithContext(context.Context, envconf.Config) (Environment, error)
 ```
 
 ### `env.Environment` and context.Context
@@ -110,22 +107,40 @@ Before an `Environment` can be used to run tests, it goes through several stages
 
 
 #### Propagating environment context
-This framework is designed for a context to be injected early during the contstruction of the `Environment` value (see Constructon functions above). The context associated with the environment can then be propagated during the many execution stages of the test.
+This framework is designed for a context to be injected early during the contstruction of the `Environment` value (see constructor functions above). A context can optionally be provided using constructor function `env.NewWithContext`. All other constructor function shall create a default context internally.
 
 #### Updating the `Environment` context
-In some instances, it will be necessary to update a previously injected context. To update an environment's context, after the environment has been already created, test writers would need to use `Environment.WithContext` method to update the context and get a new environment.
-
-#### Accessing an `Environment`'s context
-After an enviroment has been initialized, it's context can be accessed at any time using the `Environment.Context` method.
-
-### Environment Operations
-Test writers can specify an environment operation using type EnvFunc.
+In some instances, it will be necessary to update a previously injected (or the default) context. To update an environment's context, after the environment has been already created, test writers should use `Environment.WithContext` method to update the context and get a new environment with the newly updated context.
 
 ```go
-type EnvFunc func(context.Context, klient.Config) (context.Context, error)
+origEnv := env.New()
+
+// new Env with new context
+newEnv := origEnv.WithContext(context.TODO())
 ```
 
-An operation can be applied at different stages during the life cycle of an environment including environment setup, before a test, after a test, and to tear down the environment.
+#### Accessing an `Environment`'s context
+After an enviroment has been initialized, its context can be accessed at any time using the `Environment.Context` method.
+
+```go
+ctx := env.New().Context()
+```
+
+### Environment Operations
+Test writers can specify an environment operation using type `EnvFunc`.
+
+```go
+type EnvFunc func(context.Context, envconf.Config) (context.Context, error)
+```
+
+An environment operation can be applied at different stages during the life cycle of the environment including environment setup, before a test, after a test, and to tear down the environment. At runtime, the environment operation will receive the environment context that was injected at construction time (or the default context). The context's content (key/value) can be mutated during the operation and returned.
+
+```go 
+e := env.New()
+e.Setup(func(ctx context.Context, client conf envconf.Config){
+  // define environment operation here
+})
+```
 
 ### Test Features
 A test feature represents a collection of testing steps that can be performed as a group for a given feature. A feature shall have the following attributes:
@@ -182,10 +197,10 @@ type Step interface {
 The operation performed during an execution step is defined as the following Go function:
 
 ```go
-type StepFunc func (context.Context, *testing.T, klient.Config) context.Context
+type StepFunc func (context.Context, *testing.T, envconf.Config) context.Context
 ```
 
-When a step is executed, it will receive the last updated `context.Context`, `*testing.T` for test signaling, and the `klient.Config` that was used for the environment. Note a step function can update the context and return an updated context value that will be passed to subequent step.
+When a step is executed, it will receive the last updated `context.Context`, `*testing.T` for test signaling, and the `envconf.Config` that is associated with the environment. Note a step function can update the content of the context and return it so that its value will be passed to subequent steps.
 
 #### Step levels
 A step level identifies the type of a step.  It shall be encoded as the following type, shown below.
@@ -206,55 +221,6 @@ When implemented, the framework will come with many packages along with helper t
 ### Setting up a test suite
 The starting point for an E2E test is a Go TestMain function which can launch all test functions in the package (or test suite).  The following snippet shows how a new `Environment` could be set up with using a provided `klient.Config` value.
 
-```go=
-import (
-    "sigs.k8s.io/e2e-framework/pkg/env"
-    conf "sigs.k8s.io/e2e-framework/klient/conf"
-)
-
-var (
-    var global env.Environment
-)
-
-func TestMain(m *testing.M) {
-    cfg, err := conf.New(conf.ResolveConfigFile())
-    if err != nil {os.Exit(1)}
-    global = env.NewWithConfig(cfg)
-   ...
-}
-```
-
-In the snippet above, the environment configuration instance is made global because the Go’s test framework has no easy way (via context or otherwise) of injecting values into a running test functions.
-
-### Specifying environment operations
-Using an `environment` instance, a test author shall be able to register operations (functions), of type `EnvFunc`, that are applied at different stages of the test lifecycle.  For instance, during environment setup, the `Setup` method can be used to register a function to set up environment resources.
-
-```go=
-import (
-    "sigs.k8s.io/e2e-framework/pkg/env"
-    conf "sigs.k8s.io/e2e-framework/klient/conf"
-)
-
-var (
-    var global env.Environment
-)
-
-func TestMain(m *testing.M) {
-    cfg, err := conf.New(conf.ResolveConfigFile())
-    if err != nil {os.Exit(1)}
-    global = env.NewWithConfig(cfg)
-    
-    global.Setup(func(context.Context, cfg klient.Config) (context.Context, error){
-        // setup environment
-        return nil, nil
-    })
-    ...
-}
-```
-
-### Launching the suite
-After the environment is configured, it is ready to be launched using the `Environment.Run` method which will execute all test functions defined in the current package where it is located.
-
 ```go
 import (
     "sigs.k8s.io/e2e-framework/pkg/env"
@@ -266,12 +232,55 @@ var (
 )
 
 func TestMain(m *testing.M) {
-    cfg, err := conf.New(conf.ResolveConfigFile())
-    if err != nil {os.Exit(1)}
-    global = env.NewWithConfig(cfg)
-    
-    global.Setup(func(context.Context, cfg klient.Config) (context.Context, error){
-        // setup environment
+    // creates a test env with default
+    // configuration (i.e. default k8s config)
+    global = env.New()
+   ...
+}
+```
+
+In the snippet above, the environment configuration instance is made global because the Go’s test framework has no easy way of injecting values into a running test functions.
+
+### Specifying environment operations
+Using an `environment` instance, a test author shall be able to register operations (functions), of type `EnvFunc`, that are applied at different stages of the test lifecycle.  For instance, during environment setup, the `Setup` method can be used to register a function to set up environment resources.
+
+```go
+import (
+    "sigs.k8s.io/e2e-framework/pkg/env"
+    "sigs.k8s.io/e2e-framework/pkg/envconf"
+)
+
+var (
+    var global env.Environment
+)
+
+func TestMain(m *testing.M) {
+    global = env.New()    
+    global.Setup(func(context.Context, cfg envconf.Config) (context.Context, error){
+        // code to setup environment
+        return nil, nil
+    })
+    ...
+}
+```
+
+### Launching the suite
+After the test environment is configured, it is ready to be launched using the `Environment.Run` method which will execute all test functions defined in the current package where it is located.
+
+```go
+import (
+    "sigs.k8s.io/e2e-framework/pkg/env"
+    "sigs.k8s.io/e2e-framework/pkg/envconf"
+)
+
+var (
+    var global env.Environment
+)
+
+func TestMain(m *testing.M) {
+    global = env.New()    
+    global.Setup(func(context.Context, cfg envconf.Config) (context.Context, error){
+        // code to setup environment
         return nil, nil
     })
     ...
@@ -288,65 +297,46 @@ func TestSomething(t *testing.T) {
 }
 ```
 
-Then within that function a test authors would declare the feature and use the previously created environment to test the features.
+Then within that function test authors would declare the feature and use the previously created environment to test the features.
 
 ### Defining a new feature
 Before a feature can be tested, it must be defined.  Assuming that the framework provides a package named `feature`, with a fluent API, to declare and set up a `feature`, the following snippet shows how this would work:
 
 ```go
 func TestSomething(t *testing.T) {       
-	feat := features.New("Hello Feature
-        Setup(StartKind()).
-        Assess("Simple test", func(ctx context.Context, t *testing.T, cfg klientcfg.Config) context.Context {
+    feat := features.New("Hello Feature").
+        Assess("Simple test", func(ctx context.Context, t *testing.T, cfg envconf.Config) context.Context {
             result := "foo"
             if result != "Hello foo" {
                 t.Error("unexpected message")
             }
             return ctx
-        }).
-        Teardown(StopKind())
-        .Feature()   
+        }).Feature()   
 ...
 }
 
-func StartKind() feature.StepFunc  {
-    return func(ctx context.Context, t *testing.T, cfg klientcfg.Config) {
-        // check cluster is running on kind
-    }
-}
-
-func StopKind() feature.StepFunc {
-    return func(ctx context.Context, t *testing.T, cfg klientcfg.Config) {
-        // check cluster is running on kind
-    }
-}
-
 ```
-
-The snippet above creates feature `feat` with a label and includes several `step` functions with varying levels including `setup`, `assessment`, and `teardown`.
+The snippet above creates feature `feat` and with an Assessment `StepFunc` function.
 
 ### Testing the feature
 Next the feature can be tested.  This is done by invoking the `Test` method on the `global` environment.
 
 ```go
 func TestSomething(t *testing.T) {
-	feat := features.New("Hello Feature
-        Setup(StartKind()).
-        Assess("Simple test", func(ctx context.Context, t *testing.T, cfg klientcfg.Config) context.Context {
+    feat := features.New("Hello Feature").
+        Assess("Simple test", func(ctx context.Context, t *testing.T, cfg envconf.Config) context.Context {
             result := "foo"
             if result != "Hello foo" {
                 t.Error("unexpected message")
             }
             return ctx
-        }).
-        Teardown(StopKind())
-        .Feature()
+        }).Feature()
         
     global.Test(t, feat)
 }
 ```
 
-The environment component will run the feature test passing each execution step function a context, a `*testing.T` and`klient.conf.Config`.
+The environment component will run the feature test passing each execution step function a context, a `*testing.T` and`envconf.Config`.
 
 ### Finishing and clean up
 After all tests in the package (or suite) are executed, the test framework will automatically trigger any teardown operation specified as `Environment.Finish` method, as shown below.
@@ -354,12 +344,12 @@ After all tests in the package (or suite) are executed, the test framework will 
 ```go
 func TestMain(m *testing.M) {
     ...
-    env.Setup(func(ctx context.Context, cfg klientconf.Config) (context.Context, error){
+    env.Setup(func(ctx context.Context, cfg envconf.Config) (context.Context, error){
         // setup environment
         return ctx, nil
     })
 
-    env.Finish(func(ctx context.Context, cfg klientconf.Config) (context.Context, error){
+    env.Finish(func(ctx context.Context, cfg envconf.Config) (context.Context, error){
         // setup environment
         return ctx, nil
     })
@@ -374,7 +364,7 @@ The following shows actual examples of how the early implementation of this fram
 
 The following shows how a feature test can be defined outside of a test suite (TestMain).
 
-```go=
+```go
 func Hello(name string) string {
 	return fmt.Sprintf("Hello %s", name)
 }
@@ -384,7 +374,7 @@ func TestHello(t *testing.T) {
     
     feat := features.New("Hello Feature").
         WithLabel("type", "simple").
-        Assess("test message", func(ctx context.Context, t *testing.T, conf klientconf.Config) {
+        Assess("test message", func(ctx context.Context, t *testing.T, conf envconf.Config) {
             result := Hello("foo")
             if result != "Hello foo" {
                 t.Error("unexpected message")
@@ -398,22 +388,14 @@ func TestHello(t *testing.T) {
 ### Test in a Suite
 This example shows how a test can be setup in a suite (package test with TestMain).  First, the following shows the definition for TestMain. Note that for now, in order to make the same context visible to the rest of the test functions, it has to be declared as a global package variable, similar to the environment variable.
 
-```go=
+```go
 var (
 	testenv env.Environment
 )
 
 func TestMain(m *testing.M) {
-    cfg, err := klientcfg.New(klientcfg.ResolveConfigFile)
-    if err != nil { ... }
-    
     ctx = context.WithValue(context.TODO(), 1, "bazz")
-
-    testenv = env.NewWithContext(ctx, cfg)
-    testenv.BeforeTest(func(ctx context.Context, cfg klientcfg.Config) (context.Context, error) {
-        return ctx, nil
-    })
-    
+    testenv = env.NewWithContext(ctx, envconf.New())
     // run suite
     os.Exit(testenv.Run(m))
 }
@@ -421,7 +403,7 @@ func TestMain(m *testing.M) {
 
 The next code snippet shows how the test function could be defined to be used in the suite:
 
-```go=
+```go
 func Hello(name string) string {
 	return fmt.Sprintf("Hello %s", name)
 }
@@ -429,7 +411,7 @@ func Hello(name string) string {
 func TestHello(t *testing.T) {
     feat := features.New("Hello Feature").
         WithLabel("type", "simple").
-        Assess("test message", func(ctx context.Context, t *testing.T) context.Context{
+        Assess("test message", func(ctx context.Context, t *testing.T, _ envconf.Config) context.Context{
             name := ctx.Value(1).(string)
             result := Hello(name)
             if result != "Hello bazz" {
@@ -445,10 +427,10 @@ func TestHello(t *testing.T) {
 ## Running the tests
 The test framework is designed to completely rely on the Go test tool and its functionalities. Running a test shall only require constructs supported by the Go’s compiler and test framework tools.
 
-### Tagging test functions
-If a feature tests are part of a larger code base with many different types of tests (i.e. unit), it could be useful to tag the MainTest function with an arbitrary tag as follows:
+### Tagging test binaries
+If a feature test is part of a larger code base with many different types of tests (i.e. unit), it could be useful to tag the `MainTest` function with an arbitrary compiler tag as follows:
 
-```go=
+```go
 // +build app1-e2e
 
 var (
@@ -456,10 +438,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
-    cfg, err := conf.New(conf.ResolveConfigFile())
-    if err != nil {os.Exit(1)}
-    global = env.NewWithConfig(cfg)
-
+    global = env.New()
     ...
     os.Exit(global.Run(m))
 }
@@ -495,19 +474,21 @@ The test framework should provide the ability to explicitly exclude features dur
 * `--skip-lables` - a comma-separated list of key/value pairs used to skip features with matching lables
 
 ## Test support
-Another important aspect of the test framework is to make available a collection of support packages to help with the interaction with the Kubernetes API server and its hosted objects. The test framework shall offer a helper package (see klient package) that offers types and functions to make it easier for developers to write tests.
+Another important aspect of the test framework is to make available a collection of support packages to help definition of environment and step functions.
 
-For instance, with the `klient` package, the following could be a list of pre-defined functions that can be used during environment setup:
+For instance, assuming a `support` package is part of the framework, the following shows examples of pre-defined enviroment and step functions that could come with the framework:
 
-* `klient.ApplyYamlFile(YamlFilePath)`
-* `klient.DeleteWithYamlFile(yamlFilePath)`
-* `klient.ApplyYamlText(string)`
-* `klient.RunPod(imageName)`
-* `klient.CreateGenericSecret(...)`
-* `klient.CreateFilesSecret(...)`
-* `klient.DeleteSecret(...)`
-
-Etc.
+* `support/kind.CreateCluster("name")`
+* `support/kind.DestroyCluster("name")`
+* `support/k8s.CreateWithYamlFile(yamlFilePath)`
+* `support/k8s.DeleteWithYamlFile(yamlFilePath)`
+* `support/k8s.ApplyYamlText(string)`
+* `support/k8s.CreateGenericSecret(...)`
+* `support/k8s.CreateFilesSecret(...)`
+* `support/k8s.DeleteSecret(...)`
+* `support/k8s.RunPod(name, imageName)`
+* `support/k8s.DeletePod(name)`
+* Etc.
 
 ## Resources
 * E2E Test Framework 2 Repo - https://github.com/kubernetes-sigs/e2e-framework

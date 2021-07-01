@@ -60,9 +60,9 @@ func TestEnv_APIMethods(t *testing.T) {
 			name: "setup actions",
 			setup: func(t *testing.T) *testEnv {
 				env := newTestEnv()
-				env.Setup(func(ctx context.Context) (context.Context, error) {
+				env.Setup(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					return ctx, nil
-				}).Setup(func(ctx context.Context) (context.Context, error) {
+				}).Setup(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					return ctx, nil
 				})
 				return env
@@ -73,7 +73,7 @@ func TestEnv_APIMethods(t *testing.T) {
 			name: "before actions",
 			setup: func(t *testing.T) *testEnv {
 				env := newTestEnv()
-				env.BeforeTest(func(ctx context.Context) (context.Context, error) {
+				env.BeforeTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					return ctx, nil
 				})
 				return env
@@ -84,7 +84,7 @@ func TestEnv_APIMethods(t *testing.T) {
 			name: "after actions",
 			setup: func(t *testing.T) *testEnv {
 				env := newTestEnv()
-				env.AfterTest(func(ctx context.Context) (context.Context, error) {
+				env.AfterTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					return ctx, nil
 				})
 				return env
@@ -95,7 +95,7 @@ func TestEnv_APIMethods(t *testing.T) {
 			name: "finish actions",
 			setup: func(t *testing.T) *testEnv {
 				env := newTestEnv()
-				env.Finish(func(ctx context.Context) (context.Context, error) {
+				env.Finish(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					return ctx, nil
 				})
 				return env
@@ -106,13 +106,13 @@ func TestEnv_APIMethods(t *testing.T) {
 			name: "all actions",
 			setup: func(t *testing.T) *testEnv {
 				env := newTestEnv()
-				env.Setup(func(ctx context.Context) (context.Context, error) {
+				env.Setup(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					return ctx, nil
-				}).BeforeTest(func(ctx context.Context) (context.Context, error) {
+				}).BeforeTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					return ctx, nil
-				}).AfterTest(func(ctx context.Context) (context.Context, error) {
+				}).AfterTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					return ctx, nil
-				}).Finish(func(ctx context.Context) (context.Context, error) {
+				}).Finish(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					return ctx, nil
 				})
 				return env
@@ -147,11 +147,11 @@ func TestEnv_Test(t *testing.T) {
 			expected: 42,
 			setup: func(t *testing.T, ctx context.Context) (val int) {
 				env := newTestEnv()
-				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T) context.Context {
+				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					val = 42
 					return ctx
 				})
-				env.Test(ctx, t, f.Feature())
+				env.Test(t, f.Feature())
 				return
 			},
 		},
@@ -161,18 +161,18 @@ func TestEnv_Test(t *testing.T) {
 			expected: 42,
 			setup: func(t *testing.T, ctx context.Context) (val int) {
 				env := NewWithConfig(envconf.New().WithFeatureRegex("test-feat"))
-				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T) context.Context {
+				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					val = 42
 					return ctx
 				})
-				env.Test(ctx, t, f.Feature())
+				env.Test(t, f.Feature())
 
 				env2 := NewWithConfig(envconf.New().WithFeatureRegex("skip-me"))
-				f2 := features.New("test-feat-2").Assess("assess", func(ctx context.Context, t *testing.T) context.Context {
+				f2 := features.New("test-feat-2").Assess("assess", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					val = 42 + 1
 					return ctx
 				})
-				env2.Test(ctx, t, f2.Feature())
+				env2.Test(t, f2.Feature())
 
 				return
 			},
@@ -183,15 +183,15 @@ func TestEnv_Test(t *testing.T) {
 			expected: 86,
 			setup: func(t *testing.T, ctx context.Context) (val int) {
 				env := newTestEnv()
-				env.BeforeTest(func(ctx context.Context) (context.Context, error) {
+				env.BeforeTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					val = 44
 					return ctx, nil
 				})
-				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T) context.Context {
+				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					val += 42
 					return ctx
 				})
-				env.Test(ctx, t, f.Feature())
+				env.Test(t, f.Feature())
 				return
 			},
 		},
@@ -201,18 +201,18 @@ func TestEnv_Test(t *testing.T) {
 			expected: 66,
 			setup: func(t *testing.T, ctx context.Context) (val int) {
 				env := newTestEnv()
-				env.AfterTest(func(ctx context.Context) (context.Context, error) {
+				env.AfterTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					val -= 20
 					return ctx, nil
-				}).BeforeTest(func(ctx context.Context) (context.Context, error) {
+				}).BeforeTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					val = 44
 					return ctx, nil
 				})
-				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T) context.Context {
+				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					val += 42
 					return ctx
 				})
-				env.Test(ctx, t, f.Feature())
+				env.Test(t, f.Feature())
 				return
 			},
 		},
@@ -222,15 +222,15 @@ func TestEnv_Test(t *testing.T) {
 			expected: 44,
 			setup: func(t *testing.T, ctx context.Context) (val int) {
 				env := newTestEnv()
-				env.AfterTest(func(ctx context.Context) (context.Context, error) {
+				env.AfterTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					val = 44
 					return ctx, nil
 				})
-				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T) context.Context {
+				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					val = 42 + val
 					return ctx
 				})
-				env.Test(ctx, t, f.Feature())
+				env.Test(t, f.Feature())
 				return
 			},
 		},
@@ -242,53 +242,61 @@ func TestEnv_Test(t *testing.T) {
 				val = 42
 				env := NewWithConfig(envconf.New().WithAssessmentRegex("add-*"))
 				f := features.New("test-feat").
-					Assess("add-one", func(ctx context.Context, t *testing.T) context.Context {
+					Assess("add-one", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 						val++
 						return ctx
 					}).
-					Assess("add-two", func(ctx context.Context, t *testing.T) context.Context {
+					Assess("add-two", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 						val += 2
 						return ctx
 					}).
-					Assess("take-one", func(ctx context.Context, t *testing.T) context.Context {
+					Assess("take-one", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 						val--
 						return ctx
 					})
-				env.Test(ctx, t, f.Feature())
+				env.Test(t, f.Feature())
 				return
 			},
 		},
 		{
-			name:     "with before-test, after-test using context",
+			name:     "context value propagation with before, during, and after test",
 			ctx:      context.TODO(),
-			expected: 46,
+			expected: 48,
 			setup: func(t *testing.T, ctx context.Context) int {
-				env := newTestEnv()
-				// TODO: add test case using env.Setup once context propagation is supported from Setup
-				env.BeforeTest(func(ctx context.Context) (context.Context, error) {
-					return context.WithValue(ctx, &ctxKey{}, 44), nil
-				})
-				env.AfterTest(func(ctx context.Context) (context.Context, error) {
-					val, ok := ctx.Value(&ctxKey{}).(int)
+				env, err := NewWithContext(context.WithValue(ctx, &ctxTestKeyInt{}, 44), envconf.New())
+				if err != nil {
+					t.Fatal(err)
+				}
+				env.BeforeTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+					// update before test
+					val, ok := ctx.Value(&ctxTestKeyInt{}).(int)
 					if !ok {
 						t.Fatal("context value was not int")
 					}
-					val++
-
-					return context.WithValue(ctx, &ctxKey{}, val), nil
+					val += 2 // 46
+					return context.WithValue(ctx, &ctxTestKeyInt{}, val), nil
 				})
-				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T) context.Context {
-					val, ok := ctx.Value(&ctxKey{}).(int)
+				env.AfterTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+					// update after the test
+					val, ok := ctx.Value(&ctxTestKeyInt{}).(int)
 					if !ok {
 						t.Fatal("context value was not int")
 					}
-					val++
+					val++ // 48
+					return context.WithValue(ctx, &ctxTestKeyInt{}, val), nil
+				})
+				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+					val, ok := ctx.Value(&ctxTestKeyInt{}).(int)
+					if !ok {
+						t.Fatal("context value was not int")
+					}
+					val++ // 47
 
-					return context.WithValue(ctx, &ctxKey{}, val)
+					return context.WithValue(ctx, &ctxTestKeyInt{}, val)
 				})
 
-				ctx = env.Test(ctx, t, f.Feature())
-				return ctx.Value(&ctxKey{}).(int)
+				env.Test(t, f.Feature())
+				return env.(*testEnv).ctx.Value(&ctxTestKeyInt{}).(int)
 			},
 		},
 	}
@@ -299,5 +307,36 @@ func TestEnv_Test(t *testing.T) {
 				t.Error("unexpected result: ", result)
 			}
 		})
+	}
+}
+
+// This test shows the full context propagation from
+// environment setup functions (started in main_test.go) down to
+// feature step functions.
+func TestEnv_Context_Propagation(t *testing.T) {
+	f := features.New("test-context-propagation").
+		Assess("assess", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+			val, ok := ctx.Value(&ctxTestKeyInt{}).(int)
+			if !ok {
+				t.Fatal("context value was not int")
+			}
+			val += 10 // 100
+			return context.WithValue(ctx, &ctxTestKeyInt{}, val)
+		})
+
+	envForTesting.Test(t, f.Feature())
+	// after test will dec by 1
+
+	env, ok := envForTesting.(*testEnv)
+	if !ok {
+		t.Fatal("wrong type")
+	}
+
+	finalVal, ok := env.ctx.Value(&ctxTestKeyInt{}).(int)
+	if !ok {
+		t.Fatal("wrong type")
+	}
+	if finalVal != 99 {
+		t.Fatalf("unexpected value %d", finalVal)
 	}
 }

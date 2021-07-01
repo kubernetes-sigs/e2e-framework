@@ -25,8 +25,12 @@ import (
 // Client stores values to interact with the
 // API-server.
 type Client interface {
+	// RESTConfig returns the *rest.Config associated with this client.
 	RESTConfig() *rest.Config
-	Resources() *resources.Resources
+	// Resources returns a *Resources type to access resource CRUD operations.
+	// This method takes zero or at most 1 namespace (more will panic) that
+	// can be used in List operations.
+	Resources(...string) *resources.Resources
 }
 
 type client struct {
@@ -52,10 +56,21 @@ func NewWithKubeConfigFile(filePath string) (Client, error) {
 	return New(cfg)
 }
 
+// RESTConfig returns the *rest.Config value associated
+// with this client.
 func (c *client) RESTConfig() *rest.Config {
 	return c.cfg
 }
 
-func (c *client) Resources() *resources.Resources {
-	return c.resources
+// Resources returns *Resources value to access CRUD object
+// operations. It takes 0 or, at most, 1 namespace, or panics.
+func (c *client) Resources(namespace ...string) *resources.Resources {
+	switch len(namespace) {
+	case 0:
+		return c.resources.WithNamespace("")
+	case 1:
+		return c.resources.WithNamespace(namespace[0])
+	default:
+		panic("too many namespaces provided")
+	}
 }
