@@ -142,9 +142,12 @@ func deleteNamespace(ctx context.Context, ns *corev1.Namespace) {
 
 func initializeResObjects() {
 	namespace = &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test"}}
+	dep = getDeployment(fmt.Sprintf("deployment-name-%v", count))
+}
 
-	dep = &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("deployment-name-%v", count), Namespace: namespace.Name, Labels: map[string]string{"app": fmt.Sprintf("bar-%v", count)}},
+func getDeployment(name string) *appsv1.Deployment {
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace.Name, Labels: map[string]string{"app": "test-app"}},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicaCount,
 			Selector: &metav1.LabelSelector{

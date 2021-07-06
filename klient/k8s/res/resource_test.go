@@ -24,12 +24,13 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
 )
 
 func TestCreate(t *testing.T) {
 	res := Res(cfg)
 	if res == nil {
-		t.Errorf("config is nill")
+		t.Errorf("config is nil")
 	}
 
 	// create a namespace
@@ -52,7 +53,7 @@ func TestCreate(t *testing.T) {
 func TestRes(t *testing.T) {
 	res := Res(cfg)
 	if res == nil {
-		t.Errorf("config is nill")
+		t.Errorf("config is nil")
 	}
 
 	err := res.Create(context.TODO(), dep)
@@ -77,6 +78,84 @@ func TestRes(t *testing.T) {
 
 	if depObj.Name != dep.Name {
 		t.Error("deployment name mismatch, expected : ", dep.Name, "obtained :", depObj.Name)
+	}
+}
+
+func TestResNoConfig(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("expected panic while invoking Res without k8s config")
+		}
+	}()
+
+	Res(nil)
+}
+
+func TestResInvalidConfig(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("expected panic while invoking Res with invalid k8s config")
+		}
+	}()
+
+	cfg := &rest.Config{
+		Host: "invalid-host",
+	}
+
+	Res(cfg)
+}
+
+func TestUpdate(t *testing.T) {
+	res := Res(cfg)
+	if res == nil {
+		t.Errorf("config is nil")
+	}
+
+	depActual := getDeployment("update-test-dep-name")
+
+	err := res.Create(context.TODO(), depActual)
+	if err != nil {
+		t.Error("error while creating deployment", err)
+	}
+
+	depUpdated := depActual
+	depUpdated.ObjectMeta.Labels["test-key"] = "test-val"
+
+	err = res.Update(context.TODO(), depUpdated)
+	if err != nil {
+		t.Error("error while updating deployment", err)
+	}
+
+	var depObj appsv1.Deployment
+	err = res.Get(context.TODO(), depUpdated.Name, namespace.Name, &depObj)
+	if err != nil {
+		t.Error("error while getting the deployment", err)
+	}
+
+	val, ok := depObj.Labels["test-key"]
+	if !ok {
+		t.Error("deployment not updated")
+	} else if val != "test-val" {
+		t.Error("deployment label value mismatch, expected : ", "test-val", "obtained :", val)
+	}
+}
+
+func TestDelete(t *testing.T) {
+	res := Res(cfg)
+	if res == nil {
+		t.Errorf("config is nil")
+	}
+
+	depActual := getDeployment("delete-test-dep-name")
+
+	err := res.Create(context.TODO(), depActual)
+	if err != nil {
+		t.Error("error while creating deployment", err)
+	}
+
+	err = res.Delete(context.TODO(), depActual)
+	if err != nil {
+		t.Error("error while deleting deployment", err)
 	}
 }
 
