@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package res
+package resources
 
 import (
 	"context"
@@ -28,13 +28,13 @@ import (
 )
 
 func TestCreate(t *testing.T) {
-	res := Res(cfg)
-	if res == nil {
+	res, err := New(cfg)
+	if err != nil {
 		t.Errorf("config is nil")
 	}
 
 	// create a namespace
-	err := res.Create(context.TODO(), namespace)
+	err = res.Create(context.TODO(), namespace)
 	if err != nil {
 		t.Error("error while creating namespace", err)
 	}
@@ -51,12 +51,12 @@ func TestCreate(t *testing.T) {
 }
 
 func TestRes(t *testing.T) {
-	res := Res(cfg)
-	if res == nil {
+	res, err := New(cfg)
+	if err != nil {
 		t.Errorf("config is nil")
 	}
 
-	err := res.Create(context.TODO(), dep)
+	err = res.Create(context.TODO(), dep)
 	if err != nil {
 		t.Error("error while creating deployment", err)
 	}
@@ -82,38 +82,32 @@ func TestRes(t *testing.T) {
 }
 
 func TestResNoConfig(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("expected panic while invoking Res without k8s config")
-		}
-	}()
-
-	Res(nil)
+	_, err := New(nil)
+	if err == nil {
+		t.Error("expected error while invoking Res without k8s config")
+	}
 }
 
 func TestResInvalidConfig(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("expected panic while invoking Res with invalid k8s config")
-		}
-	}()
-
 	cfg := &rest.Config{
 		Host: "invalid-host",
 	}
 
-	Res(cfg)
+	_, err := New(cfg)
+	if err == nil {
+		t.Error("expected panic while invoking Res with invalid k8s config")
+	}
 }
 
 func TestUpdate(t *testing.T) {
-	res := Res(cfg)
-	if res == nil {
+	res, err := New(cfg)
+	if err != nil {
 		t.Errorf("config is nil")
 	}
 
 	depActual := getDeployment("update-test-dep-name")
 
-	err := res.Create(context.TODO(), depActual)
+	err = res.Create(context.TODO(), depActual)
 	if err != nil {
 		t.Error("error while creating deployment", err)
 	}
@@ -141,14 +135,14 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	res := Res(cfg)
-	if res == nil {
+	res, err := New(cfg)
+	if err != nil {
 		t.Errorf("config is nil")
 	}
 
 	depActual := getDeployment("delete-test-dep-name")
 
-	err := res.Create(context.TODO(), depActual)
+	err = res.Create(context.TODO(), depActual)
 	if err != nil {
 		t.Error("error while creating deployment", err)
 	}
@@ -160,13 +154,13 @@ func TestDelete(t *testing.T) {
 }
 
 func TestList(t *testing.T) {
-	res := Res(cfg)
-	if res == nil {
+	res, err := New(cfg)
+	if err != nil {
 		t.Errorf("config is nill")
 	}
 
 	deps := &appsv1.DeploymentList{}
-	err := res.List(context.TODO(), deps)
+	err = res.List(context.TODO(), deps)
 	if err != nil {
 		t.Error("error while getting the deployment", err)
 	}

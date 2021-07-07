@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package res
+package resources
 
 import (
 	"context"
@@ -41,21 +41,22 @@ type Resources struct {
 	client cr.Client
 }
 
-// Res instantiates the controller runtime client
+// New instantiates the controller runtime client
 // object. User can get panic for belopw scenarios.
 // 1. if user does not provide k8s config
 // 2. if controller runtime client instantiation fails.
-func Res(cfg *rest.Config) *Resources {
+func New(cfg *rest.Config) (*Resources, error) {
 	if cfg == nil {
 		// TODO: logging
 		fmt.Println("must provide rest.Config")
-		panic(errors.New("must provide rest.Config"))
+		return nil, errors.New("must provide rest.Config")
 	}
 
 	cl, err := cr.New(cfg, cr.Options{Scheme: scheme.Scheme})
 	if err != nil {
 		// TODO: log error
-		panic(err)
+		fmt.Println("unexpected error creating client using provided config and client options")
+		return nil, err
 	}
 
 	res := &Resources{
@@ -64,7 +65,7 @@ func Res(cfg *rest.Config) *Resources {
 		client: cl,
 	}
 
-	return res
+	return res, nil
 }
 
 func (r *Resources) Get(ctx context.Context, name, namespace string, obj k8s.Object) error {
