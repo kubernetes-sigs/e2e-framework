@@ -2,6 +2,7 @@
 
 This document captures high-level design ideas for the next generation of a Go framework for testing components runnking on Kubernetes. The framework, referred to as `e2e-framework` provides ways that makes it easy to define tests functions that can programmatically test components running on a cluster.  The two overall goals of the new framework are to allow developers to quickly and easily assemble end-to-end tests and to provide a collection of support packages to help with interacting with the API-server.
 
+> See the original Google Doc design document [here](https://docs.google.com/document/d/11JKqcnUOrw5Lk98f_ylJXBXyxWSW1z3CZu27OLX1CbM/edit).
 
 ## Motivations
 Currently, the existing E2E Test Framework is intrinsically baked into Kubernetes source code repository with organically grown assumptions, over the years, that shape how tests are created and executed.  This, however, has presented some shortcomings including:
