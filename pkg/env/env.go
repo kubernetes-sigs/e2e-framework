@@ -132,9 +132,10 @@ func (e *testEnv) Finish(funcs ...Func) types.Environment {
 func (e *testEnv) Run(ctx context.Context, m *testing.M) int {
 	setups := e.GetSetupActions()
 	// fail fast on setup, upon err exit
+	var err error
 	for _, setup := range setups {
-		// context not surfaced further
-		if _, err := setup.run(ctx); err != nil {
+		// context passed down to each setup
+		if ctx, err = setup.run(ctx); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -145,8 +146,8 @@ func (e *testEnv) Run(ctx context.Context, m *testing.M) int {
 	// attempt to gracefully clean up.
 	// Upon error, log and continue.
 	for _, fin := range finishes {
-		// context not surfaced further
-		if _, err := fin.run(ctx); err != nil {
+		// context passed down to each finish step
+		if ctx, err = fin.run(ctx); err != nil {
 			log.Println(err)
 		}
 	}
