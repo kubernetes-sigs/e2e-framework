@@ -18,13 +18,16 @@ package res
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	cr "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
@@ -108,6 +111,16 @@ func (r *Resources) Delete(ctx context.Context, obj k8s.Object, opts ...DeleteOp
 	return r.client.Delete(ctx, obj, o)
 }
 
+func WithGracePeriod(gpt time.Duration) DeleteOption {
+	t := gpt.Milliseconds()
+	return func(do *metav1.DeleteOptions) { do.GracePeriodSeconds = &t }
+}
+
+func WithDeletePropagation(prop string) DeleteOption {
+	p := metav1.DeletionPropagation(prop)
+	return func(do *metav1.DeleteOptions) { do.PropagationPolicy = &p }
+}
+
 type ListOption func(*metav1.ListOptions)
 
 func (r *Resources) List(ctx context.Context, objs k8s.ObjectList, opts ...ListOption) error {
@@ -119,4 +132,62 @@ func (r *Resources) List(ctx context.Context, objs k8s.ObjectList, opts ...ListO
 
 	o := &cr.ListOptions{Raw: listOptions}
 	return r.client.List(ctx, objs, o)
+}
+
+func WithLabelSelector(sel string) ListOption {
+	return func(lo *metav1.ListOptions) { lo.LabelSelector = sel }
+}
+
+func WithFieldSelector(sel string) ListOption {
+	return func(lo *metav1.ListOptions) { lo.FieldSelector = sel }
+}
+
+func WithTimeout(to time.Duration) ListOption {
+	t := to.Milliseconds()
+	return func(lo *metav1.ListOptions) { lo.TimeoutSeconds = &t }
+}
+
+// Patch is a patch that can be applied to a Kubernetes object.
+type Patch struct {
+	// Type is the PatchType of the patch.
+	patchType types.PatchType
+	// Data is the raw data representing the patch.
+	data []byte
+}
+
+// PatchOption is used to provide additional arguments to the Patch call.
+type PatchOption func(*metav1.PatchOptions)
+
+// Patch patches portion of object `orig` with data from object `patch`
+func (r *Resources) Patch(ctx context.Context, objs k8s.Object, patch Patch, opts ...PatchOption) error {
+	patchOptions := &metav1.PatchOptions{}
+
+	for _, fn := range opts {
+		fn(patchOptions)
+	}
+
+	p := cr.RawPatch(patch.patchType, patch.data)
+
+	o := &cr.PatchOptions{Raw: patchOptions}
+	return r.client.Patch(ctx, objs, p, o)
+}
+
+func (r *Resources) BuildFromJSON(obj k8s.Object, jsonData string) error {
+	return json.Unmarshal([]byte(jsonData), &obj)
+}
+
+func (r *Resources) SetAnnotate(obj k8s.Object, annotation map[string]string) {
+	obj.SetAnnotations(annotation)
+}
+
+func (r *Resources) GetAnnotate(obj k8s.Object) map[string]string {
+	return obj.GetAnnotations()
+}
+
+func (r *Resources) SetLabel(obj k8s.Object, label map[string]string) {
+	obj.SetLabels(label)
+}
+
+func (r *Resources) GetLabel(obj k8s.Object) map[string]string {
+	return obj.GetLabels()
 }
