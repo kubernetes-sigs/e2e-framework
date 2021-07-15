@@ -14,5 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package config hosts types for test configuration
-package conf
+package envconf
+
+import (
+	"testing"
+)
+
+func TestConfig_New(t *testing.T) {
+	cfg := New()
+	if cfg.client != nil {
+		t.Errorf("client should be nil")
+	}
+	if cfg.namespace != "" {
+		t.Errorf("namespace should be empty")
+	}
+	if cfg.featureRegex != nil || cfg.assessmentRegex != nil {
+		t.Errorf("regex filters should be nil")
+	}
+}

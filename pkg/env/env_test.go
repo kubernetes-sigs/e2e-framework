@@ -20,18 +20,26 @@ import (
 	"context"
 	"testing"
 
-	"sigs.k8s.io/e2e-framework/pkg/conf"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 func TestEnv_New(t *testing.T) {
-	e := newTestEnv(conf.New())
-	if e.Config() == nil {
-		t.Error("missing config")
+	e := newTestEnv()
+	if e.ctx == nil {
+		t.Error("missing default context")
 	}
 
 	if len(e.actions) != 0 {
 		t.Error("unexpected actions found")
+	}
+
+	if e.cfg.Namespace() != "" {
+		t.Error("unexpected envconfig.Namespace value")
+	}
+
+	if e.cfg.Client() != nil {
+		t.Error("unexpected envconfig.Client")
 	}
 }
 
@@ -44,14 +52,14 @@ func TestEnv_APIMethods(t *testing.T) {
 		{
 			name: "empty actions",
 			setup: func(t *testing.T) *testEnv {
-				return newTestEnv(conf.New())
+				return newTestEnv()
 			},
 			roles: map[actionRole]int{roleSetup: 0, roleBefore: 0, roleAfter: 0, roleFinish: 0},
 		},
 		{
 			name: "setup actions",
 			setup: func(t *testing.T) *testEnv {
-				env := newTestEnv(conf.New())
+				env := newTestEnv()
 				env.Setup(func(ctx context.Context) (context.Context, error) {
 					return ctx, nil
 				}).Setup(func(ctx context.Context) (context.Context, error) {
@@ -64,7 +72,7 @@ func TestEnv_APIMethods(t *testing.T) {
 		{
 			name: "before actions",
 			setup: func(t *testing.T) *testEnv {
-				env := newTestEnv(conf.New())
+				env := newTestEnv()
 				env.BeforeTest(func(ctx context.Context) (context.Context, error) {
 					return ctx, nil
 				})
@@ -75,7 +83,7 @@ func TestEnv_APIMethods(t *testing.T) {
 		{
 			name: "after actions",
 			setup: func(t *testing.T) *testEnv {
-				env := newTestEnv(conf.New())
+				env := newTestEnv()
 				env.AfterTest(func(ctx context.Context) (context.Context, error) {
 					return ctx, nil
 				})
@@ -86,7 +94,7 @@ func TestEnv_APIMethods(t *testing.T) {
 		{
 			name: "finish actions",
 			setup: func(t *testing.T) *testEnv {
-				env := newTestEnv(conf.New())
+				env := newTestEnv()
 				env.Finish(func(ctx context.Context) (context.Context, error) {
 					return ctx, nil
 				})
@@ -97,7 +105,7 @@ func TestEnv_APIMethods(t *testing.T) {
 		{
 			name: "all actions",
 			setup: func(t *testing.T) *testEnv {
-				env := newTestEnv(conf.New())
+				env := newTestEnv()
 				env.Setup(func(ctx context.Context) (context.Context, error) {
 					return ctx, nil
 				}).BeforeTest(func(ctx context.Context) (context.Context, error) {
@@ -138,7 +146,7 @@ func TestEnv_Test(t *testing.T) {
 			ctx:      context.TODO(),
 			expected: 42,
 			setup: func(t *testing.T, ctx context.Context) (val int) {
-				env := newTestEnv(conf.New())
+				env := newTestEnv()
 				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T) context.Context {
 					val = 42
 					return ctx
@@ -152,14 +160,14 @@ func TestEnv_Test(t *testing.T) {
 			ctx:      context.TODO(),
 			expected: 42,
 			setup: func(t *testing.T, ctx context.Context) (val int) {
-				env := newTestEnv(conf.New().WithFeatureRegex("test-feat"))
+				env := NewWithConfig(envconf.New().WithFeatureRegex("test-feat"))
 				f := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T) context.Context {
 					val = 42
 					return ctx
 				})
 				env.Test(ctx, t, f.Feature())
 
-				env2 := newTestEnv(conf.New().WithFeatureRegex("skip-me"))
+				env2 := NewWithConfig(envconf.New().WithFeatureRegex("skip-me"))
 				f2 := features.New("test-feat-2").Assess("assess", func(ctx context.Context, t *testing.T) context.Context {
 					val = 42 + 1
 					return ctx
@@ -174,7 +182,7 @@ func TestEnv_Test(t *testing.T) {
 			ctx:      context.TODO(),
 			expected: 86,
 			setup: func(t *testing.T, ctx context.Context) (val int) {
-				env := newTestEnv(conf.New())
+				env := newTestEnv()
 				env.BeforeTest(func(ctx context.Context) (context.Context, error) {
 					val = 44
 					return ctx, nil
@@ -192,7 +200,7 @@ func TestEnv_Test(t *testing.T) {
 			ctx:      context.TODO(),
 			expected: 66,
 			setup: func(t *testing.T, ctx context.Context) (val int) {
-				env := newTestEnv(conf.New())
+				env := newTestEnv()
 				env.AfterTest(func(ctx context.Context) (context.Context, error) {
 					val -= 20
 					return ctx, nil
@@ -213,7 +221,7 @@ func TestEnv_Test(t *testing.T) {
 			ctx:      context.TODO(),
 			expected: 44,
 			setup: func(t *testing.T, ctx context.Context) (val int) {
-				env := newTestEnv(conf.New())
+				env := newTestEnv()
 				env.AfterTest(func(ctx context.Context) (context.Context, error) {
 					val = 44
 					return ctx, nil
@@ -232,7 +240,7 @@ func TestEnv_Test(t *testing.T) {
 			expected: 45,
 			setup: func(t *testing.T, ctx context.Context) (val int) {
 				val = 42
-				env := newTestEnv(conf.New().WithAssessmentRegex("add-*"))
+				env := NewWithConfig(envconf.New().WithAssessmentRegex("add-*"))
 				f := features.New("test-feat").
 					Assess("add-one", func(ctx context.Context, t *testing.T) context.Context {
 						val++
@@ -255,7 +263,7 @@ func TestEnv_Test(t *testing.T) {
 			ctx:      context.TODO(),
 			expected: 46,
 			setup: func(t *testing.T, ctx context.Context) int {
-				env := newTestEnv(conf.New())
+				env := newTestEnv()
 				// TODO: add test case using env.Setup once context propagation is supported from Setup
 				env.BeforeTest(func(ctx context.Context) (context.Context, error) {
 					return context.WithValue(ctx, &ctxKey{}, 44), nil

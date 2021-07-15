@@ -24,15 +24,27 @@ import (
 )
 
 const (
-	flagFeatureName = "feature"
-	flagAssessName  = "assess"
-	flagLabelsName  = "labels"
+	flagNamespaceName = "namespace"
+	flagKubecofigName = "kubeconfig"
+	flagFeatureName   = "feature"
+	flagAssessName    = "assess"
+	flagLabelsName    = "labels"
 )
 
 type Flags struct {
-	feature string
-	assess  string
-	labels  LabelsMap
+	namespace  string
+	kubeconfig string
+	feature    string
+	assess     string
+	labels     LabelsMap
+}
+
+func (f *Flags) Namespace() string {
+	return f.namespace
+}
+
+func (f *Flags) Kubeconfig() string {
+	return f.kubeconfig
 }
 
 func (f *Flags) Feature() string {
@@ -52,11 +64,27 @@ func Parse() (*Flags, error) {
 }
 
 func parseFlags(cmdName string, flags []string) (*Flags, error) {
+	var namespace string
+	var kubeconfig string
 	var feature string
 	var assess string
+
+	// avoid flags parsed with the default `flag.FlagSet`
+	// which may cause issue with certain common kubernetes flags.
+	if flag.Parsed() {
+		if kc := flag.Lookup(flagKubecofigName); kc != nil {
+			kubeconfig = kc.Value.String()
+		}
+		if ns := flag.Lookup(flagNamespaceName); ns != nil {
+			namespace = ns.Value.String()
+		}
+	}
+
 	labels := make(LabelsMap)
 
 	flagset := flag.NewFlagSet(cmdName, flag.ExitOnError)
+	flagset.StringVar(&namespace, flagNamespaceName, namespace, "Kubernetes cluster namespaces to use")
+	flagset.StringVar(&kubeconfig, flagKubecofigName, kubeconfig, "The path to the kubeconfig file")
 	flagset.StringVar(&feature, flagFeatureName, "", "Regular expression that targets features to test")
 	flagset.StringVar(&assess, flagAssessName, "", "Regular expression that targets assertive steps to run")
 	flagset.Var(&labels, flagLabelsName, "Comma-separated key/value pairs to filter tests by labels")

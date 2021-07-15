@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"testing"
 
-	"sigs.k8s.io/e2e-framework/pkg/conf"
 	"sigs.k8s.io/e2e-framework/pkg/env"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
@@ -34,7 +34,7 @@ func Hello(name string) string {
 // that uses a simple setup to assess a feature (test)
 // in a test function directly (outside of test suite TestMain)
 func TestHello(t *testing.T) {
-	e := env.NewWithConfig(conf.New())
+	e := env.NewWithConfig(envconf.New())
 	feat := features.New("Hello Feature").
 		WithLabel("type", "simple").
 		Assess("test message", func(ctx context.Context, t *testing.T) context.Context {
@@ -52,7 +52,7 @@ func TestHello(t *testing.T) {
 // test function that uses feature with a setup
 // step.
 func TestHello_WithSetup(t *testing.T) {
-	e := env.NewWithConfig(conf.New())
+	e := env.NewWithConfig(envconf.New())
 	var name string
 	feat := features.New("Hello Feature").
 		WithLabel("type", "simple").

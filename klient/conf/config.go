@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package conf is used to create an instance of *rest.Config
 package conf
 
 import (

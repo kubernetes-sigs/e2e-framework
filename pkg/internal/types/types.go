@@ -19,8 +19,6 @@ package types
 import (
 	"context"
 	"testing"
-
-	"sigs.k8s.io/e2e-framework/pkg/conf"
 )
 
 // EnvFunc represents a user-defined operation that
@@ -32,7 +30,8 @@ type EnvFunc func(context.Context) (context.Context, error)
 // Environment represents an environment where
 // features can be tested.
 type Environment interface {
-	Config() *conf.Config
+	// WithContext returns a new Environment with a new context
+	WithContext(context.Context) Environment
 
 	// Setup registers environment operations that are executed once
 	// prior to the environment being ready and prior to any test.
