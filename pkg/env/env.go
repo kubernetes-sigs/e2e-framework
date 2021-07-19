@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package env exposes types to create type `Environment` used to run
+// feature tests.
 package env
 
 import (
@@ -21,7 +23,7 @@ import (
 	"log"
 	"testing"
 
-	"sigs.k8s.io/e2e-framework/pkg/conf"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
@@ -34,27 +36,42 @@ type (
 )
 
 type testEnv struct {
-	cfg     *conf.Config
+	ctx     context.Context
+	cfg     *envconf.Config
 	actions []action
 }
 
 // New creates a test environment with no config attached.
 func New() types.Environment {
-	return &testEnv{cfg: conf.New()}
+	return newTestEnv()
 }
 
-// NewWithConfig convenience constructor function that takes
-// a default *conf.Config
-func NewWithConfig(cfg *conf.Config) types.Environment {
-	return &testEnv{cfg: cfg}
+// NewWithConfig creates an environment using an Environment Configuration value
+func NewWithConfig(cfg *envconf.Config) types.Environment {
+	env := newTestEnv()
+	env.cfg = cfg
+	return env
 }
 
-func newTestEnv(cfg *conf.Config) *testEnv {
-	return &testEnv{cfg: cfg}
+func newTestEnv() *testEnv {
+	return &testEnv{
+		ctx: context.TODO(),
+		cfg: envconf.New(),
+	}
 }
 
-func (e *testEnv) Config() *conf.Config {
-	return e.cfg
+// WithContext returns a new environment with the context set to ctx.
+// Argument ctx cannot be nil
+func (e *testEnv) WithContext(ctx context.Context) types.Environment {
+	if ctx == nil {
+		panic("nil context")
+	}
+	env := &testEnv{
+		ctx:     ctx,
+		cfg:     e.cfg,
+		actions: e.actions,
+	}
+	return env
 }
 
 func (e *testEnv) Setup(funcs ...Func) types.Environment {

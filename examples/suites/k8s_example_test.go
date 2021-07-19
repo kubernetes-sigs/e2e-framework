@@ -26,8 +26,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 
-	"sigs.k8s.io/e2e-framework/pkg/conf"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -58,7 +58,7 @@ func clientSet() *kubernetes.Clientset {
 // TestClientGo is an example of how to write a simple test that uses client-go.
 func TestListPodsWithClientGo(t *testing.T) {
 	client := clientSet()
-	env := env.NewWithConfig(conf.New())
+	env := env.NewWithConfig(envconf.New())
 	// TODO Add label example later once they are fully vetted
 	feat := features.New("Example client-go service").
 		Assess("Example test listing pods with client-go", func(ctx context.Context, t *testing.T) context.Context {

@@ -14,25 +14,5 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package conf
-
-import (
-	"testing"
-
-	"k8s.io/client-go/rest"
-)
-
-func TestConfig_UseRESTConfig(t *testing.T) {
-	cfg := New().WithKubeConfig(&rest.Config{})
-	if cfg.kubecfg == nil {
-		t.Errorf("kubecfg is nil")
-	}
-}
-
-func TestConfig_UseNamespace(t *testing.T) {
-	cfg := New().WithNamespace("testns")
-
-	if cfg.namespace != "testns" {
-		t.Errorf("unexpected config namespace: %s", cfg.namespace)
-	}
-}
+// Package envconf stores configuration for a test environment
+package envconf

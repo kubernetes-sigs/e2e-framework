@@ -20,14 +20,14 @@ import (
 	"context"
 	"testing"
 
-	"sigs.k8s.io/e2e-framework/pkg/conf"
 	"sigs.k8s.io/e2e-framework/pkg/env"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 // This test shows how to filter assessment tests
 func TestHello_WithFilters(t *testing.T) {
-	env := env.NewWithConfig(conf.New().WithAssessmentRegex("add-*"))
+	env := env.NewWithConfig(envconf.New().WithAssessmentRegex("add-*"))
 	feat := features.New("Hello Feature").
 		Assess("add-bazz", func(ctx context.Context, t *testing.T) context.Context {
 			result := Hello("bazz")
