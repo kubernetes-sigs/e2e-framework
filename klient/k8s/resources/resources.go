@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -109,6 +110,16 @@ func (r *Resources) Delete(ctx context.Context, obj k8s.Object, opts ...DeleteOp
 	return r.client.Delete(ctx, obj, o)
 }
 
+func WithGracePeriod(gpt time.Duration) DeleteOption {
+	t := gpt.Milliseconds()
+	return func(do *metav1.DeleteOptions) { do.GracePeriodSeconds = &t }
+}
+
+func WithDeletePropagation(prop string) DeleteOption {
+	p := metav1.DeletionPropagation(prop)
+	return func(do *metav1.DeleteOptions) { do.PropagationPolicy = &p }
+}
+
 type ListOption func(*metav1.ListOptions)
 
 func (r *Resources) List(ctx context.Context, objs k8s.ObjectList, opts ...ListOption) error {
@@ -120,4 +131,44 @@ func (r *Resources) List(ctx context.Context, objs k8s.ObjectList, opts ...ListO
 
 	o := &cr.ListOptions{Raw: listOptions}
 	return r.client.List(ctx, objs, o)
+}
+
+func WithLabelSelector(sel string) ListOption {
+	return func(lo *metav1.ListOptions) { lo.LabelSelector = sel }
+}
+
+func WithFieldSelector(sel string) ListOption {
+	return func(lo *metav1.ListOptions) { lo.FieldSelector = sel }
+}
+
+func WithTimeout(to time.Duration) ListOption {
+	t := to.Milliseconds()
+	return func(lo *metav1.ListOptions) { lo.TimeoutSeconds = &t }
+}
+
+// PatchOption is used to provide additional arguments to the Patch call.
+type PatchOption func(*metav1.PatchOptions)
+
+// Patch patches portion of object `orig` with data from object `patch`
+func (r *Resources) Patch(ctx context.Context, objs k8s.Object, patch k8s.Patch, opts ...PatchOption) error {
+	patchOptions := &metav1.PatchOptions{}
+
+	for _, fn := range opts {
+		fn(patchOptions)
+	}
+
+	p := cr.RawPatch(patch.PatchType, patch.Data)
+
+	o := &cr.PatchOptions{Raw: patchOptions}
+	return r.client.Patch(ctx, objs, p, o)
+}
+
+// Annotate attach annotations to an existing resource objec
+func (r *Resources) Annotate(obj k8s.Object, annotation map[string]string) {
+	obj.SetAnnotations(annotation)
+}
+
+// Label apply labels to an existing resources.
+func (r *Resources) Label(obj k8s.Object, label map[string]string) {
+	obj.SetLabels(label)
 }

@@ -536,15 +536,16 @@ func main() {
             Name: podName,
         }
     }
-    pod2 := &v1.Pod{
-        Spec: v1.PodSpec{
-            Containers: []v1.Container{{
-                Name:  "nginx",
-                Image: imageutils.GetPauseImageName(),
-            }},
-        },
-    }
-    if err := res.Patch(context.TODO(), &pod1, &pod2); err != nil {
+    mergePatch, err := json.Marshal(map[string]interface{}{
+        "metadata": map[string]interface{}{
+                "annotations": map[string]interface{}{
+                    "foo": "bar",
+                 },
+            },
+        })
+
+    patch := k8s.Patch{PatchType: types.StrategicMergePatchType, Data: mergePatch}
+    if err := res.Patch(context.TODO(), &pod1, patch); err != nil {
         log.Fatal("unable to update pod: ", err)   
     }
 }
