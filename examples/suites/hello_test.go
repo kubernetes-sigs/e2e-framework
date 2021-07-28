@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"testing"
 
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
@@ -28,11 +29,15 @@ func Hello(name string) string {
 	return fmt.Sprintf("Hello %s", name)
 }
 
+// TestHello shows a simple test with a suite
+// setup. The stuite is configured in main_test.go
+// which creates test environment `testenv` as a global
+// package variable so that it can be accessed here.
 func TestHello(t *testing.T) {
-	name := ctx.Value(1).(string)
 	feat := features.New("Hello Feature").
 		WithLabel("type", "simple").
-		Assess("test message", func(ctx context.Context, t *testing.T) context.Context {
+		Assess("test message", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+			name := ctx.Value(1).(string)
 			result := Hello(name)
 			if result != "Hello bazz" {
 				t.Error("unexpected message")
@@ -40,5 +45,5 @@ func TestHello(t *testing.T) {
 			return ctx
 		}).Feature()
 
-	testenv.Test(ctx, t, feat)
+	testenv.Test(t, feat)
 }

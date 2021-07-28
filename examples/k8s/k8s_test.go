@@ -14,28 +14,31 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package suites
+package k8s
 
 import (
 	"context"
-	"log"
-	"os"
 	"testing"
 
-	"sigs.k8s.io/e2e-framework/pkg/env"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-var (
-	testenv env.Environment
-)
+func TestListPods(t *testing.T) {
+	f := features.New("example with klient package").
+		Assess("get pods from kube-system", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			var pods corev1.PodList
+			err := cfg.Client().Resources("kube-system").List(context.TODO(), &pods)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Logf("found %d pods", len(pods.Items))
+			if len(pods.Items) == 0 {
+				t.Fatal("no pods in namespace kube-system")
+			}
+			return ctx
+		})
 
-func TestMain(m *testing.M) {
-	var err error
-	testenv, err = env.NewWithContext(context.WithValue(context.Background(), 1, "bazz"), envconf.New())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	os.Exit(testenv.Run(m))
+	testenv.Test(t, f.Feature())
 }
