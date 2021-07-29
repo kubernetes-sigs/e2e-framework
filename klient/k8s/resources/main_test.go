@@ -32,7 +32,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/homedir"
 	"sigs.k8s.io/e2e-framework/klient/conf"
-	test "sigs.k8s.io/e2e-framework/klient/k8s/testing"
+	"sigs.k8s.io/e2e-framework/support/kind"
 )
 
 var (
@@ -44,7 +44,7 @@ var (
 	ctx                = context.TODO()
 	cfg          *rest.Config
 	namespace    *corev1.Namespace
-	kind         *test.KindCluster
+	kc           *kind.Cluster
 )
 
 func TestMain(m *testing.M) {
@@ -59,7 +59,7 @@ func setup() {
 	home := homedir.HomeDir()
 	path := filepath.Join(home, ".kube", "config")
 
-	// setup a kind cluster
+	// set up kind cluster
 	err := setupKindCluster()
 	if err != nil {
 		fmt.Println("error while setting up kind cluster", err)
@@ -92,8 +92,8 @@ func setup() {
 
 // setupKindCluster
 func setupKindCluster() error {
-	kind = test.NewKindCluster("e2e-test-cluster")
-	if err := kind.Create(); err != nil {
+	kc = kind.NewKindCluster("e2e-test-cluster")
+	if _, err := kc.Create(); err != nil {
 		return err
 	}
 	fmt.Println("kind cluster created")
@@ -111,7 +111,7 @@ func teardown() {
 	deleteNamespace(ctx, namespace)
 
 	// delete kind cluster
-	err := kind.Destroy()
+	err := kc.Destroy()
 	if err != nil {
 		fmt.Println("error while deleting the cluster", err)
 		return
