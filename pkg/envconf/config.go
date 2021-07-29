@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"math/rand"
 	"regexp"
+	"time"
 
 	"sigs.k8s.io/e2e-framework/klient"
 	"sigs.k8s.io/e2e-framework/klient/conf"
@@ -161,7 +162,20 @@ func (c *Config) NamespaceShouldBeCreated() bool {
 }
 
 func randNS() string {
-	bytes := make([]byte, 25)
-	rand.Read(bytes)
-	return fmt.Sprintf("testns-%s", hex.EncodeToString(bytes))
+	return RandomName("testns-", 32)
+}
+
+// RandomName generates a random name of n length with the provided
+// prefix. If prefix is omitted, the then entire name is random char.
+func RandomName(prefix string, n int) string {
+	if n == 0 {
+		n = 32
+	}
+	if len(prefix) >= n {
+		return prefix
+	}
+	rand.Seed(time.Now().UnixNano())
+	p := make([]byte, n)
+	rand.Read(p)
+	return fmt.Sprintf("%s%s", prefix, hex.EncodeToString(p))[:n]
 }

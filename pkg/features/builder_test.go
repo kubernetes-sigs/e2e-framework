@@ -20,6 +20,7 @@ import (
 	"context"
 	"testing"
 
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
 
@@ -69,7 +70,7 @@ func TestFeatureBuilder(t *testing.T) {
 		{
 			name: "one setup",
 			setup: func(t *testing.T) types.Feature {
-				return New("test").Setup(func(ctx context.Context, t *testing.T) context.Context {
+				return New("test").Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					// test
 					return ctx
 				}).Feature()
@@ -88,10 +89,10 @@ func TestFeatureBuilder(t *testing.T) {
 		{ // nolint
 			name: "multiple setups",
 			setup: func(t *testing.T) types.Feature {
-				return New("test").Setup(func(ctx context.Context, t *testing.T) context.Context {
+				return New("test").Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					// test
 					return ctx
-				}).Setup(func(ctx context.Context, t *testing.T) context.Context {
+				}).Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					// test
 					return ctx
 				}).Feature()
@@ -110,7 +111,7 @@ func TestFeatureBuilder(t *testing.T) {
 		{
 			name: "one teardown",
 			setup: func(t *testing.T) types.Feature {
-				return New("test").Teardown(func(ctx context.Context, t *testing.T) context.Context {
+				return New("test").Teardown(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					// test
 					return ctx
 				}).Feature()
@@ -129,10 +130,10 @@ func TestFeatureBuilder(t *testing.T) {
 		{ // nolint
 			name: "multiple teardowns",
 			setup: func(t *testing.T) types.Feature {
-				return New("test").Teardown(func(ctx context.Context, t *testing.T) context.Context {
+				return New("test").Teardown(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					// test
 					return ctx
-				}).Teardown(func(ctx context.Context, t *testing.T) context.Context {
+				}).Teardown(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					// test
 					return ctx
 				}).Feature()
@@ -151,7 +152,7 @@ func TestFeatureBuilder(t *testing.T) {
 		{
 			name: "single assessment",
 			setup: func(t *testing.T) types.Feature {
-				return New("test").Assess("Some test", func(ctx context.Context, t *testing.T) context.Context {
+				return New("test").Assess("Some test", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					// test
 					return ctx
 				}).Feature()
@@ -170,10 +171,10 @@ func TestFeatureBuilder(t *testing.T) {
 		{
 			name: "multiple assessments",
 			setup: func(t *testing.T) types.Feature {
-				return New("test").Assess("some test", func(ctx context.Context, t *testing.T) context.Context {
+				return New("test").Assess("some test", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					// test
 					return ctx
-				}).Assess("some tets 2", func(ctx context.Context, t *testing.T) context.Context {
+				}).Assess("some tets 2", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					// test
 					return ctx
 				}).Feature()
@@ -192,16 +193,16 @@ func TestFeatureBuilder(t *testing.T) {
 		{
 			name: "all steps",
 			setup: func(t *testing.T) types.Feature {
-				return New("test").Setup(func(ctx context.Context, t *testing.T) context.Context {
+				return New("test").Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					// test
 					return ctx
-				}).Assess("some tets 2", func(ctx context.Context, t *testing.T) context.Context {
+				}).Assess("some tets 2", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					// test
 					return ctx
-				}).Assess("some tets 3", func(ctx context.Context, t *testing.T) context.Context {
+				}).Assess("some tets 3", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					// test
 					return ctx
-				}).Teardown(func(ctx context.Context, t *testing.T) context.Context {
+				}).Teardown(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					// test
 					return ctx
 				}).Feature()

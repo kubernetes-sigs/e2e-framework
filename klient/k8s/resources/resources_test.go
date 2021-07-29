@@ -18,7 +18,7 @@ package resources
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"testing"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -67,7 +67,7 @@ func TestRes(t *testing.T) {
 	}
 
 	if actual == dep {
-		fmt.Println("deployment found", dep.Name)
+		log.Println("deployment found", dep.Name)
 	}
 
 	var depObj appsv1.Deployment
@@ -180,4 +180,23 @@ func TestList(t *testing.T) {
 	if !hasDep {
 		t.Error("there are no deployment exist", hasDep)
 	}
+}
+
+func TestListAllPods(t *testing.T) {
+	res, err := New(cfg)
+	if err != nil {
+		t.Errorf("config is nill")
+	}
+
+	pods := &corev1.PodList{}
+	err = res.List(context.TODO(), pods)
+	if err != nil {
+		t.Error("error while getting the deployment", err)
+	}
+
+	if pods.Items == nil {
+		t.Error("error while getting the list of deployments", err)
+	}
+
+	log.Println("pod list contains", len(pods.Items), pods.Items)
 }

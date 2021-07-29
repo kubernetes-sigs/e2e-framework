@@ -19,13 +19,15 @@ package types
 import (
 	"context"
 	"testing"
+
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
 // EnvFunc represents a user-defined operation that
 // can be used to customized the behavior of the
 // environment. Changes to context are expected to surface
 // to caller.
-type EnvFunc func(context.Context) (context.Context, error)
+type EnvFunc func(context.Context, *envconf.Config) (context.Context, error)
 
 // Environment represents an environment where
 // features can be tested.
@@ -42,7 +44,7 @@ type Environment interface {
 
 	// Test executes a test feature defined in a TestXXX function
 	// This method surfaces context for further updates.
-	Test(context.Context, *testing.T, Feature) context.Context
+	Test(*testing.T, Feature)
 
 	// AfterTest registers funcs that are executed after each Env.Test(...)
 	AfterTest(...EnvFunc) Environment
@@ -51,7 +53,7 @@ type Environment interface {
 	Finish(...EnvFunc) Environment
 
 	// Run Launches the test suite from within a TestMain
-	Run(context.Context, *testing.M) int
+	Run(*testing.M) int
 }
 
 type Labels map[string]string
@@ -76,7 +78,7 @@ const (
 	LevelTeardown
 )
 
-type StepFunc func(context.Context, *testing.T) context.Context
+type StepFunc func(context.Context, *testing.T, *envconf.Config) context.Context
 
 type Step interface {
 	// Name is the step name

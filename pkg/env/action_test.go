@@ -20,69 +20,69 @@ import (
 	"context"
 	"testing"
 
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
-
-type ctxKey struct{}
 
 func TestAction_Run(t *testing.T) {
 	tests := []struct {
 		name       string
 		ctx        context.Context
-		setup      func(context.Context) (int, error)
+		cfg        *envconf.Config
+		setup      func(context.Context, *envconf.Config) (int, error)
 		expected   int
 		shouldFail bool
 	}{
 		{
 			name: "single-step action",
-			ctx:  context.WithValue(context.TODO(), &ctxKey{}, 1),
-			setup: func(ctx context.Context) (val int, err error) {
+			ctx:  context.WithValue(context.TODO(), &ctxTestKeyInt{}, 1),
+			setup: func(ctx context.Context, cfg *envconf.Config) (val int, err error) {
 				funcs := []types.EnvFunc{
-					func(ctx context.Context) (context.Context, error) {
+					func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 						val = 12
 						return ctx, nil
 					},
 				}
-				_, err = action{role: roleSetup, funcs: funcs}.run(ctx)
+				_, err = action{role: roleSetup, funcs: funcs}.run(ctx, cfg)
 				return
 			},
 			expected: 12,
 		},
 		{
 			name: "multi-step action",
-			ctx:  context.WithValue(context.TODO(), &ctxKey{}, 1),
-			setup: func(ctx context.Context) (val int, err error) {
+			ctx:  context.WithValue(context.TODO(), &ctxTestKeyInt{}, 1),
+			setup: func(ctx context.Context, cfg *envconf.Config) (val int, err error) {
 				funcs := []types.EnvFunc{
-					func(ctx context.Context) (context.Context, error) {
+					func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 						val = 12
 						return ctx, nil
 					},
-					func(ctx context.Context) (context.Context, error) {
+					func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 						val *= 2
 						return ctx, nil
 					},
 				}
-				_, err = action{role: roleSetup, funcs: funcs}.run(ctx)
+				_, err = action{role: roleSetup, funcs: funcs}.run(ctx, cfg)
 				return
 			},
 			expected: 24,
 		},
 		{
 			name: "read from context",
-			ctx:  context.WithValue(context.TODO(), &ctxKey{}, 1),
-			setup: func(ctx context.Context) (val int, err error) {
+			ctx:  context.WithValue(context.TODO(), &ctxTestKeyInt{}, 1),
+			setup: func(ctx context.Context, cfg *envconf.Config) (val int, err error) {
 				funcs := []types.EnvFunc{
-					func(ctx context.Context) (context.Context, error) {
-						i := ctx.Value(&ctxKey{}).(int) + 2
+					func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
+						i := ctx.Value(&ctxTestKeyInt{}).(int) + 2
 						val = i
 						return ctx, nil
 					},
-					func(ctx context.Context) (context.Context, error) {
+					func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 						val += 3
 						return ctx, nil
 					},
 				}
-				_, err = action{role: roleSetup, funcs: funcs}.run(ctx)
+				_, err = action{role: roleSetup, funcs: funcs}.run(ctx, cfg)
 				return
 			},
 			expected: 6,
@@ -91,7 +91,7 @@ func TestAction_Run(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := test.setup(test.ctx)
+			result, err := test.setup(test.ctx, test.cfg)
 			if !test.shouldFail && err != nil {
 				t.Fatalf("unexpected failure: %v", err)
 			}

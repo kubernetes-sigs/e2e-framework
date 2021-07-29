@@ -19,7 +19,7 @@ package resources
 import (
 	"context"
 	"errors"
-	"fmt"
+	"log"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -39,6 +39,9 @@ type Resources struct {
 
 	// client is a wrapper for controller runtime client
 	client cr.Client
+
+	// namespace for namespaced object requests
+	namespace string
 }
 
 // New instantiates the controller runtime client
@@ -48,14 +51,14 @@ type Resources struct {
 func New(cfg *rest.Config) (*Resources, error) {
 	if cfg == nil {
 		// TODO: logging
-		fmt.Println("must provide rest.Config")
+		log.Println("must provide rest.Config")
 		return nil, errors.New("must provide rest.Config")
 	}
 
 	cl, err := cr.New(cfg, cr.Options{Scheme: scheme.Scheme})
 	if err != nil {
 		// TODO: log error
-		fmt.Println("unexpected error creating client using provided config and client options")
+		log.Println("unexpected error creating client using provided config and client options", err)
 		return nil, err
 	}
 
@@ -66,6 +69,11 @@ func New(cfg *rest.Config) (*Resources, error) {
 	}
 
 	return res, nil
+}
+
+func (r *Resources) WithNamespace(ns string) *Resources {
+	r.namespace = ns
+	return r
 }
 
 func (r *Resources) Get(ctx context.Context, name, namespace string, obj k8s.Object) error {
@@ -119,5 +127,9 @@ func (r *Resources) List(ctx context.Context, objs k8s.ObjectList, opts ...ListO
 	}
 
 	o := &cr.ListOptions{Raw: listOptions}
+	if r.namespace != "" {
+		o.Namespace = r.namespace
+	}
+
 	return r.client.List(ctx, objs, o)
 }

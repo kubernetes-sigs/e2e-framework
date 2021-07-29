@@ -18,7 +18,7 @@ package envsupport
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"time"
 
 	"sigs.k8s.io/e2e-framework/pkg/env"
@@ -26,31 +26,50 @@ import (
 	"sigs.k8s.io/e2e-framework/support/kind"
 )
 
+type ContextKey string
+
+func (c ContextKey) String() string {
+	return string(c)
+}
+
+var (
+	// ContextKeyKubeConfig key for setting kube config value in context
+	ContextKeyKubeConfig = ContextKey("kubeconfig")
+	// ContextKeyClusterName key for setting clustername value in context
+	ContextKeyClusterName = ContextKey("clustername")
+)
+
+// GetStringValueFromContext gets the caller value from the context.
+// Use this function to retrieve value of a context key
+// or can print out value of key by doing,
+// fmt.Println("Key is:", ContextKeyKubeConfig.String())
+func GetStringValueFromContext(ctx context.Context, key ContextKey) (string, bool) {
+	value, ok := ctx.Value(key).(string)
+	return value, ok
+}
+
 func CreateCluster(clusterName string) env.Func {
 	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
-		k := kind.NewKindCluster(clusterName)
+		k := kind.NewCluster(clusterName)
 		kubecfg, err := k.Create()
 		if err != nil {
 			return ctx, err
 		}
 
-		fmt.Println("kind cluster created")
-
 		// stall to wait for kind pods initialization
 		waitTime := time.Second * 10
-		fmt.Println("waiting for kind pods to initialize...", waitTime)
 		time.Sleep(waitTime)
-		return context.WithValue(context.WithValue(ctx, 1, kubecfg), 2, clusterName), nil
+		return context.WithValue(context.WithValue(ctx, ContextKeyKubeConfig, kubecfg), ContextKeyClusterName, clusterName), nil
 	}
 }
 
 func DestroyCluster(clusterName string) {
 	// delete kind cluster
-	k := kind.NewKindCluster(clusterName)
+	k := kind.NewCluster(clusterName)
 
 	err := k.Destroy()
 	if err != nil {
-		fmt.Println("error while deleting the cluster", err)
+		log.Println("error while deleting the cluster", err)
 		return
 	}
 }

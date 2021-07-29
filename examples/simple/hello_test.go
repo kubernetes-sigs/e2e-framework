@@ -37,15 +37,15 @@ func TestHello(t *testing.T) {
 	e := env.NewWithConfig(envconf.New())
 	feat := features.New("Hello Feature").
 		WithLabel("type", "simple").
-		Assess("test message", func(ctx context.Context, t *testing.T) context.Context {
+		Assess("test message", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 			result := Hello("foo")
 			if result != "Hello foo" {
 				t.Error("unexpected message")
 			}
 			return ctx
-		}).Feature()
+		})
 
-	e.Test(context.TODO(), t, feat)
+	e.Test(t, feat.Feature())
 }
 
 // The following shows an example of a simple
@@ -56,11 +56,11 @@ func TestHello_WithSetup(t *testing.T) {
 	var name string
 	feat := features.New("Hello Feature").
 		WithLabel("type", "simple").
-		Setup(func(ctx context.Context, t *testing.T) context.Context {
+		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 			name = "foobar"
 			return ctx
 		}).
-		Assess("test message", func(ctx context.Context, t *testing.T) context.Context {
+		Assess("test message", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 			result := Hello(name)
 			if result != "Hello foobar" {
 				t.Error("unexpected message")
@@ -68,5 +68,5 @@ func TestHello_WithSetup(t *testing.T) {
 			return ctx
 		}).Feature()
 
-	e.Test(context.TODO(), t, feat)
+	e.Test(t, feat)
 }

@@ -20,6 +20,7 @@ package env
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"testing"
 
@@ -53,9 +54,20 @@ func NewWithConfig(cfg *envconf.Config) types.Environment {
 	return env
 }
 
+// NewWithContext creates a new environment with the provided context and config.
+func NewWithContext(ctx context.Context, cfg *envconf.Config) (types.Environment, error) {
+	if ctx == nil {
+		return nil, fmt.Errorf("context is nil")
+	}
+	if cfg == nil {
+		return nil, fmt.Errorf("environment config is nil")
+	}
+	return &testEnv{ctx: ctx, cfg: cfg}, nil
+}
+
 func newTestEnv() *testEnv {
 	return &testEnv{
-		ctx: context.TODO(),
+		ctx: context.Background(),
 		cfg: envconf.New(),
 	}
 }
@@ -64,13 +76,13 @@ func newTestEnv() *testEnv {
 // Argument ctx cannot be nil
 func (e *testEnv) WithContext(ctx context.Context) types.Environment {
 	if ctx == nil {
-		panic("nil context")
+		panic("nil context") // this should never happen
 	}
 	env := &testEnv{
-		ctx:     ctx,
-		cfg:     e.cfg,
-		actions: e.actions,
+		ctx: ctx,
+		cfg: e.cfg,
 	}
+	env.actions = append(env.actions, e.actions...)
 	return env
 }
 
@@ -93,34 +105,36 @@ func (e *testEnv) BeforeTest(funcs ...Func) types.Environment {
 // Test executes a feature test from within a TestXXX function.
 //
 // Feature setups and teardowns are executed at the same *testing.T
-// contextual level as the test that invoked this method. Assessments
+// contextual level as the "test" that invoked this method. Assessments
 // are executed as a subtests of the feature.  This approach allows
 // features/assessments to be filtered using go test -run flag.
 //
 // Feature tests will have access to and able to update the context
-// passed to it. The updated context is returned by this call.
+// passed to it.
 //
 // BeforeTest and AfterTest operations are executed before and after
 // the feature is tested respectively.
-func (e *testEnv) Test(ctx context.Context, t *testing.T, feature types.Feature) context.Context {
+func (e *testEnv) Test(t *testing.T, feature types.Feature) {
+	if e.ctx == nil {
+		panic("context not set") // something is terribly wrong.
+	}
+
 	befores := e.GetBeforeActions()
 	var err error
 	for _, action := range befores {
-		if ctx, err = action.run(ctx); err != nil {
+		if e.ctx, err = action.run(e.ctx, e.cfg); err != nil {
 			t.Fatalf("BeforeTest failure: %s: %v", feature.Name(), err)
 		}
 	}
 
-	ctx = e.execFeature(ctx, t, feature)
+	e.ctx = e.execFeature(e.ctx, t, feature)
 
 	afters := e.GetAfterActions()
 	for _, action := range afters {
-		if ctx, err = action.run(ctx); err != nil {
+		if e.ctx, err = action.run(e.ctx, e.cfg); err != nil {
 			t.Fatalf("AfterTest failure: %s: %v", feature.Name(), err)
 		}
 	}
-
-	return ctx
 }
 
 func (e *testEnv) AfterTest(funcs ...Func) types.Environment {
@@ -146,24 +160,29 @@ func (e *testEnv) Finish(funcs ...Func) types.Environment {
 // starting the tests and run all Env.Finish operations after
 // before completing the suite.
 //
-func (e *testEnv) Run(ctx context.Context, m *testing.M) int {
+func (e *testEnv) Run(m *testing.M) int {
+	if e.ctx == nil {
+		panic("context not set") // something is terribly wrong.
+	}
+
 	setups := e.GetSetupActions()
 	// fail fast on setup, upon err exit
+	var err error
 	for _, setup := range setups {
-		// context not surfaced further
-		if _, err := setup.run(ctx); err != nil {
+		// context passed down to each setup
+		if e.ctx, err = setup.run(e.ctx, e.cfg); err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	exitCode := m.Run()
+	exitCode := m.Run() // exec test suite
 
 	finishes := e.GetFinishActions()
 	// attempt to gracefully clean up.
 	// Upon error, log and continue.
 	for _, fin := range finishes {
-		// context not surfaced further
-		if _, err := fin.run(ctx); err != nil {
+		// context passed down to each finish step
+		if e.ctx, err = fin.run(e.ctx, e.cfg); err != nil {
 			log.Println(err)
 		}
 	}
@@ -214,7 +233,7 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, f types.Feature
 		// setups run at feature-level
 		setups := features.GetStepsByLevel(f.Steps(), types.LevelSetup)
 		for _, setup := range setups {
-			ctx = setup.Func()(ctx, t)
+			ctx = setup.Func()(ctx, t, e.cfg)
 		}
 
 		// assessments run as feature/assessment sub level
@@ -225,14 +244,14 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, f types.Feature
 				if e.cfg.AssessmentRegex() != nil && !e.cfg.AssessmentRegex().MatchString(assess.Name()) {
 					t.Skipf(`Skipping assessment "%s": name not matched`, assess.Name())
 				}
-				ctx = assess.Func()(ctx, t)
+				ctx = assess.Func()(ctx, t, e.cfg)
 			})
 		}
 
 		// teardowns run at feature-level
 		teardowns := features.GetStepsByLevel(f.Steps(), types.LevelTeardown)
 		for _, teardown := range teardowns {
-			ctx = teardown.Func()(ctx, t)
+			ctx = teardown.Func()(ctx, t, e.cfg)
 		}
 	})
 
