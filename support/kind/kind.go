@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package testing
+package kind
 
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -28,43 +29,60 @@ import (
 
 var kindVersion = "v0.11.0"
 
-type KindCluster struct {
+type Cluster struct {
 	name string
 	e    *gexe.Echo
 }
 
-func NewKindCluster(name string) *KindCluster {
-	return &KindCluster{name: name, e: gexe.New()}
+func NewKindCluster(name string) *Cluster {
+	return &Cluster{name: name, e: gexe.New()}
 }
 
-func (k *KindCluster) Create() error {
+func (k *Cluster) Create() (string, error) {
 	log.Println("Creating kind cluster ", k.name)
 	// is kind program available
 	if err := findOrInstallKind(k.e); err != nil {
-		return err
+		return "", err
 	}
 
 	if strings.Contains(k.e.Run("kind get clusters"), k.name) {
-		log.Println("Skipping KindCluster.Create: cluster already created: ", k.name)
-		return nil
+		log.Println("Skipping Kind Cluster.Create: cluster already created: ", k.name)
+		return "", nil
 	}
 
 	// create kind cluster using kind-cluster-docker.yaml config file
 	log.Println("launching: kind create cluster --name", k.name)
 	p := k.e.RunProc(fmt.Sprintf(`kind create cluster --name %s`, k.name))
 	if p.Err() != nil {
-		return fmt.Errorf("failed to create kind cluster: %s : %s", p.Err(), p.Result())
+		return "", fmt.Errorf("failed to create kind cluster: %s : %s", p.Err(), p.Result())
 	}
 
 	clusters := k.e.Run("kind get clusters")
 	log.Println("kind clusters available: ", clusters)
 
-	return nil
+	// grab kubeconfig file for cluster
+	kubecfg := fmt.Sprintf("%s-kubecfg", k.name)
+	p = k.e.StartProc(fmt.Sprintf(`kind get kubeconfig --name %s`, k.name))
+	if p.Err() != nil {
+		return "", fmt.Errorf("kind get kubeconfig: %s: %w", p.Result(), p.Err())
+	}
+
+	file, err := ioutil.TempFile("", fmt.Sprintf("kind-cluser-%s", kubecfg))
+	if err != nil {
+		return "", fmt.Errorf("kind kubeconfig file: %w", err)
+	}
+
+	defer file.Close()
+	if n, err := io.Copy(file, p.Out()); n == 0 || err != nil {
+		return "", fmt.Errorf("kind kubecfg file: bytes copied: %d: %w]", n, err)
+	}
+
+	return file.Name(), nil
 }
 
-func (k *KindCluster) GetKubeConfig() (io.Reader, error) {
+func (k *Cluster) GetKubeConfig() (io.Reader, error) {
 	fmt.Println("Retrieving kind kubeconfig for cluster: ", k.name)
-	p := k.e.RunProc(fmt.Sprintf(`kind get kubeconfig --name %s`, k.name))
+	p := k.e.StartProc(fmt.Sprintf(`kind get kubeconfig --name %s`, k.name))
 	if p.Err() != nil {
 		return nil, p.Err()
 	}
@@ -72,7 +90,7 @@ func (k *KindCluster) GetKubeConfig() (io.Reader, error) {
 	return p.Out(), nil
 }
 
-func (k *KindCluster) MakeKubeConfigFile(path string) error {
+func (k *Cluster) MakeKubeConfigFile(path string) error {
 	fmt.Println("Creating kind kubeconfig file: ", path)
 	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
@@ -94,11 +112,11 @@ func (k *KindCluster) MakeKubeConfigFile(path string) error {
 	return nil
 }
 
-func (k *KindCluster) GetKubeCtlContext() string {
+func (k *Cluster) GetKubeCtlContext() string {
 	return fmt.Sprintf("kind-%s", k.name)
 }
 
-func (k *KindCluster) Destroy() error {
+func (k *Cluster) Destroy() error {
 	fmt.Println("Destroying kind cluster :", k.name)
 	if err := findOrInstallKind(k.e); err != nil {
 		return err
