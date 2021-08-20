@@ -58,7 +58,7 @@ func TestMain(m *testing.M) {
 			val *= 2 // 88
 			return context.WithValue(ctx, &ctxTestKeyInt{}, val), nil
 		},
-	).BeforeTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+	).BeforeEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 		// update before each test
 		val, ok := ctx.Value(&ctxTestKeyInt{}).(int)
 		if !ok {
@@ -66,7 +66,7 @@ func TestMain(m *testing.M) {
 		}
 		val += 2 // 90
 		return context.WithValue(ctx, &ctxTestKeyInt{}, val), nil
-	}).AfterTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+	}).AfterEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 		// update after the test
 		val, ok := ctx.Value(&ctxTestKeyInt{}).(int)
 		if !ok {

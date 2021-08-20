@@ -25,8 +25,10 @@ import (
 
 const (
 	roleSetup = iota
-	roleBefore
-	roleAfter
+	roleBeforeTest
+	roleBeforeFeature
+	roleAfterFeature
+	roleAfterTest
 	roleFinish
 )
 

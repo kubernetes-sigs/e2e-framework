@@ -54,7 +54,7 @@ func TestEnv_APIMethods(t *testing.T) {
 			setup: func(t *testing.T) *testEnv {
 				return newTestEnv()
 			},
-			roles: map[actionRole]int{roleSetup: 0, roleBefore: 0, roleAfter: 0, roleFinish: 0},
+			roles: map[actionRole]int{roleSetup: 0, roleBeforeTest: 0, roleAfterTest: 0, roleFinish: 0},
 		},
 		{
 			name: "setup actions",
@@ -67,29 +67,29 @@ func TestEnv_APIMethods(t *testing.T) {
 				})
 				return env
 			},
-			roles: map[actionRole]int{roleSetup: 2, roleBefore: 0, roleAfter: 0, roleFinish: 0},
+			roles: map[actionRole]int{roleSetup: 2, roleBeforeTest: 0, roleAfterTest: 0, roleFinish: 0},
 		},
 		{
 			name: "before actions",
 			setup: func(t *testing.T) *testEnv {
 				env := newTestEnv()
-				env.BeforeTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				env.BeforeEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					return ctx, nil
 				})
 				return env
 			},
-			roles: map[actionRole]int{roleSetup: 0, roleBefore: 1, roleAfter: 0, roleFinish: 0},
+			roles: map[actionRole]int{roleSetup: 0, roleBeforeTest: 1, roleAfterTest: 0, roleFinish: 0},
 		},
 		{
 			name: "after actions",
 			setup: func(t *testing.T) *testEnv {
 				env := newTestEnv()
-				env.AfterTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				env.AfterEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					return ctx, nil
 				})
 				return env
 			},
-			roles: map[actionRole]int{roleSetup: 0, roleBefore: 0, roleAfter: 1, roleFinish: 0},
+			roles: map[actionRole]int{roleSetup: 0, roleBeforeTest: 0, roleAfterTest: 1, roleFinish: 0},
 		},
 		{
 			name: "finish actions",
@@ -100,7 +100,7 @@ func TestEnv_APIMethods(t *testing.T) {
 				})
 				return env
 			},
-			roles: map[actionRole]int{roleSetup: 0, roleBefore: 0, roleAfter: 0, roleFinish: 1},
+			roles: map[actionRole]int{roleSetup: 0, roleBeforeTest: 0, roleAfterTest: 0, roleFinish: 1},
 		},
 		{
 			name: "all actions",
@@ -108,16 +108,16 @@ func TestEnv_APIMethods(t *testing.T) {
 				env := newTestEnv()
 				env.Setup(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					return ctx, nil
-				}).BeforeTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				}).BeforeEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					return ctx, nil
-				}).AfterTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				}).AfterEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					return ctx, nil
 				}).Finish(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					return ctx, nil
 				})
 				return env
 			},
-			roles: map[actionRole]int{roleSetup: 1, roleBefore: 1, roleAfter: 1, roleFinish: 1},
+			roles: map[actionRole]int{roleSetup: 1, roleBeforeTest: 1, roleAfterTest: 1, roleFinish: 1},
 		},
 	}
 
@@ -183,7 +183,7 @@ func TestEnv_Test(t *testing.T) {
 			expected: 86,
 			setup: func(t *testing.T, ctx context.Context) (val int) {
 				env := newTestEnv()
-				env.BeforeTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				env.BeforeEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					val = 44
 					return ctx, nil
 				})
@@ -201,10 +201,10 @@ func TestEnv_Test(t *testing.T) {
 			expected: 66,
 			setup: func(t *testing.T, ctx context.Context) (val int) {
 				env := newTestEnv()
-				env.AfterTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				env.AfterEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					val -= 20
 					return ctx, nil
-				}).BeforeTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				}).BeforeEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					val = 44
 					return ctx, nil
 				})
@@ -222,7 +222,7 @@ func TestEnv_Test(t *testing.T) {
 			expected: 44,
 			setup: func(t *testing.T, ctx context.Context) (val int) {
 				env := newTestEnv()
-				env.AfterTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				env.AfterEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					val = 44
 					return ctx, nil
 				})
@@ -267,7 +267,7 @@ func TestEnv_Test(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				env.BeforeTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				env.BeforeEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					// update before test
 					val, ok := ctx.Value(&ctxTestKeyInt{}).(int)
 					if !ok {
@@ -276,7 +276,7 @@ func TestEnv_Test(t *testing.T) {
 					val += 2 // 46
 					return context.WithValue(ctx, &ctxTestKeyInt{}, val), nil
 				})
-				env.AfterTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				env.AfterEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					// update after the test
 					val, ok := ctx.Value(&ctxTestKeyInt{}).(int)
 					if !ok {
@@ -297,6 +297,90 @@ func TestEnv_Test(t *testing.T) {
 
 				env.Test(t, f.Feature())
 				return env.(*testEnv).ctx.Value(&ctxTestKeyInt{}).(int)
+			},
+		},
+		{
+			name:     "no features specified",
+			ctx:      context.TODO(),
+			expected: 0,
+			setup: func(t *testing.T, ctx context.Context) (val int) {
+				env := newTestEnv()
+				env.Test(t)
+				return
+			},
+		},
+		{
+			name:     "multiple features",
+			ctx:      context.TODO(),
+			expected: 84,
+			setup: func(t *testing.T, ctx context.Context) (val int) {
+				env := newTestEnv()
+				f1 := features.New("test-feat-1").
+					Assess("assess", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+						val = 42
+						return ctx
+					})
+
+				f2 := features.New("test-feat-2").
+					Assess("assess", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+						val += 42
+						return ctx
+					})
+
+				env.Test(t, f1.Feature(), f2.Feature())
+				return
+			},
+		},
+		{
+			name:     "multiple features with before-after-test",
+			ctx:      context.TODO(),
+			expected: 66,
+			setup: func(t *testing.T, ctx context.Context) (val int) {
+				env := newTestEnv()
+				env.AfterEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+					val = 0
+					return ctx, nil
+				})
+				env.AfterEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+					val = 22 * 3
+					return ctx, nil
+				})
+				f1 := features.New("test-feat-1").Assess("assess", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+					val = 42 + val
+					return ctx
+				})
+				f2 := features.New("test-feat-2").Assess("assess", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+					val = 42 - 40
+					return ctx
+				})
+				env.Test(t, f1.Feature(), f2.Feature())
+				return
+			},
+		},
+
+		{
+			name:     "with before-and-after features",
+			ctx:      context.TODO(),
+			expected: 300,
+			setup: func(t *testing.T, ctx context.Context) (val int) {
+				env := newTestEnv()
+				env.BeforeEachFeature(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+					val += 20
+					return ctx, nil
+				}).AfterEachFeature(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+					val -= 20
+					return ctx, nil
+				})
+				f1 := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+					val *= 4
+					return ctx
+				})
+				f2 := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+					val *= 4
+					return ctx
+				})
+				env.Test(t, f1.Feature(), f2.Feature())
+				return
 			},
 		},
 	}
