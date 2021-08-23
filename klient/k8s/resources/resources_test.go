@@ -18,13 +18,16 @@ package resources
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/e2e-framework/klient/k8s"
 )
 
 func TestCreate(t *testing.T) {
@@ -179,5 +182,38 @@ func TestList(t *testing.T) {
 
 	if !hasDep {
 		t.Error("there are no deployment exist", hasDep)
+	}
+}
+
+func TestPatch(t *testing.T) {
+	res, err := New(cfg)
+	if err != nil {
+		t.Errorf("config is nill")
+	}
+
+	mergePatch, err := json.Marshal(map[string]interface{}{
+		"metadata": map[string]interface{}{
+			"annotations": map[string]interface{}{
+				"ping": "pong",
+			},
+		},
+	})
+	if err != nil {
+		t.Error("error while json marshalling", err)
+	}
+
+	err = res.Patch(context.Background(), dep, k8s.Patch{PatchType: types.StrategicMergePatchType, Data: mergePatch})
+	if err != nil {
+		t.Error("error while patching the deployment", err)
+	}
+
+	obj := &appsv1.Deployment{}
+	err = res.Get(context.Background(), dep.Name, dep.Namespace, obj)
+	if err != nil {
+		t.Error("error while getting patched deployment", err)
+	}
+
+	if obj.Annotations["ping"] != "pong" {
+		t.Error("resource patch not applied correctly.")
 	}
 }

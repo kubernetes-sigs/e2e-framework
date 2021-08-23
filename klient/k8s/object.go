@@ -19,6 +19,7 @@ package k8s
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // Object is a union type that can represent either typed objects
@@ -34,4 +35,12 @@ type Object interface {
 type ObjectList interface {
 	metav1.ListInterface
 	runtime.Object
+}
+
+// Patch is a patch that can be applied to a Kubernetes object.
+type Patch struct {
+	// PatchType is the type of the patch.
+	PatchType types.PatchType
+	// Data is the raw data representing the patch.
+	Data []byte
 }
