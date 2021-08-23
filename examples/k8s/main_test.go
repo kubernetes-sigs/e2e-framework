@@ -23,7 +23,6 @@ import (
 	"testing"
 	"time"
 
-	"sigs.k8s.io/e2e-framework/klient"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
@@ -51,12 +50,10 @@ func TestMain(m *testing.M) {
 		// env func: creates a klient.Client for the envconfig.Config
 		func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 			kubecfg := ctx.Value(1).(string)
-			// create a klient.Client and set it for the env config
-			client, err := klient.NewWithKubeConfigFile(kubecfg)
+			_, err := cfg.WithKubeconfigFile(kubecfg) // set client in envconfig
 			if err != nil {
 				return ctx, fmt.Errorf("create klient.Client: %w", err)
 			}
-			cfg.WithClient(client) // set client in envconfig
 			return ctx, nil
 		},
 	).Finish(

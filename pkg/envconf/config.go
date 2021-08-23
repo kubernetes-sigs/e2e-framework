@@ -86,6 +86,16 @@ func NewFromFlags() (*Config, error) {
 	return e, nil
 }
 
+// WithKubeconfigFile creates a new klient.Client and injects it in the cfg
+func (c *Config) WithKubeconfigFile(kubecfg string) (*Config, error) {
+	client, err := klient.NewWithKubeConfigFile(kubecfg)
+	if err != nil {
+		return nil, err
+	}
+	c.client = client
+	return c, nil
+}
+
 // WithClient used to update the environment klient.Client
 func (c *Config) WithClient(client klient.Client) *Config {
 	c.client = client
