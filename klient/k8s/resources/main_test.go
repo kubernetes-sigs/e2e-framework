@@ -20,6 +20,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"testing"
@@ -32,7 +33,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/homedir"
 	"sigs.k8s.io/e2e-framework/klient/conf"
-	test "sigs.k8s.io/e2e-framework/klient/k8s/testing"
+	"sigs.k8s.io/e2e-framework/support/kind"
 )
 
 var (
@@ -44,7 +45,7 @@ var (
 	ctx                = context.TODO()
 	cfg          *rest.Config
 	namespace    *corev1.Namespace
-	kind         *test.KindCluster
+	kc           *kind.Cluster
 )
 
 func TestMain(m *testing.M) {
@@ -59,10 +60,10 @@ func setup() {
 	home := homedir.HomeDir()
 	path := filepath.Join(home, ".kube", "config")
 
-	// setup a kind cluster
+	// set up kind cluster
 	err := setupKindCluster()
 	if err != nil {
-		fmt.Println("error while setting up kind cluster", err)
+		log.Println("error while setting up kind cluster", err)
 		return
 	}
 
@@ -71,7 +72,7 @@ func setup() {
 	// set --kubeconfig flag
 	err = flag.Set("kubeconfig", path)
 	if err != nil {
-		fmt.Println("unexpected error while setting flag value", err)
+		log.Println("unexpected error while setting flag value", err)
 		return
 	}
 
@@ -79,28 +80,27 @@ func setup() {
 
 	cfg, err = conf.New(conf.ResolveKubeConfigFile())
 	if err != nil {
-		fmt.Println("error while client connection", err)
+		log.Println("error while client connection", err)
 		return
 	}
 
 	clientset, err = kubernetes.NewForConfig(cfg)
 	if err != nil {
-		fmt.Println("error while client set connection", err)
+		log.Println("error while client set connection", err)
 		return
 	}
 }
 
 // setupKindCluster
 func setupKindCluster() error {
-	kind = test.NewKindCluster("e2e-test-cluster")
-	if err := kind.Create(); err != nil {
+	kc = kind.NewCluster("e2e-test-cluster")
+	if _, err := kc.Create(); err != nil {
 		return err
 	}
-	fmt.Println("kind cluster created")
 
 	// stall to wait for kind pods initialization
 	waitTime := time.Second * 10
-	fmt.Println("waiting for kind pods to initialize...", waitTime)
+	log.Println("waiting for kind pods to initialize...", waitTime)
 	time.Sleep(waitTime)
 
 	return nil
@@ -111,9 +111,9 @@ func teardown() {
 	deleteNamespace(ctx, namespace)
 
 	// delete kind cluster
-	err := kind.Destroy()
+	err := kc.Destroy()
 	if err != nil {
-		fmt.Println("error while deleting the cluster", err)
+		log.Println("error while deleting the cluster", err)
 		return
 	}
 }
@@ -123,7 +123,7 @@ func deleteDeployment(ctx context.Context, dep *appsv1.Deployment, ns string) {
 	if err == nil {
 		err = clientset.AppsV1().Deployments(ns).Delete(ctx, dep.Name, metav1.DeleteOptions{})
 		if err != nil {
-			fmt.Println("error while deleting deployment", err)
+			log.Println("error while deleting deployment", err)
 		}
 	}
 }
@@ -136,7 +136,7 @@ func deleteNamespace(ctx context.Context, ns *corev1.Namespace) {
 
 	err = clientset.CoreV1().Namespaces().Delete(ctx, ns.Name, metav1.DeleteOptions{})
 	if err != nil {
-		fmt.Println("error while deleting namespace", err)
+		log.Println("error while deleting namespace", err)
 	}
 }
 

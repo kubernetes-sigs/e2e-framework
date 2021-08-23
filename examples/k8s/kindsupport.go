@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 
 	"github.com/vladimirvivien/gexe"
@@ -32,7 +33,7 @@ var (
 
 func createKindCluster(clusterName string) (string, error) {
 	if e.Prog().Avail("kind") == "" {
-		fmt.Println(`kind may not be installed, attempting to install...`)
+		log.Println(`kind may not be installed, attempting to install...`)
 		p := e.SetEnv("GO111MODULE", "on").RunProc(fmt.Sprintf("go get sigs.k8s.io/kind@%s", kindVersion))
 		if p.Err() != nil {
 			return "", fmt.Errorf("install kind failed: %s: %w", p.Result(), p.Err())

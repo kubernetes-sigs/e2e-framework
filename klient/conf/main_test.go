@@ -18,8 +18,8 @@ package conf
 
 import (
 	"flag"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -47,7 +47,7 @@ func setup() {
 	if os.IsNotExist(err) {
 		err = os.MkdirAll(kubeconfigdir, 0777)
 		if err != nil {
-			fmt.Println("failed to create .kube dir", err)
+			log.Println("failed to create .kube dir", err)
 			return
 		}
 
@@ -56,19 +56,19 @@ func setup() {
 
 		err = createFile(kubeconfigpath, data)
 		if err != nil {
-			fmt.Println("failed to create config file", err)
+			log.Println("failed to create config file", err)
 			return
 		}
 	}
 
-	fmt.Println("file created successfully", kubeconfigpath)
+	log.Println("file created successfully", kubeconfigpath)
 
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Paths to a kubeconfig. Only required if out-of-cluster.")
 
 	// set --kubeconfig flag
 	err = flag.Set("kubeconfig", kubeconfigpath)
 	if err != nil {
-		fmt.Println("unexpected error while setting flag value", err)
+		log.Println("unexpected error while setting flag value", err)
 		return
 	}
 
@@ -120,6 +120,6 @@ func teardown() {
 	home := homedir.HomeDir()
 	err := os.RemoveAll(filepath.Join(home, "test"))
 	if err != nil {
-		fmt.Println("failed to delete .kube dir", err)
+		log.Println("failed to delete .kube dir", err)
 	}
 }
