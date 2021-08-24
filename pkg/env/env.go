@@ -86,6 +86,8 @@ func (e *testEnv) WithContext(ctx context.Context) types.Environment {
 	return env
 }
 
+// Setup registers environment operations that are executed once
+// prior to the environment being ready and prior to any test.
 func (e *testEnv) Setup(funcs ...Func) types.Environment {
 	if len(funcs) == 0 {
 		return e
@@ -94,11 +96,43 @@ func (e *testEnv) Setup(funcs ...Func) types.Environment {
 	return e
 }
 
-func (e *testEnv) BeforeTest(funcs ...Func) types.Environment {
+// BeforeEachTest registers environment funcs that are executed
+// before each Env.Test(...)
+func (e *testEnv) BeforeEachTest(funcs ...Func) types.Environment {
 	if len(funcs) == 0 {
 		return e
 	}
-	e.actions = append(e.actions, action{role: roleBefore, funcs: funcs})
+	e.actions = append(e.actions, action{role: roleBeforeTest, funcs: funcs})
+	return e
+}
+
+// BeforeEachFeature registers step functions that are executed
+// before each Feature is tested during env.Test call.
+func (e *testEnv) BeforeEachFeature(funcs ...Func) types.Environment {
+	if len(funcs) == 0 {
+		return e
+	}
+	e.actions = append(e.actions, action{role: roleBeforeFeature, funcs: funcs})
+	return e
+}
+
+// AfterEachFeature registers step functions that are executed
+// after each feature is tested during an env.Test call.
+func (e *testEnv) AfterEachFeature(funcs ...Func) types.Environment {
+	if len(funcs) == 0 {
+		return e
+	}
+	e.actions = append(e.actions, action{role: roleAfterFeature, funcs: funcs})
+	return e
+}
+
+// AfterEachTest registers environment funcs that are executed
+// after each Env.Test(...).
+func (e *testEnv) AfterEachTest(funcs ...Func) types.Environment {
+	if len(funcs) == 0 {
+		return e
+	}
+	e.actions = append(e.actions, action{role: roleAfterTest, funcs: funcs})
 	return e
 }
 
@@ -114,37 +148,58 @@ func (e *testEnv) BeforeTest(funcs ...Func) types.Environment {
 //
 // BeforeTest and AfterTest operations are executed before and after
 // the feature is tested respectively.
-func (e *testEnv) Test(t *testing.T, feature types.Feature) {
+func (e *testEnv) Test(t *testing.T, testFeatures ...types.Feature) {
 	if e.ctx == nil {
 		panic("context not set") // something is terribly wrong.
 	}
 
-	befores := e.GetBeforeActions()
+	if len(testFeatures) == 0 {
+		t.Log("No test testFeatures provided, skipping test")
+		return
+	}
+
+	// execute the beforeTest functions
+	beforeTestActions := e.getBeforeTestActions()
 	var err error
-	for _, action := range befores {
+	for _, action := range beforeTestActions {
 		if e.ctx, err = action.run(e.ctx, e.cfg); err != nil {
-			t.Fatalf("BeforeTest failure: %s: %v", feature.Name(), err)
+			t.Fatalf("BeforeEachTest failure: %s", err)
 		}
 	}
 
-	e.ctx = e.execFeature(e.ctx, t, feature)
+	// execute each feature
+	beforeFeatureActions := e.getBeforeFeatureActions()
+	afterFeatureActions := e.getAfterFeatureActions()
+	for _, feature := range testFeatures {
+		// execute beforeFeature actions
+		for _, action := range beforeFeatureActions {
+			if e.ctx, err = action.run(e.ctx, e.cfg); err != nil {
+				t.Fatalf("BeforeEachTest failure: %s", err)
+			}
+		}
 
-	afters := e.GetAfterActions()
-	for _, action := range afters {
+		// execute feature test
+		e.ctx = e.execFeature(e.ctx, t, feature)
+
+		// execute beforeFeature actions
+		for _, action := range afterFeatureActions {
+			if e.ctx, err = action.run(e.ctx, e.cfg); err != nil {
+				t.Fatalf("BeforeEachTest failure: %s", err)
+			}
+		}
+	}
+
+	// execute afterTest functions
+	afterTestActions := e.getAfterTestActions()
+	for _, action := range afterTestActions {
 		if e.ctx, err = action.run(e.ctx, e.cfg); err != nil {
-			t.Fatalf("AfterTest failure: %s: %v", feature.Name(), err)
+			t.Fatalf("AfterEachTest failure: %s", err)
 		}
 	}
 }
 
-func (e *testEnv) AfterTest(funcs ...Func) types.Environment {
-	if len(funcs) == 0 {
-		return e
-	}
-	e.actions = append(e.actions, action{role: roleAfter, funcs: funcs})
-	return e
-}
-
+// Finish registers funcs that are executed at the end of the
+// test suite.
 func (e *testEnv) Finish(funcs ...Func) types.Environment {
 	if len(funcs) == 0 {
 		return e
@@ -165,7 +220,7 @@ func (e *testEnv) Run(m *testing.M) int {
 		panic("context not set") // something is terribly wrong.
 	}
 
-	setups := e.GetSetupActions()
+	setups := e.getSetupActions()
 	// fail fast on setup, upon err exit
 	var err error
 	for _, setup := range setups {
@@ -177,7 +232,7 @@ func (e *testEnv) Run(m *testing.M) int {
 
 	exitCode := m.Run() // exec test suite
 
-	finishes := e.GetFinishActions()
+	finishes := e.getFinishActions()
 	// attempt to gracefully clean up.
 	// Upon error, log and continue.
 	for _, fin := range finishes {
@@ -205,19 +260,27 @@ func (e *testEnv) getActionsByRole(r actionRole) []action {
 	return result
 }
 
-func (e *testEnv) GetSetupActions() []action {
+func (e *testEnv) getSetupActions() []action {
 	return e.getActionsByRole(roleSetup)
 }
 
-func (e *testEnv) GetBeforeActions() []action {
-	return e.getActionsByRole(roleBefore)
+func (e *testEnv) getBeforeTestActions() []action {
+	return e.getActionsByRole(roleBeforeTest)
 }
 
-func (e *testEnv) GetAfterActions() []action {
-	return e.getActionsByRole(roleAfter)
+func (e *testEnv) getBeforeFeatureActions() []action {
+	return e.getActionsByRole(roleBeforeFeature)
 }
 
-func (e *testEnv) GetFinishActions() []action {
+func (e *testEnv) getAfterFeatureActions() []action {
+	return e.getActionsByRole(roleAfterFeature)
+}
+
+func (e *testEnv) getAfterTestActions() []action {
+	return e.getActionsByRole(roleAfterTest)
+}
+
+func (e *testEnv) getFinishActions() []action {
 	return e.getActionsByRole(roleFinish)
 }
 

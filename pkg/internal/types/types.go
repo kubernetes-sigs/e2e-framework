@@ -39,17 +39,28 @@ type Environment interface {
 	// prior to the environment being ready and prior to any test.
 	Setup(...EnvFunc) Environment
 
-	// BeforeTest registers funcs that are executed before each Env.Test(...)
-	BeforeTest(...EnvFunc) Environment
+	// BeforeEachTest registers environment funcs that are executed
+	// before each Env.Test(...)
+	BeforeEachTest(...EnvFunc) Environment
+
+	// BeforeEachFeature registers step functions that are executed
+	// before each Feature is tested during env.Test call.
+	BeforeEachFeature(...EnvFunc) Environment
+
+	// AfterEachFeature registers step functions that are executed
+	// after each feature is tested during an env.Test call.
+	AfterEachFeature(...EnvFunc) Environment
 
 	// Test executes a test feature defined in a TestXXX function
 	// This method surfaces context for further updates.
-	Test(*testing.T, Feature)
+	Test(*testing.T, ...Feature)
 
-	// AfterTest registers funcs that are executed after each Env.Test(...)
-	AfterTest(...EnvFunc) Environment
+	// AfterEachTest registers environment funcs that are executed
+	// after each Env.Test(...).
+	AfterEachTest(...EnvFunc) Environment
 
-	// Finish registers funcs that are executed at the end.
+	// Finish registers funcs that are executed at the end of the
+	// test suite.
 	Finish(...EnvFunc) Environment
 
 	// Run Launches the test suite from within a TestMain
