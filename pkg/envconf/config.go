@@ -35,7 +35,6 @@ type Config struct {
 	assessmentRegex *regexp.Regexp
 	featureRegex    *regexp.Regexp
 	labels          map[string]string
-	autoCreateNS    bool
 }
 
 // New creates and initializes an empty environment configuration
@@ -158,19 +157,6 @@ func (c *Config) Labels() map[string]string {
 	return c.labels
 }
 
-// AutoCreateNamespace signals that a namespace should
-// be automatically created for the environment
-func (c *Config) AutoCreateNamespace() *Config {
-	c.autoCreateNS = true
-	return c
-}
-
-// NamespaceShouldBeCreated indicates if a namespace
-// should be created for the environment
-func (c *Config) NamespaceShouldBeCreated() bool {
-	return c.autoCreateNS
-}
-
 func randNS() string {
 	return RandomName("testns-", 32)
 }
@@ -187,5 +173,5 @@ func RandomName(prefix string, n int) string {
 	rand.Seed(time.Now().UnixNano())
 	p := make([]byte, n)
 	rand.Read(p)
-	return fmt.Sprintf("%s%s", prefix, hex.EncodeToString(p))[:n]
+	return fmt.Sprintf("%s-%s", prefix, hex.EncodeToString(p))[:n]
 }

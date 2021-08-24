@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package k8s
+package custom_env_funcs
 
 import (
 	"context"
@@ -26,8 +26,8 @@ import (
 )
 
 func TestListPods(t *testing.T) {
-	f := features.New("example with klient package").
-		Assess("get pods from kube-system", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+	f := features.New("pod list").
+		Assess("pods from kube-system", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			var pods corev1.PodList
 			err := cfg.Client().Resources("kube-system").List(context.TODO(), &pods)
 			if err != nil {
