@@ -79,13 +79,21 @@ func (k *Cluster) Create() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("kind kubeconfig file: %w", err)
 	}
-
 	defer file.Close()
+
+	k.kubecfgFile = file.Name()
+
 	if n, err := io.Copy(file, p.Out()); n == 0 || err != nil {
 		return "", fmt.Errorf("kind kubecfg file: bytes copied: %d: %w]", n, err)
 	}
 
 	return file.Name(), nil
+}
+
+// GetKubeconfig returns the path of the kubeconfig file
+// associated with this kind cluster
+func (k *Cluster) GetKubeconfig() string {
+	return k.kubecfgFile
 }
 
 func (k *Cluster) GetKubeCtlContext() string {

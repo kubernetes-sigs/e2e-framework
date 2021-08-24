@@ -25,6 +25,7 @@ import (
 
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	kindsupport "sigs.k8s.io/e2e-framework/support/kind"
 )
 
 var (
@@ -33,40 +34,44 @@ var (
 
 func TestMain(m *testing.M) {
 	testenv = env.New()
-	testenv.Setup(
-		// env func: creates kind cluster, propagate kubeconfig file name
-		func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
-			cluster := envconf.RandomName("my-cluster", 16)
-			kubecfg, err := createKindCluster(cluster)
-			if err != nil {
-				return ctx, err
-			}
-			// stall a bit to allow most pods to come up
-			time.Sleep(time.Second * 10)
-
-			// propagate cluster name and kubeconfig file name
-			return context.WithValue(context.WithValue(ctx, 1, kubecfg), 2, cluster), nil
-		},
-		// env func: creates a klient.Client for the envconfig.Config
-		func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
-			kubecfg := ctx.Value(1).(string)
-			_, err := cfg.WithKubeconfigFile(kubecfg) // set client in envconfig
-			if err != nil {
-				return ctx, fmt.Errorf("create klient.Client: %w", err)
-			}
-			return ctx, nil
-		},
-	).Finish(
-		// Teardown func: delete kind cluster and delete kubecfg file
-		func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
-			kubecfg := ctx.Value(1).(string)
-			cluster := ctx.Value(2).(string)
-			if err := deleteKindCluster(cluster, kubecfg); err != nil {
-				return ctx, err
-			}
-			return ctx, nil
-		},
-	)
-
+	testenv.Setup(CreateKindFunc(envconf.RandomName("my-cluster", 16))).Finish(CleanupKindFunc())
 	os.Exit(testenv.Run(m))
+}
+
+// CreateKindFunc returns an EnvFunc
+// that creates kind cluster, and propagate
+// the kind instance via the environment context
+func CreateKindFunc(name string) env.Func {
+	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
+		kind := kindsupport.NewCluster(name)
+		kubecfg, err := kind.Create()
+		if err != nil {
+			return ctx, fmt.Errorf("kind setup: %w", err)
+		}
+
+		// stall, give pods time
+		time.Sleep(7 * time.Second)
+
+		// update envconfig  with kubeconfig
+		if _, err := cfg.WithKubeconfigFile(kubecfg); err != nil {
+			return ctx, fmt.Errorf("kind setup: envconfig: %w", err)
+		}
+
+		// forward cluster name and kubecfg file name (via context)
+		// for cleanup later
+		return context.WithValue(ctx, "kindcluster", kind), nil
+	}
+}
+
+// CleanupKindFunc returns an EnvFunc that
+// retrieves the kind cluster instance from the forwarded context
+// then deletes the cluster.
+func CleanupKindFunc() env.Func {
+	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
+		kind := ctx.Value("kindcluster").(*kindsupport.Cluster)
+		if err := kind.Destroy(); err != nil {
+			return ctx, fmt.Errorf("kind cleanup: %w", err)
+		}
+		return ctx, nil
+	}
 }
