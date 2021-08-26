@@ -234,5 +234,5 @@ func TestListAllPods(t *testing.T) {
 		t.Error("error while getting the list of deployments", err)
 	}
 
-	log.Println("pod list contains", len(pods.Items), pods.Items)
+	t.Logf("pod list contains %d pods", len(pods.Items))
 }

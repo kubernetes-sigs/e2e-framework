@@ -14,17 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package k8s
+package custom_env_funcs
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"testing"
 	"time"
 
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"sigs.k8s.io/e2e-framework/support/kind"
 )
 
 var (
@@ -34,34 +34,30 @@ var (
 func TestMain(m *testing.M) {
 	testenv = env.New()
 	testenv.Setup(
-		// env func: creates kind cluster, propagate kubeconfig file name
+		// Step: creates kind cluster, propagate kind cluster object
 		func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
-			cluster := envconf.RandomName("my-cluster", 16)
-			kubecfg, err := createKindCluster(cluster)
+			name := envconf.RandomName("my-cluster", 16)
+			cluster := kind.NewCluster(name)
+			kubeconfig, err := cluster.Create()
 			if err != nil {
 				return ctx, err
 			}
 			// stall a bit to allow most pods to come up
 			time.Sleep(time.Second * 10)
 
-			// propagate cluster name and kubeconfig file name
-			return context.WithValue(context.WithValue(ctx, 1, kubecfg), 2, cluster), nil
-		},
-		// env func: creates a klient.Client for the envconfig.Config
-		func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
-			kubecfg := ctx.Value(1).(string)
-			_, err := cfg.WithKubeconfigFile(kubecfg) // set client in envconfig
-			if err != nil {
-				return ctx, fmt.Errorf("create klient.Client: %w", err)
+			// update environment with kubecofig file
+			if _, err := cfg.WithKubeconfigFile(kubeconfig); err != nil {
+				return ctx, err
 			}
-			return ctx, nil
+
+			// propagate cluster value
+			return context.WithValue(ctx, 1, cluster), nil
 		},
 	).Finish(
-		// Teardown func: delete kind cluster and delete kubecfg file
+		// Teardown func: delete kind cluster
 		func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
-			kubecfg := ctx.Value(1).(string)
-			cluster := ctx.Value(2).(string)
-			if err := deleteKindCluster(cluster, kubecfg); err != nil {
+			cluster := ctx.Value(1).(*kind.Cluster) // nil should be tested
+			if err := cluster.Destroy(); err != nil{
 				return ctx, err
 			}
 			return ctx, nil

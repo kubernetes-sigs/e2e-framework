@@ -79,8 +79,10 @@ func (k *Cluster) Create() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("kind kubeconfig file: %w", err)
 	}
-
 	defer file.Close()
+
+	k.kubecfgFile = file.Name()
+
 	if n, err := io.Copy(file, p.Out()); n == 0 || err != nil {
 		return "", fmt.Errorf("kind kubecfg file: bytes copied: %d: %w]", n, err)
 	}
@@ -88,11 +90,18 @@ func (k *Cluster) Create() (string, error) {
 	return file.Name(), nil
 }
 
+// GetKubeconfig returns the path of the kubeconfig file
+// associated with this kind cluster
+func (k *Cluster) GetKubeconfig() string {
+	return k.kubecfgFile
+}
+
 func (k *Cluster) GetKubeCtlContext() string {
 	return fmt.Sprintf("kind-%s", k.name)
 }
 
 func (k *Cluster) Destroy() error {
+	log.Println("Destroying kind cluster ", k.name)
 	if err := k.findOrInstallKind(k.e); err != nil {
 		return err
 	}
@@ -103,6 +112,7 @@ func (k *Cluster) Destroy() error {
 		return fmt.Errorf("failed to install kind: %s: %s", p.Err(), p.Result())
 	}
 
+	log.Println("Removing kubeconfig file ", k.kubecfgFile)
 	if err := os.RemoveAll(k.kubecfgFile); err != nil {
 		return fmt.Errorf("kind: remove kubefconfig failed: %w", err)
 	}
