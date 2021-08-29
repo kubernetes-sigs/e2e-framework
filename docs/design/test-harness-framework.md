@@ -461,7 +461,7 @@ go test -tags=e2e ./test/... --feature="special"
 The framework shall provide predefined flagsets that will be automatically applied during test execution. Possible filters that could be supported by the framework implementation:
 
 * `--feature` - a regular expression that target features to run
-* `--assert` - a regular expression that targets the name of an assertive steps
+* `--assess` - a regular expression that targets the name of an assesment steps
 * `--labels` - a comma-separated list of key/value pairs  used to filter features by their assigned labels
 
 The framework should automatically inject these filter values into the environment component when it is created.
@@ -470,7 +470,7 @@ The framework should automatically inject these filter values into the environme
 The test framework should provide the ability to explicitly exclude features during a test run.  This could be done with the following flags:
 
 * `--skip-feature` - a regular expression that skips features with matching names
-* `--skip-assert` - a regular expression that skips assertions with matching name
+* `--skip-assessment` - a regular expression that skips assessment with matching name
 * `--skip-lables` - a comma-separated list of key/value pairs used to skip features with matching lables
 
 ## Test support
