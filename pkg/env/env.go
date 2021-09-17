@@ -21,7 +21,9 @@ package env
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	log "k8s.io/klog/v2"
 
@@ -42,6 +44,7 @@ type testEnv struct {
 	ctx     context.Context
 	cfg     *envconf.Config
 	actions []action
+	rnd     rand.Source
 }
 
 // New creates a test environment with no config attached.
@@ -89,6 +92,7 @@ func newTestEnv() *testEnv {
 	return &testEnv{
 		ctx: context.Background(),
 		cfg: envconf.New(),
+		rnd: rand.NewSource(time.Now().UnixNano()),
 	}
 }
 
@@ -190,7 +194,7 @@ func (e *testEnv) Test(t *testing.T, testFeatures ...types.Feature) {
 	// execute each feature
 	beforeFeatureActions := e.getBeforeFeatureActions()
 	afterFeatureActions := e.getAfterFeatureActions()
-	for _, feature := range testFeatures {
+	for i, feature := range testFeatures {
 		// execute beforeFeature actions
 		for _, action := range beforeFeatureActions {
 			if e.ctx, err = action.runWithFeature(e.ctx, e.cfg, deepCopyFeature(feature)); err != nil {
@@ -199,7 +203,11 @@ func (e *testEnv) Test(t *testing.T, testFeatures ...types.Feature) {
 		}
 
 		// execute feature test
-		e.ctx = e.execFeature(e.ctx, t, feature)
+		featName := feature.Name()
+		if featName == "" {
+			featName = fmt.Sprintf("Feature-%d", i+1)
+		}
+		e.ctx = e.execFeature(e.ctx, t, featName, feature)
 
 		// execute beforeFeature actions
 		for _, action := range afterFeatureActions {
@@ -304,9 +312,7 @@ func (e *testEnv) getFinishActions() []action {
 	return e.getActionsByRole(roleFinish)
 }
 
-func (e *testEnv) execFeature(ctx context.Context, t *testing.T, f types.Feature) context.Context {
-	featName := f.Name()
-
+func (e *testEnv) execFeature(ctx context.Context, t *testing.T, featName string, f types.Feature) context.Context {
 	// feature-level subtest
 	t.Run(featName, func(t *testing.T) {
 		// skip feature which matches with --skip-feature
@@ -343,8 +349,12 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, f types.Feature
 		// assessments run as feature/assessment sub level
 		assessments := features.GetStepsByLevel(f.Steps(), types.LevelAssess)
 
-		for _, assess := range assessments {
-			t.Run(assess.Name(), func(t *testing.T) {
+		for i, assess := range assessments {
+			assessName := assess.Name()
+			if assessName == "" {
+				assessName = fmt.Sprintf("Assessment-%d", i+1)
+			}
+			t.Run(assessName, func(t *testing.T) {
 				// skip assessments which matches with --skip-assessments
 				if e.cfg.SkipAssessmentRegex() != nil && e.cfg.SkipAssessmentRegex().MatchString(assess.Name()) {
 					t.Skipf(`Skipping assessment "%s": name matched`, assess.Name())
