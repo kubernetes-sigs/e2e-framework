@@ -28,8 +28,12 @@ import (
 func TestListPods(t *testing.T) {
 	f := features.New("pod list").
 		Assess("pods from kube-system", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			client, err := cfg.Client()
+			if err != nil {
+				t.Fatal(err)
+			}
 			var pods corev1.PodList
-			err := cfg.Client().Resources("kube-system").List(context.TODO(), &pods)
+			err = client.Resources("kube-system").List(context.TODO(), &pods)
 			if err != nil {
 				t.Fatal(err)
 			}

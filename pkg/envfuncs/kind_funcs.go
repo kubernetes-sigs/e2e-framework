@@ -47,10 +47,7 @@ func CreateKindCluster(clusterName string) env.Func {
 		time.Sleep(7 * time.Second)
 
 		// update envconfig  with kubeconfig
-		if _, err := cfg.WithKubeconfigFile(kubecfg); err != nil {
-			return ctx, fmt.Errorf("create kind cluster func: update envconfig: %w", err)
-		}
-
+		cfg.WithKubeconfigFile(kubecfg)
 		// store entire cluster value in ctx for future access using the cluster name
 		return context.WithValue(ctx, kindContextKey(clusterName), k), nil
 	}

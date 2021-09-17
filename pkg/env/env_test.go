@@ -37,10 +37,6 @@ func TestEnv_New(t *testing.T) {
 	if e.cfg.Namespace() != "" {
 		t.Error("unexpected envconfig.Namespace value")
 	}
-
-	if e.cfg.Client() != nil {
-		t.Error("unexpected envconfig.Client")
-	}
 }
 
 func TestEnv_APIMethods(t *testing.T) {

@@ -70,7 +70,7 @@ func ResolveKubeConfigFile() string {
 	// If a flag --kubeconfig  is specified with the config location, use that
 	if flag.Parsed() {
 		f := flag.Lookup("kubeconfig")
-		if f != nil {
+		if f != nil && f.Value.String() != "" {
 			return f.Value.String()
 		}
 	}

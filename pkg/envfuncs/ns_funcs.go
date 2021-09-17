@@ -38,8 +38,12 @@ type namespaceContextKey string
 func CreateNamespace(name string) env.Func {
 	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 		namespace := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: name}}
-		if err := cfg.Client().Resources().Create(ctx, &namespace); err != nil {
-			return nil, fmt.Errorf("create namespace func: %w", err)
+		client, err := cfg.Client()
+		if err != nil {
+			return ctx, fmt.Errorf("create namespace func: %w", err)
+		}
+		if err := client.Resources().Create(ctx, &namespace); err != nil {
+			return ctx, fmt.Errorf("create namespace func: %w", err)
 		}
 		cfg.WithNamespace(name) // set env config default namespace
 		return context.WithValue(ctx, namespaceContextKey(name), namespace), nil
@@ -61,10 +65,15 @@ func DeleteNamespace(name string) env.Func {
 			}
 		}
 
+		client, err := cfg.Client()
+		if err != nil {
+			return ctx, fmt.Errorf("delete namespace func: %w", err)
+		}
+
 		// if not in context, get from server
 		if namespace == nil {
 			var ns corev1.Namespace
-			if err := cfg.Client().Resources().Get(ctx, name, name, &ns); err != nil {
+			if err := client.Resources().Get(ctx, name, name, &ns); err != nil {
 				return ctx, fmt.Errorf("delete namespace func: %w", err)
 			}
 			namespace = &ns
@@ -76,7 +85,7 @@ func DeleteNamespace(name string) env.Func {
 		}
 
 		// remove namespace api object
-		if err := cfg.Client().Resources().Delete(ctx, namespace); err != nil {
+		if err := client.Resources().Delete(ctx, namespace); err != nil {
 			return ctx, fmt.Errorf("delete namespace func: %w", err)
 		}
 

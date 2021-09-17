@@ -17,46 +17,30 @@ limitations under the License.
 package flags
 
 import (
-	"os"
 	"testing"
 )
 
-func TestParse(t *testing.T) {
+func TestParseFlags(t *testing.T) {
 	tests := []struct {
 		name  string
 		args  []string
-		flags *Flags
+		flags *EnvFlags
 	}{
-		{
-			name:  "with feature only",
-			args:  []string{"-feature", "networking"},
-			flags: &Flags{feature: "networking"},
-		},
-		{
-			name:  "with assessment only",
-			args:  []string{"-assess", "volume test"},
-			flags: &Flags{assess: "volume test"},
-		},
-		{
-			name:  "with labels only",
-			args:  []string{"-labels", "k0=v0"},
-			flags: &Flags{labels: LabelsMap{"k0": "v0"}},
-		},
 		{
 			name:  "with all",
 			args:  []string{"-assess", "volume test", "--feature", "beta", "--labels", "k0=v0, k1=v1, k2=v2"},
-			flags: &Flags{assess: "volume test", feature: "beta", labels: LabelsMap{"k0": "v0", "k1": "v1", "k2": "v2"}},
+			flags: &EnvFlags{assess: "volume test", feature: "beta", labels: LabelsMap{"k0": "v0", "k1": "v1", "k2": "v2"}},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			testFlags, err := parseFlags(os.Args[0], test.args)
+			testFlags, err := ParseArgs(test.args)
 			if err != nil {
 				t.Fatal(err)
 			}
 			if testFlags.Feature() != test.flags.Feature() {
-				t.Errorf("unmatched feature: %s", testFlags.Feature())
+				t.Errorf("unmatched feature: %s; %s", testFlags.Feature(), test.flags.Feature())
 			}
 			if testFlags.Assessment() != test.flags.Assessment() {
 				t.Errorf("unmatched assessment: %s", testFlags.Assessment())

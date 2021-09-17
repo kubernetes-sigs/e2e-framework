@@ -45,7 +45,7 @@ func setup() {
 	_, err := os.Stat(kubeconfigpath)
 	// create file if not exists
 	if os.IsNotExist(err) {
-		err = os.MkdirAll(kubeconfigdir, 0777)
+		err = os.MkdirAll(kubeconfigdir, 0o777)
 		if err != nil {
 			log.Println("failed to create .kube dir", err)
 			return
@@ -76,7 +76,7 @@ func setup() {
 }
 
 func createFile(path, data string) error {
-	return ioutil.WriteFile(path, []byte(data), 0644)
+	return ioutil.WriteFile(path, []byte(data), 0o644)
 }
 
 // genKubeconfig used to genearte kube config file

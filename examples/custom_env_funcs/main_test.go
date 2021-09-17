@@ -27,9 +27,7 @@ import (
 	"sigs.k8s.io/e2e-framework/support/kind"
 )
 
-var (
-	testenv env.Environment
-)
+var testenv env.Environment
 
 func TestMain(m *testing.M) {
 	testenv = env.New()
@@ -46,10 +44,7 @@ func TestMain(m *testing.M) {
 			time.Sleep(time.Second * 10)
 
 			// update environment with kubecofig file
-			if _, err := cfg.WithKubeconfigFile(kubeconfig); err != nil {
-				return ctx, err
-			}
-
+			cfg.WithKubeconfigFile(kubeconfig)
 			// propagate cluster value
 			return context.WithValue(ctx, 1, cluster), nil
 		},
@@ -57,7 +52,7 @@ func TestMain(m *testing.M) {
 		// Teardown func: delete kind cluster
 		func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 			cluster := ctx.Value(1).(*kind.Cluster) // nil should be tested
-			if err := cluster.Destroy(); err != nil{
+			if err := cluster.Destroy(); err != nil {
 				return ctx, err
 			}
 			return ctx, nil

@@ -31,68 +31,105 @@ const (
 	flagLabelsName    = "labels"
 )
 
-type Flags struct {
-	namespace  string
+// Supported flag definitions
+var (
+	featureFlag = flag.Flag{
+		Name:  flagFeatureName,
+		Usage: "Regular expression to select feature(s) to test",
+	}
+	assessFlag = flag.Flag{
+		Name:  flagAssessName,
+		Usage: "Regular expression to select assessment(s) to run",
+	}
+	labelsFlag = flag.Flag{
+		Name:  flagLabelsName,
+		Usage: "Comma-separated key=value to filter features by labels",
+	}
+	kubecfgFlag = flag.Flag{
+		Name:  flagKubecofigName,
+		Usage: "Path to a cluster kubeconfig file (optional)",
+	}
+	kubeNSFlag = flag.Flag{
+		Name:  flagNamespaceName,
+		Usage: "A namespace value to use for testing (optional)",
+	}
+)
+
+// EnvFlags surfaces all resolved flag values for the testing framework
+type EnvFlags struct {
+	feature string
+	assess  string
+	labels  LabelsMap
+
+	// optional kube flags
 	kubeconfig string
-	feature    string
-	assess     string
-	labels     LabelsMap
+	namespace  string
 }
 
-func (f *Flags) Namespace() string {
-	return f.namespace
-}
-
-func (f *Flags) Kubeconfig() string {
-	return f.kubeconfig
-}
-
-func (f *Flags) Feature() string {
+// Feature returns value for `-feature` flag
+func (f *EnvFlags) Feature() string {
 	return f.feature
 }
 
-func (f *Flags) Assessment() string {
+// Assessment returns value for `-assess` flag
+func (f *EnvFlags) Assessment() string {
 	return f.assess
 }
 
-func (f *Flags) Labels() LabelsMap {
+// Labels returns a map of parsed key/value from `-labels` flag
+func (f *EnvFlags) Labels() LabelsMap {
 	return f.labels
 }
 
-func Parse() (*Flags, error) {
-	return parseFlags(os.Args[0], os.Args[1:])
+// Namespace returns an optional namespace flag value
+func (f *EnvFlags) Namespace() string {
+	return f.namespace
 }
 
-func parseFlags(cmdName string, flags []string) (*Flags, error) {
-	var namespace string
-	var kubeconfig string
+// Kubeconfig returns an optional path for kubeconfig file
+func (f *EnvFlags) Kubeconfig() string {
+	return f.kubeconfig
+}
+
+// Parse parses defined CLI args os.Args[1:]
+func Parse() (*EnvFlags, error) {
+	return ParseArgs(os.Args[1:])
+}
+
+// ParseArgs parses the specified args from global flag.CommandLine
+// and returns a set of environment flag values.
+func ParseArgs(args []string) (*EnvFlags, error) {
 	var feature string
 	var assess string
-
-	// avoid flags parsed with the default `flag.FlagSet`
-	// which may cause issue with certain common kubernetes flags.
-	if flag.Parsed() {
-		if kc := flag.Lookup(flagKubecofigName); kc != nil {
-			kubeconfig = kc.Value.String()
-		}
-		if ns := flag.Lookup(flagNamespaceName); ns != nil {
-			namespace = ns.Value.String()
-		}
-	}
-
 	labels := make(LabelsMap)
+	var namespace string
+	var kubeconfig string
 
-	flagset := flag.NewFlagSet(cmdName, flag.ExitOnError)
-	flagset.StringVar(&namespace, flagNamespaceName, namespace, "Kubernetes cluster namespaces to use")
-	flagset.StringVar(&kubeconfig, flagKubecofigName, kubeconfig, "The path to the kubeconfig file")
-	flagset.StringVar(&feature, flagFeatureName, "", "Regular expression that targets features to test")
-	flagset.StringVar(&assess, flagAssessName, "", "Regular expression that targets assertive steps to run")
-	flagset.Var(&labels, flagLabelsName, "Comma-separated key/value pairs to filter tests by labels")
-	if err := flagset.Parse(flags); err != nil {
-		return nil, err
+	if flag.Lookup(featureFlag.Name) == nil {
+		flag.StringVar(&feature, featureFlag.Name, featureFlag.DefValue, featureFlag.Usage)
 	}
 
-	return &Flags{feature: feature, assess: assess, labels: labels}, nil
+	if flag.Lookup(assessFlag.Name) == nil {
+		flag.StringVar(&assess, assessFlag.Name, assessFlag.DefValue, assessFlag.Usage)
+	}
+
+	if flag.Lookup(kubecfgFlag.Name) == nil {
+		flag.StringVar(&kubeconfig, kubecfgFlag.Name, kubecfgFlag.DefValue, kubecfgFlag.Usage)
+	}
+
+	if flag.Lookup(kubeNSFlag.Name) == nil {
+		flag.StringVar(&namespace, kubeNSFlag.Name, kubeNSFlag.DefValue, kubeNSFlag.Usage)
+	}
+
+	if flag.Lookup(labelsFlag.Name) == nil {
+		flag.Var(&labels, labelsFlag.Name, labelsFlag.Usage)
+	}
+
+	if err := flag.CommandLine.Parse(args); err != nil {
+		return nil, fmt.Errorf("flags parsing: %w", err)
+	}
+
+	return &EnvFlags{feature: feature, assess: assess, labels: labels, namespace: namespace, kubeconfig: kubeconfig}, nil
 }
 
 type LabelsMap map[string]string
