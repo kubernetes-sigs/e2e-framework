@@ -92,7 +92,7 @@ func parseFlags(cmdName string, flags []string) (*Flags, error) {
 		return nil, err
 	}
 
-	return &Flags{feature: feature, assess: assess, labels: labels}, nil
+	return &Flags{namespace: namespace, kubeconfig: kubeconfig, feature: feature, assess: assess, labels: labels}, nil
 }
 
 type LabelsMap map[string]string

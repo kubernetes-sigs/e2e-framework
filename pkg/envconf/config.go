@@ -77,11 +77,16 @@ func NewFromFlags() (*Config, error) {
 	if kubecfg == "" {
 		kubecfg = conf.ResolveKubeConfigFile()
 	}
-	c, err := klient.NewWithKubeConfigFile(kubecfg)
-	if err != nil {
-		return nil, err
+
+	// if there is a kubeconfig
+	if kubecfg != "" {
+		c, err := klient.NewWithKubeConfigFile(kubecfg)
+		if err != nil {
+			return nil, err
+		}
+		e.client = c
 	}
-	e.client = c
+
 	return e, nil
 }
 
