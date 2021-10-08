@@ -31,8 +31,13 @@ import (
 func TestKubernetes(t *testing.T) {
 	podFeature := features.New("pod list").
 		Assess("pods from kube-system", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			client, err := cfg.Client()
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			var pods corev1.PodList
-			err := cfg.Client().Resources("kube-system").List(context.TODO(), &pods)
+			err = client.Resources("kube-system").List(context.TODO(), &pods)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -46,17 +51,25 @@ func TestKubernetes(t *testing.T) {
 	// feature uses pre-generated namespace (see TestMain)
 	depFeature := features.New("appsv1/deployment").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			client, err := cfg.Client()
+			if err != nil {
+				t.Fatal(err)
+			}
 			// insert a deployment
 			deployment := newDeployment(cfg.Namespace(), "test-deployment", 1)
-			if err := cfg.Client().Resources().Create(ctx, deployment); err != nil {
+			if err := client.Resources().Create(ctx, deployment); err != nil {
 				t.Fatal(err)
 			}
 			time.Sleep(2 * time.Second)
 			return ctx
 		}).
 		Assess("deployment creation", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			client, err := cfg.Client()
+			if err != nil {
+				t.Fatal(err)
+			}
 			var dep appsv1.Deployment
-			if err := cfg.Client().Resources().Get(ctx, "test-deployment", cfg.Namespace(), &dep); err != nil {
+			if err := client.Resources().Get(ctx, "test-deployment", cfg.Namespace(), &dep); err != nil {
 				t.Fatal(err)
 			}
 			if &dep != nil {
@@ -65,8 +78,12 @@ func TestKubernetes(t *testing.T) {
 			return context.WithValue(ctx, "test-deployment", &dep)
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			client, err := cfg.Client()
+			if err != nil {
+				t.Fatal(err)
+			}
 			dep := ctx.Value("test-deployment").(*appsv1.Deployment)
-			if err := cfg.Client().Resources().Delete(ctx, dep); err != nil {
+			if err := client.Resources().Delete(ctx, dep); err != nil {
 				t.Fatal(err)
 			}
 			return ctx

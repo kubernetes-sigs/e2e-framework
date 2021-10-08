@@ -19,17 +19,18 @@ package envconf
 import (
 	"encoding/hex"
 	"fmt"
+	"log"
 	"math/rand"
 	"regexp"
 	"time"
 
 	"sigs.k8s.io/e2e-framework/klient"
-	"sigs.k8s.io/e2e-framework/klient/conf"
 	"sigs.k8s.io/e2e-framework/pkg/flags"
 )
 
 // Config represents and environment configuration
 type Config struct {
+	kubeconfig      string
 	client          klient.Client
 	namespace       string
 	assessmentRegex *regexp.Regexp
@@ -42,57 +43,30 @@ func New() *Config {
 	return &Config{}
 }
 
-// NewWithKubeconfig is a convenience constructor function
-// that creates a new environment configuration using a kubeconfig file.
-func NewWithKubeconfig(kubecfg string) (*Config, error) {
-	client, err := klient.NewWithKubeConfigFile(kubecfg)
-	if err != nil {
-		return nil, err
-	}
-	cfg := New()
-	cfg.client = client
-	return cfg, nil
-}
-
-// NewFromFlags initializes an environment config using values
-// from command-line argument flags. See package flags for supported flags.
+// NewFromFlags initializes an environment config using flag values
+// parsed from command-line arguments and returns an error on parsing failure.
 func NewFromFlags() (*Config, error) {
-	flagset, err := flags.Parse()
+	envFlags, err := flags.Parse()
 	if err != nil {
-		return nil, err
+		log.Fatalf("flags parse failed: %s", err)
 	}
 	e := New()
-	if flagset.Assessment() != "" {
-		e.assessmentRegex = regexp.MustCompile(flagset.Assessment())
-	}
-	if flagset.Feature() != "" {
-		e.featureRegex = regexp.MustCompile(flagset.Feature())
-	}
-
-	// setup EnvConfig
-	e.labels = flagset.Labels()
-	e.namespace = flagset.Namespace()
-
-	kubecfg := flagset.Kubeconfig()
-	if kubecfg == "" {
-		kubecfg = conf.ResolveKubeConfigFile()
-	}
-	c, err := klient.NewWithKubeConfigFile(kubecfg)
-	if err != nil {
-		return nil, err
-	}
-	e.client = c
+	e.assessmentRegex = regexp.MustCompile(envFlags.Assessment())
+	e.featureRegex = regexp.MustCompile(envFlags.Feature())
+	e.labels = envFlags.Labels()
+	e.namespace = envFlags.Namespace()
+	e.kubeconfig = envFlags.Kubeconfig()
 	return e, nil
 }
 
 // WithKubeconfigFile creates a new klient.Client and injects it in the cfg
-func (c *Config) WithKubeconfigFile(kubecfg string) (*Config, error) {
-	client, err := klient.NewWithKubeConfigFile(kubecfg)
-	if err != nil {
-		return nil, err
-	}
-	c.client = client
-	return c, nil
+func (c *Config) WithKubeconfigFile(kubecfg string) *Config {
+	c.kubeconfig = kubecfg
+	return c
+}
+
+func (c *Config) KubeconfigFile() string {
+	return c.kubeconfig
 }
 
 // WithClient used to update the environment klient.Client
@@ -101,9 +75,24 @@ func (c *Config) WithClient(client klient.Client) *Config {
 	return c
 }
 
-// Client returns the environment klient.Client
-func (c *Config) Client() klient.Client {
-	return c.client
+// Client is a constructor function that returns a previously
+// created klient.Client or create a new one based on configuration
+// previously set
+func (c *Config) Client() (klient.Client, error) {
+	if c.client != nil {
+		return c.client, nil
+	}
+
+	if c.kubeconfig == "" {
+		return nil, fmt.Errorf("kubeconfig not set")
+	}
+
+	client, err := klient.NewWithKubeConfigFile(c.kubeconfig)
+	if err != nil {
+		return nil, fmt.Errorf("envconfig: client failed: %w", err)
+	}
+	c.client = client
+	return c.client, nil
 }
 
 // WithNamespace updates the environment namespace value
