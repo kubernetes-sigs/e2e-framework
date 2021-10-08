@@ -80,3 +80,21 @@ func TestWithFlags(t *testing.T) {
 
 	test.Test(t, f.Feature())
 }
+
+func TestWithSkipFlags(t *testing.T) {
+	f := features.New("skip assessment")
+	f.Assess("en", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+		if greet("en") != "Hello" {
+			t.Error("unexpected message: en")
+		}
+		return ctx
+	})
+	f.Assess("es", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+		if greet("es") != "Olá" {
+			t.Error("unexpected message: es")
+		}
+		return ctx
+	})
+
+	test.Test(t, f.Feature())
+}

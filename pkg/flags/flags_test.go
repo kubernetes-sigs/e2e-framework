@@ -27,19 +27,11 @@ func TestParseFlags(t *testing.T) {
 		flags *EnvFlags
 	}{
 		{
-			name:  "with all",
-			args:  []string{"-assess", "volume test", "--feature", "beta", "--labels", "k0=v0, k1=v1, k2=v2", "--skip-labels", "k0=v0, k1=v1"},
-			flags: &EnvFlags{assess: "volume test", feature: "beta", labels: LabelsMap{"k0": "v0", "k1": "v1", "k2": "v2"}, skiplabels: LabelsMap{"k0": "v0", "k1": "v1"}},
-		},
-		{
-			name:  "with skip feature only",
-			args:  []string{"-skip-features", "networking"},
-			flags: &EnvFlags{skipFeatures: "networking"},
-		},
-		{
-			name:  "with skip assesment only",
-			args:  []string{"-skip-assessment", "volume test"},
-			flags: &EnvFlags{skipAssessments: "volume test"},
+			name: "with all",
+			args: []string{"-assess", "volume test", "--feature", "beta", "--labels", "k0=v0, k1=v1, k2=v2", "--skip-labels", "k0=v0, k1=v1",
+				"-skip-features", "networking", "-skip-assessment", "volume test"},
+			flags: &EnvFlags{assess: "volume test", feature: "beta", labels: LabelsMap{"k0": "v0", "k1": "v1", "k2": "v2"},
+				skiplabels: LabelsMap{"k0": "v0", "k1": "v1"}, skipFeatures: "networking", skipAssessments: "volume test"},
 		},
 	}
 
@@ -74,7 +66,7 @@ func TestParseFlags(t *testing.T) {
 			}
 
 			if testFlags.SkipAssessment() != test.flags.SkipAssessment() {
-				t.Errorf("unmatched assesment name for skip: %s", testFlags.SkipFeatures())
+				t.Errorf("unmatched assessment name for skip: %s", testFlags.SkipFeatures())
 			}
 		})
 	}

@@ -54,13 +54,23 @@ func NewFromFlags() (*Config, error) {
 		log.Fatalf("flags parse failed: %s", err)
 	}
 	e := New()
-	e.assessmentRegex = regexp.MustCompile(envFlags.Assessment())
-	e.featureRegex = regexp.MustCompile(envFlags.Feature())
+	if envFlags.Assessment() != "" {
+		e.assessmentRegex = regexp.MustCompile(envFlags.Assessment())
+	}
+	if envFlags.Feature() != "" {
+		e.featureRegex = regexp.MustCompile(envFlags.Feature())
+	}
 	e.labels = envFlags.Labels()
 	e.namespace = envFlags.Namespace()
 	e.kubeconfig = envFlags.Kubeconfig()
-	e.skipFeatureRegex = regexp.MustCompile(envFlags.SkipFeatures())
+	if envFlags.SkipFeatures() != "" {
+		e.skipFeatureRegex = regexp.MustCompile(envFlags.SkipFeatures())
+	}
+	if envFlags.SkipAssessment() != "" {
+		e.skipAssessmentRegex = regexp.MustCompile(envFlags.SkipAssessment())
+	}
 	e.skipLabels = envFlags.SkipLabels()
+
 	return e, nil
 }
 
