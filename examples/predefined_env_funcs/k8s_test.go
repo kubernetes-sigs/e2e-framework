@@ -31,7 +31,7 @@ import (
 func TestKubernetes(t *testing.T) {
 	podFeature := features.New("pod list").
 		Assess("pods from kube-system", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			client, err := cfg.Client()
+			client, err := cfg.NewClient()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -51,7 +51,7 @@ func TestKubernetes(t *testing.T) {
 	// feature uses pre-generated namespace (see TestMain)
 	depFeature := features.New("appsv1/deployment").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			client, err := cfg.Client()
+			client, err := cfg.NewClient()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -64,7 +64,7 @@ func TestKubernetes(t *testing.T) {
 			return ctx
 		}).
 		Assess("deployment creation", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			client, err := cfg.Client()
+			client, err := cfg.NewClient()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -78,7 +78,7 @@ func TestKubernetes(t *testing.T) {
 			return context.WithValue(ctx, "test-deployment", &dep)
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			client, err := cfg.Client()
+			client, err := cfg.NewClient()
 			if err != nil {
 				t.Fatal(err)
 			}

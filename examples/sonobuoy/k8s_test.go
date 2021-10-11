@@ -14,35 +14,35 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package custom_env_funcs
+package sonobuoy
 
 import (
 	"context"
 	"testing"
 
-	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func TestListPods(t *testing.T) {
-	f := features.New("pod list").
-		Assess("pods from kube-system", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			client, err := cfg.NewClient()
-			if err != nil {
-				t.Fatal(err)
+// The following shows an example of a simple
+// test function that reaches out to the API server.
+func TestAPICall(t *testing.T) {
+	feat := features.New("API Feature").
+		WithLabel("type", "API").
+		Assess("test message", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
+			var pods v1.PodList
+			if err := c.Client().Resources("kube-system").List(ctx, &pods); err != nil {
+				t.Error(err)
 			}
-			var pods corev1.PodList
-			err = client.Resources("kube-system").List(context.TODO(), &pods)
-			if err != nil {
-				t.Fatal(err)
-			}
-			t.Logf("found %d pods", len(pods.Items))
+			t.Logf("Got pods %v in namespace", len(pods.Items))
 			if len(pods.Items) == 0 {
-				t.Fatal("no pods in namespace kube-system")
+				t.Errorf("Expected >0 pods in kube-system but got %v", len(pods.Items))
 			}
 			return ctx
-		})
+		}).Feature()
 
-	testenv.Test(t, f.Feature())
+	// testenv is the one global that we rely on; it passes the context
+	//and *envconf.Config to our feature.
+	testenv.Test(t, feat)
 }

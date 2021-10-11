@@ -38,7 +38,7 @@ type namespaceContextKey string
 func CreateNamespace(name string) env.Func {
 	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 		namespace := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: name}}
-		client, err := cfg.Client()
+		client, err := cfg.NewClient()
 		if err != nil {
 			return ctx, fmt.Errorf("create namespace func: %w", err)
 		}
@@ -65,7 +65,7 @@ func DeleteNamespace(name string) env.Func {
 			}
 		}
 
-		client, err := cfg.Client()
+		client, err := cfg.NewClient()
 		if err != nil {
 			return ctx, fmt.Errorf("delete namespace func: %w", err)
 		}

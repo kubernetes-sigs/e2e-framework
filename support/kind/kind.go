@@ -48,7 +48,6 @@ func (k *Cluster) WithVersion(ver string) *Cluster {
 
 func (k *Cluster) Create() (string, error) {
 	log.Println("Creating kind cluster ", k.name)
-	// is kind program available
 	if err := k.findOrInstallKind(k.e); err != nil {
 		return "", err
 	}
@@ -58,7 +57,6 @@ func (k *Cluster) Create() (string, error) {
 		return "", nil
 	}
 
-	// create kind cluster using kind-cluster-docker.yaml config file
 	log.Println("launching: kind create cluster --name", k.name)
 	p := k.e.RunProc(fmt.Sprintf(`kind create cluster --name %s`, k.name))
 	if p.Err() != nil {
@@ -66,11 +64,14 @@ func (k *Cluster) Create() (string, error) {
 	}
 
 	clusters := k.e.Run("kind get clusters")
+	if !strings.Contains(clusters, k.name) {
+		return "", fmt.Errorf("kind Cluster.Create: cluster %v still not in 'cluster list' after creation: %v", k.name, clusters)
+	}
 	log.Println("kind clusters available: ", clusters)
 
-	// grab kubeconfig file for cluster
+	// Grab kubeconfig file for cluster.
 	kubecfg := fmt.Sprintf("%s-kubecfg", k.name)
-	p = k.e.StartProc(fmt.Sprintf(`kind get kubeconfig --name %s`, k.name))
+	p = k.e.RunProc(fmt.Sprintf(`kind get kubeconfig --name %s`, k.name))
 	if p.Err() != nil {
 		return "", fmt.Errorf("kind get kubeconfig: %s: %w", p.Result(), p.Err())
 	}
@@ -83,7 +84,7 @@ func (k *Cluster) Create() (string, error) {
 
 	k.kubecfgFile = file.Name()
 
-	if n, err := io.Copy(file, p.Out()); n == 0 || err != nil {
+	if n, err := io.Copy(file, strings.NewReader(p.Result())); n == 0 || err != nil {
 		return "", fmt.Errorf("kind kubecfg file: bytes copied: %d: %w]", n, err)
 	}
 
@@ -106,10 +107,9 @@ func (k *Cluster) Destroy() error {
 		return err
 	}
 
-	// deleteting kind cluster
 	p := k.e.RunProc(fmt.Sprintf(`kind delete cluster --name %s`, k.name))
 	if p.Err() != nil {
-		return fmt.Errorf("failed to install kind: %s: %s", p.Err(), p.Result())
+		return fmt.Errorf("kind: delete cluster failed: %s: %s", p.Err(), p.Result())
 	}
 
 	log.Println("Removing kubeconfig file ", k.kubecfgFile)
