@@ -29,6 +29,18 @@ import (
 // to caller.
 type EnvFunc func(context.Context, *envconf.Config) (context.Context, error)
 
+// FeatureEnvFunc represents a user-defined operation that
+// can be used to customized the behavior of the
+// environment. Changes to context are expected to surface
+// to caller. Meant for use with before/after feature hooks.
+type FeatureEnvFunc func(context.Context, *envconf.Config, FeatureInfo) (context.Context, error)
+
+// TestEnvFunc represents a user-defined operation that
+// can be used to customized the behavior of the
+// environment. Changes to context are expected to surface
+// to caller. Meant for use with before/after test hooks.
+type TestEnvFunc func(context.Context, *envconf.Config, *testing.T) (context.Context, error)
+
 // Environment represents an environment where
 // features can be tested.
 type Environment interface {
@@ -41,15 +53,15 @@ type Environment interface {
 
 	// BeforeEachTest registers environment funcs that are executed
 	// before each Env.Test(...)
-	BeforeEachTest(...EnvFunc) Environment
+	BeforeEachTest(...TestEnvFunc) Environment
 
 	// BeforeEachFeature registers step functions that are executed
 	// before each Feature is tested during env.Test call.
-	BeforeEachFeature(...EnvFunc) Environment
+	BeforeEachFeature(...FeatureEnvFunc) Environment
 
 	// AfterEachFeature registers step functions that are executed
 	// after each feature is tested during an env.Test call.
-	AfterEachFeature(...EnvFunc) Environment
+	AfterEachFeature(...FeatureEnvFunc) Environment
 
 	// Test executes a test feature defined in a TestXXX function
 	// This method surfaces context for further updates.
@@ -57,7 +69,7 @@ type Environment interface {
 
 	// AfterEachTest registers environment funcs that are executed
 	// after each Env.Test(...).
-	AfterEachTest(...EnvFunc) Environment
+	AfterEachTest(...TestEnvFunc) Environment
 
 	// Finish registers funcs that are executed at the end of the
 	// test suite.
@@ -76,6 +88,12 @@ type Feature interface {
 	Labels() Labels
 	// Steps testing tasks to test the feature
 	Steps() []Step
+}
+
+type FeatureInfo struct {
+	Name   string
+	Labels map[string]string
+	Steps  []Step
 }
 
 type Level uint8

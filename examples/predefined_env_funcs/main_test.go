@@ -39,6 +39,8 @@ func TestMain(m *testing.M) {
 		envfuncs.CreateNamespace(namespace),
 	)
 
+	testenv.BeforeEachTest()
+
 	// Finish uses pre-defined funcs to
 	// remove namespace, then delete cluster
 	testenv.Finish(
