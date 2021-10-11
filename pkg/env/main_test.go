@@ -28,12 +28,12 @@ import (
 
 var envForTesting types.Environment
 
-type ctxTestKeyInt struct{}
+type ctxTestKeyString struct{}
 
 func TestMain(m *testing.M) {
 	// setup new environment test with injected context value
-	initialVal := 22
-	env, err := NewWithContext(context.WithValue(context.Background(), &ctxTestKeyInt{}, initialVal), envconf.New())
+	initialVal := []string{}
+	env, err := NewWithContext(context.WithValue(context.Background(), &ctxTestKeyString{}, initialVal), envconf.New())
 	if err != nil {
 		log.Fatalf("Test suite failed to start: %s", err)
 	}
@@ -43,37 +43,37 @@ func TestMain(m *testing.M) {
 	// each func will update value inside context
 	envForTesting.Setup(
 		func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
-			val, ok := ctx.Value(&ctxTestKeyInt{}).(int)
+			val, ok := ctx.Value(&ctxTestKeyString{}).([]string)
 			if !ok {
-				log.Fatal("context value was not of expected type int or nil")
+				log.Fatal("context value was not of expected type []string or nil")
 			}
-			val *= 2 // 44
-			return context.WithValue(ctx, &ctxTestKeyInt{}, val), nil
+			val = append(val, "setup-1")
+			return context.WithValue(ctx, &ctxTestKeyString{}, val), nil
 		},
 		func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
-			val, ok := ctx.Value(&ctxTestKeyInt{}).(int)
+			val, ok := ctx.Value(&ctxTestKeyString{}).([]string)
 			if !ok {
-				log.Fatal("context value was not of expected type int or nil")
+				log.Fatal("context value was not of expected type []string or nil")
 			}
-			val *= 2 // 88
-			return context.WithValue(ctx, &ctxTestKeyInt{}, val), nil
+			val = append(val, "setup-2")
+			return context.WithValue(ctx, &ctxTestKeyString{}, val), nil
 		},
 	).BeforeEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 		// update before each test
-		val, ok := ctx.Value(&ctxTestKeyInt{}).(int)
+		val, ok := ctx.Value(&ctxTestKeyString{}).([]string)
 		if !ok {
-			log.Fatal("context value was not of expected type int or nil")
+			log.Fatal("context value was not of expected type []string or nil")
 		}
-		val += 2 // 90
-		return context.WithValue(ctx, &ctxTestKeyInt{}, val), nil
+		val = append(val, "before-each-test")
+		return context.WithValue(ctx, &ctxTestKeyString{}, val), nil
 	}).AfterEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 		// update after the test
-		val, ok := ctx.Value(&ctxTestKeyInt{}).(int)
+		val, ok := ctx.Value(&ctxTestKeyString{}).([]string)
 		if !ok {
-			log.Fatal("context value was not of expected type int or nil")
+			log.Fatal("context value was not of expected type []string] or nil")
 		}
-		val--
-		return context.WithValue(ctx, &ctxTestKeyInt{}, val), nil
+		val = append(val, "after-each-test")
+		return context.WithValue(ctx, &ctxTestKeyString{}, val), nil
 	})
 
 	os.Exit(envForTesting.Run(m))
