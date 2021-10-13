@@ -27,11 +27,9 @@ func TestParseFlags(t *testing.T) {
 		flags *EnvFlags
 	}{
 		{
-			name: "with all",
-			args: []string{"-assess", "volume test", "--feature", "beta", "--labels", "k0=v0, k1=v1, k2=v2", "--skip-labels", "k0=v0, k1=v1",
-				"-skip-features", "networking", "-skip-assessment", "volume test"},
-			flags: &EnvFlags{assess: "volume test", feature: "beta", labels: LabelsMap{"k0": "v0", "k1": "v1", "k2": "v2"},
-				skiplabels: LabelsMap{"k0": "v0", "k1": "v1"}, skipFeatures: "networking", skipAssessments: "volume test"},
+			name:  "with all",
+			args:  []string{"-assess", "volume test", "--feature", "beta", "--labels", "k0=v0, k1=v1, k2=v2", "--skip-labels", "k0=v0, k1=v1", "-skip-features", "networking", "-skip-assessment", "volume test"},
+			flags: &EnvFlags{assess: "volume test", feature: "beta", labels: LabelsMap{"k0": "v0", "k1": "v1", "k2": "v2"}, skiplabels: LabelsMap{"k0": "v0", "k1": "v1"}, skipFeatures: "networking", skipAssessments: "volume test"},
 		},
 	}
 
