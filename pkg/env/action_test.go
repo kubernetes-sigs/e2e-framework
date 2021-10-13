@@ -35,7 +35,7 @@ func TestAction_Run(t *testing.T) {
 	}{
 		{
 			name: "single-step action",
-			ctx:  context.WithValue(context.TODO(), &ctxTestKeyInt{}, 1),
+			ctx:  context.WithValue(context.TODO(), &ctxTestKeyString{}, 1),
 			setup: func(ctx context.Context, cfg *envconf.Config) (val int, err error) {
 				funcs := []types.EnvFunc{
 					func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
@@ -50,7 +50,7 @@ func TestAction_Run(t *testing.T) {
 		},
 		{
 			name: "multi-step action",
-			ctx:  context.WithValue(context.TODO(), &ctxTestKeyInt{}, 1),
+			ctx:  context.WithValue(context.TODO(), &ctxTestKeyString{}, 1),
 			setup: func(ctx context.Context, cfg *envconf.Config) (val int, err error) {
 				funcs := []types.EnvFunc{
 					func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
@@ -69,11 +69,11 @@ func TestAction_Run(t *testing.T) {
 		},
 		{
 			name: "read from context",
-			ctx:  context.WithValue(context.TODO(), &ctxTestKeyInt{}, 1),
+			ctx:  context.WithValue(context.TODO(), &ctxTestKeyString{}, 1),
 			setup: func(ctx context.Context, cfg *envconf.Config) (val int, err error) {
 				funcs := []types.EnvFunc{
 					func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
-						i := ctx.Value(&ctxTestKeyInt{}).(int) + 2
+						i := ctx.Value(&ctxTestKeyString{}).(int) + 2
 						val = i
 						return ctx, nil
 					},

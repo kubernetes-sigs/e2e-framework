@@ -33,7 +33,7 @@ import (
 func TestCreate(t *testing.T) {
 	res, err := New(cfg)
 	if err != nil {
-		t.Errorf("config is nil")
+		t.Fatalf("error creating new config: %v", err)
 	}
 
 	// create a namespace
