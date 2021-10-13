@@ -28,8 +28,8 @@ func TestParseFlags(t *testing.T) {
 	}{
 		{
 			name:  "with all",
-			args:  []string{"-assess", "volume test", "--feature", "beta", "--labels", "k0=v0, k1=v1, k2=v2"},
-			flags: &EnvFlags{assess: "volume test", feature: "beta", labels: LabelsMap{"k0": "v0", "k1": "v1", "k2": "v2"}},
+			args:  []string{"-assess", "volume test", "--feature", "beta", "--labels", "k0=v0, k1=v1, k2=v2", "--skip-labels", "k0=v0, k1=v1", "-skip-features", "networking", "-skip-assessment", "volume test"},
+			flags: &EnvFlags{assess: "volume test", feature: "beta", labels: LabelsMap{"k0": "v0", "k1": "v1", "k2": "v2"}, skiplabels: LabelsMap{"k0": "v0", "k1": "v1"}, skipFeatures: "networking", skipAssessments: "volume test"},
 		},
 	}
 
@@ -39,6 +39,7 @@ func TestParseFlags(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			if testFlags.Feature() != test.flags.Feature() {
 				t.Errorf("unmatched feature: %s; %s", testFlags.Feature(), test.flags.Feature())
 			}
@@ -50,6 +51,20 @@ func TestParseFlags(t *testing.T) {
 				if test.flags.Labels()[k] != v {
 					t.Errorf("unmatched label %s=%s", k, test.flags.Labels()[k])
 				}
+			}
+
+			for k, v := range testFlags.SkipLabels() {
+				if test.flags.SkipLabels()[k] != v {
+					t.Errorf("unmatched skip label %s=%s", k, test.flags.SkipLabels()[k])
+				}
+			}
+
+			if testFlags.SkipFeatures() != test.flags.SkipFeatures() {
+				t.Errorf("unmatched feature for skip: %s", testFlags.SkipFeatures())
+			}
+
+			if testFlags.SkipAssessment() != test.flags.SkipAssessment() {
+				t.Errorf("unmatched assessment name for skip: %s", testFlags.SkipFeatures())
 			}
 		})
 	}

@@ -289,7 +289,12 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, f types.Feature
 
 	// feature-level subtest
 	t.Run(featName, func(t *testing.T) {
-		// skip if feature name does not match
+		// skip feature which matches with --skip-feature
+		if e.cfg.SkipFeatureRegex() != nil && e.cfg.SkipFeatureRegex().MatchString(featName) {
+			t.Skipf(`Skipping feature "%s": name matched`, featName)
+		}
+
+		// skip feature which does not match with --feature
 		if e.cfg.FeatureRegex() != nil && !e.cfg.FeatureRegex().MatchString(featName) {
 			t.Skipf(`Skipping feature "%s": name not matched`, featName)
 		}
@@ -299,6 +304,13 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, f types.Feature
 		for k, v := range e.cfg.Labels() {
 			if f.Labels()[k] != v {
 				t.Skipf(`Skipping feature "%s": unmatched label "%s=%s"`, featName, k, f.Labels()[k])
+			}
+		}
+
+		// skip running a feature if labels matches with --skip-labels
+		for k, v := range e.cfg.SkipLabels() {
+			if f.Labels()[k] == v {
+				t.Skipf(`Skipping feature "%s": matched label provided in --skip-lables "%s=%s"`, featName, k, f.Labels()[k])
 			}
 		}
 
@@ -313,6 +325,12 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, f types.Feature
 
 		for _, assess := range assessments {
 			t.Run(assess.Name(), func(t *testing.T) {
+				// skip assessments which matches with --skip-assessments
+				if e.cfg.SkipAssessmentRegex() != nil && e.cfg.SkipAssessmentRegex().MatchString(assess.Name()) {
+					t.Skipf(`Skipping assessment "%s": name matched`, assess.Name())
+				}
+
+				// skip assessments which does not matches with --assess
 				if e.cfg.AssessmentRegex() != nil && !e.cfg.AssessmentRegex().MatchString(assess.Name()) {
 					t.Skipf(`Skipping assessment "%s": name not matched`, assess.Name())
 				}

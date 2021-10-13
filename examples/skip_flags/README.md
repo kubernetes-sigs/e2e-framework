@@ -11,12 +11,12 @@ To drive your tests with CLI flags, you must initialize a test environment using
 var test env.Environment
 
 func TestMain(m *testing.M) {
-    cfg, err := envconf.NewFromFlags()
-    if err != nil {
-    	log.Fatalf("envconf failed: %s", err)
-    }
+    // parse and load flags to configure environment
+	cfg, err := envconf.NewFromFlags()
+	if err != nil {
+		
     test = env.NewWithConfig(cfg)
-    os.Exit(test.Run(m))
+    ...
 }
 ```
 
@@ -38,23 +38,23 @@ There are several supported flags (for more accurate list, see package `pkg/flag
 The tests can be executed using the normal `go test` tools steps. For instance, to pass the flags to your tests, do the followings:
 
 ```shell
-go test -v . -args --assess en
+go test -v . -args --skip-features "pod list"
 ```
 
 You can also build a test binary, then pass the CLI flags to the binary. First, compile the test binary:
 
 ```shell
-go test -c -o flags.test .
+go test -c -o skipflags.test .
 ```
 
 Then execute the test binary passing the CLI arguments:
 
 ```shell
-./flags.test --assess en
+./skipflags.test --labels "env=dev"
 ```
 
-To skip a particular assessment , do the following
+To skip a particular labeled feature , do the following
 
 ```shell
-./flags.test --skip-assessment en
+./skipflags.test --skip-labels "env=prod"
 ```

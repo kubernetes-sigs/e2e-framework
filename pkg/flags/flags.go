@@ -24,11 +24,14 @@ import (
 )
 
 const (
-	flagNamespaceName = "namespace"
-	flagKubecofigName = "kubeconfig"
-	flagFeatureName   = "feature"
-	flagAssessName    = "assess"
-	flagLabelsName    = "labels"
+	flagNamespaceName      = "namespace"
+	flagKubecofigName      = "kubeconfig"
+	flagFeatureName        = "feature"
+	flagAssessName         = "assess"
+	flagLabelsName         = "labels"
+	flagSkipLabelName      = "skip-labels"
+	flagSkipFeatureName    = "skip-features"
+	flagSkipAssessmentName = "skip-assessment"
 )
 
 // Supported flag definitions
@@ -53,17 +56,30 @@ var (
 		Name:  flagNamespaceName,
 		Usage: "A namespace value to use for testing (optional)",
 	}
+	skipLabelsFlag = flag.Flag{
+		Name:  flagSkipLabelName,
+		Usage: "Regular expression to skip label(s) to run",
+	}
+	skipFeatureFlag = flag.Flag{
+		Name:  flagSkipFeatureName,
+		Usage: "Regular expression to skip feature(s) to run",
+	}
+	skipAssessmentFlag = flag.Flag{
+		Name:  flagSkipAssessmentName,
+		Usage: "Regular expression to skip assessment(s) to run",
+	}
 )
 
 // EnvFlags surfaces all resolved flag values for the testing framework
 type EnvFlags struct {
-	feature string
-	assess  string
-	labels  LabelsMap
-
-	// optional kube flags
-	kubeconfig string
-	namespace  string
+	feature         string
+	assess          string
+	labels          LabelsMap
+	kubeconfig      string
+	namespace       string
+	skiplabels      LabelsMap
+	skipFeatures    string
+	skipAssessments string
 }
 
 // Feature returns value for `-feature` flag
@@ -86,6 +102,18 @@ func (f *EnvFlags) Namespace() string {
 	return f.namespace
 }
 
+func (f *EnvFlags) SkipFeatures() string {
+	return f.skipFeatures
+}
+
+func (f *EnvFlags) SkipAssessment() string {
+	return f.skipAssessments
+}
+
+func (f *EnvFlags) SkipLabels() LabelsMap {
+	return f.skiplabels
+}
+
 // Kubeconfig returns an optional path for kubeconfig file
 func (f *EnvFlags) Kubeconfig() string {
 	return f.kubeconfig
@@ -99,11 +127,17 @@ func Parse() (*EnvFlags, error) {
 // ParseArgs parses the specified args from global flag.CommandLine
 // and returns a set of environment flag values.
 func ParseArgs(args []string) (*EnvFlags, error) {
-	var feature string
-	var assess string
+	var (
+		feature        string
+		assess         string
+		namespace      string
+		kubeconfig     string
+		skipFeature    string
+		skipAssessment string
+	)
+
 	labels := make(LabelsMap)
-	var namespace string
-	var kubeconfig string
+	skipLabels := make(LabelsMap)
 
 	if flag.Lookup(featureFlag.Name) == nil {
 		flag.StringVar(&feature, featureFlag.Name, featureFlag.DefValue, featureFlag.Usage)
@@ -125,11 +159,32 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 		flag.Var(&labels, labelsFlag.Name, labelsFlag.Usage)
 	}
 
+	if flag.Lookup(skipLabelsFlag.Name) == nil {
+		flag.Var(&skipLabels, skipLabelsFlag.Name, skipLabelsFlag.Usage)
+	}
+
+	if flag.Lookup(skipAssessmentFlag.Name) == nil {
+		flag.StringVar(&skipAssessment, skipAssessmentFlag.Name, skipAssessmentFlag.DefValue, skipAssessmentFlag.Usage)
+	}
+
+	if flag.Lookup(skipFeatureFlag.Name) == nil {
+		flag.StringVar(&skipFeature, skipFeatureFlag.Name, skipFeatureFlag.DefValue, skipFeatureFlag.Usage)
+	}
+
 	if err := flag.CommandLine.Parse(args); err != nil {
 		return nil, fmt.Errorf("flags parsing: %w", err)
 	}
 
-	return &EnvFlags{feature: feature, assess: assess, labels: labels, namespace: namespace, kubeconfig: kubeconfig}, nil
+	return &EnvFlags{
+		feature:         feature,
+		assess:          assess,
+		labels:          labels,
+		namespace:       namespace,
+		kubeconfig:      kubeconfig,
+		skiplabels:      skipLabels,
+		skipFeatures:    skipFeature,
+		skipAssessments: skipAssessment,
+	}, nil
 }
 
 type LabelsMap map[string]string

@@ -30,12 +30,15 @@ import (
 
 // Config represents and environment configuration
 type Config struct {
-	kubeconfig      string
-	client          klient.Client
-	namespace       string
-	assessmentRegex *regexp.Regexp
-	featureRegex    *regexp.Regexp
-	labels          map[string]string
+	client              klient.Client
+	kubeconfig          string
+	namespace           string
+	assessmentRegex     *regexp.Regexp
+	featureRegex        *regexp.Regexp
+	labels              map[string]string
+	skipFeatureRegex    *regexp.Regexp
+	skipLabels          map[string]string
+	skipAssessmentRegex *regexp.Regexp
 }
 
 // New creates and initializes an empty environment configuration
@@ -51,11 +54,23 @@ func NewFromFlags() (*Config, error) {
 		log.Fatalf("flags parse failed: %s", err)
 	}
 	e := New()
-	e.assessmentRegex = regexp.MustCompile(envFlags.Assessment())
-	e.featureRegex = regexp.MustCompile(envFlags.Feature())
+	if envFlags.Assessment() != "" {
+		e.assessmentRegex = regexp.MustCompile(envFlags.Assessment())
+	}
+	if envFlags.Feature() != "" {
+		e.featureRegex = regexp.MustCompile(envFlags.Feature())
+	}
 	e.labels = envFlags.Labels()
 	e.namespace = envFlags.Namespace()
 	e.kubeconfig = envFlags.Kubeconfig()
+	if envFlags.SkipFeatures() != "" {
+		e.skipFeatureRegex = regexp.MustCompile(envFlags.SkipFeatures())
+	}
+	if envFlags.SkipAssessment() != "" {
+		e.skipAssessmentRegex = regexp.MustCompile(envFlags.SkipAssessment())
+	}
+	e.skipLabels = envFlags.SkipLabels()
+
 	return e, nil
 }
 
@@ -124,6 +139,17 @@ func (c *Config) AssessmentRegex() *regexp.Regexp {
 	return c.assessmentRegex
 }
 
+// WithSkipAssessmentRegex sets the environment assessment regex filter
+func (c *Config) WithSkipAssessmentRegex(regex string) *Config {
+	c.skipAssessmentRegex = regexp.MustCompile(regex)
+	return c
+}
+
+// SkipAssessmentRegex returns the environment assessment filter
+func (c *Config) SkipAssessmentRegex() *regexp.Regexp {
+	return c.skipAssessmentRegex
+}
+
 // WithFeatureRegex sets the environment's feature regex filter
 func (c *Config) WithFeatureRegex(regex string) *Config {
 	c.featureRegex = regexp.MustCompile(regex)
@@ -135,6 +161,17 @@ func (c *Config) FeatureRegex() *regexp.Regexp {
 	return c.featureRegex
 }
 
+// WithSkipFeatureRegex sets the environment's skip feature regex filter
+func (c *Config) WithSkipFeatureRegex(regex string) *Config {
+	c.skipFeatureRegex = regexp.MustCompile(regex)
+	return c
+}
+
+// SkipFeatureRegex returns the environment's skipfeature regex filter
+func (c *Config) SkipFeatureRegex() *regexp.Regexp {
+	return c.skipFeatureRegex
+}
+
 // WithLabels sets the environment label filters
 func (c *Config) WithLabels(lbls map[string]string) *Config {
 	c.labels = lbls
@@ -144,6 +181,17 @@ func (c *Config) WithLabels(lbls map[string]string) *Config {
 // Labels returns the environment's label filters
 func (c *Config) Labels() map[string]string {
 	return c.labels
+}
+
+// WithSkipLabels sets the environment label filters
+func (c *Config) WithSkipLabels(lbls map[string]string) *Config {
+	c.skipLabels = lbls
+	return c
+}
+
+// SkipLabels returns the environment's label filters
+func (c *Config) SkipLabels() map[string]string {
+	return c.skipLabels
 }
 
 func randNS() string {
