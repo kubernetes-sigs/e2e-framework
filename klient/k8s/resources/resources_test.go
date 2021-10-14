@@ -33,7 +33,7 @@ import (
 func TestCreate(t *testing.T) {
 	res, err := New(cfg)
 	if err != nil {
-		t.Fatalf("error creating new config: %v", err)
+		t.Fatalf("Error creating new resources object: %v", err)
 	}
 
 	// create a namespace
@@ -56,7 +56,7 @@ func TestCreate(t *testing.T) {
 func TestRes(t *testing.T) {
 	res, err := New(cfg)
 	if err != nil {
-		t.Errorf("config is nil")
+		t.Fatalf("Error creating new resources object: %v", err)
 	}
 
 	err = res.Create(context.TODO(), dep)
@@ -105,7 +105,7 @@ func TestResInvalidConfig(t *testing.T) {
 func TestUpdate(t *testing.T) {
 	res, err := New(cfg)
 	if err != nil {
-		t.Errorf("config is nil")
+		t.Fatalf("Error creating new resources object: %v", err)
 	}
 
 	depActual := getDeployment("update-test-dep-name")
@@ -140,7 +140,7 @@ func TestUpdate(t *testing.T) {
 func TestDelete(t *testing.T) {
 	res, err := New(cfg)
 	if err != nil {
-		t.Errorf("config is nil")
+		t.Fatalf("Error creating new resources object: %v", err)
 	}
 
 	depActual := getDeployment("delete-test-dep-name")
@@ -159,7 +159,7 @@ func TestDelete(t *testing.T) {
 func TestList(t *testing.T) {
 	res, err := New(cfg)
 	if err != nil {
-		t.Errorf("config is nill")
+		t.Fatalf("Error creating new resources object: %v", err)
 	}
 
 	deps := &appsv1.DeploymentList{}
@@ -188,7 +188,7 @@ func TestList(t *testing.T) {
 func TestPatch(t *testing.T) {
 	res, err := New(cfg)
 	if err != nil {
-		t.Errorf("config is nill")
+		t.Fatalf("Error creating new resources object: %v", err)
 	}
 
 	mergePatch, err := json.Marshal(map[string]interface{}{
@@ -221,7 +221,7 @@ func TestPatch(t *testing.T) {
 func TestListAllPods(t *testing.T) {
 	res, err := New(cfg)
 	if err != nil {
-		t.Errorf("config is nill")
+		t.Fatalf("Error creating new resources object: %v", err)
 	}
 
 	pods := &corev1.PodList{}

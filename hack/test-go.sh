@@ -36,6 +36,7 @@ done
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "${REPO_ROOT}"
 
-# not testing the examples right now
-GO111MODULE=on go test -v -timeout="${TEST_TIMEOUT}s" -count=1 -cover -coverprofile coverage.out $(go list ./...)
+# Ensure -p=1 to avoid packages running concurrently which may all try and install kind at the same time or race for
+# use of the kind binary.
+GO111MODULE=on go test -v -p=1 -timeout="${TEST_TIMEOUT}s" -count=1 -cover -coverprofile coverage.out $(go list ./...)
 go tool cover -html coverage.out -o coverage.html
