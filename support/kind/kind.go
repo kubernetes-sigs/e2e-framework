@@ -145,6 +145,12 @@ func (k *Cluster) installKind(e *gexe.Echo) error {
 		return fmt.Errorf("failed to install kind: %s", p.Result())
 	}
 
+	// PATH may already be set to include $GOPATH/bin so we don't need to.
+	if kindPath := e.Prog().Avail("kind"); kindPath != "" {
+		log.Println("installed kind at", kindPath)
+		return nil
+	}
+
 	p = e.RunProc("ls $GOPATH/bin")
 	if p.Err() != nil {
 		return fmt.Errorf("failed to install kind: %s", p.Err())
@@ -155,7 +161,12 @@ func (k *Cluster) installKind(e *gexe.Echo) error {
 		return fmt.Errorf("failed to install kind: %s", p.Err())
 	}
 
+	log.Println(`Setting path to include $GOPATH/bin:`, p.Result())
 	e.SetEnv("PATH", p.Result())
 
-	return nil
+	if kindPath := e.Prog().Avail("kind"); kindPath != "" {
+		log.Println("installed kind at", kindPath)
+		return nil
+	}
+	return fmt.Errorf("kind not available even after installation")
 }
