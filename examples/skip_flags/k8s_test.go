@@ -32,7 +32,7 @@ func TestSkipFlags(t *testing.T) {
 	podFeature := features.New("pod list").WithLabel("env", "prod").
 		Assess("pods from kube-system", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			var pods corev1.PodList
-			client, err := cfg.Client()
+			client, err := cfg.NewClient()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -52,7 +52,7 @@ func TestSkipFlags(t *testing.T) {
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			// insert a deployment
 			deployment := newDeployment(cfg.Namespace(), "test-deployment", 1)
-			client, err := cfg.Client()
+			client, err := cfg.NewClient()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -65,7 +65,7 @@ func TestSkipFlags(t *testing.T) {
 		}).
 		Assess("deployment creation", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			var dep appsv1.Deployment
-			client, err := cfg.Client()
+			client, err := cfg.NewClient()
 			if err != nil {
 				t.Fatal(err)
 			}

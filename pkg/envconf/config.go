@@ -46,6 +46,12 @@ func New() *Config {
 	return &Config{}
 }
 
+// NewWithKubeConfig creates and initializes an empty environment configuration
+func NewWithKubeConfig(kubeconfig string) *Config {
+	c := &Config{}
+	return c.WithKubeconfigFile(kubeconfig)
+}
+
 // NewFromFlags initializes an environment config using flag values
 // parsed from command-line arguments and returns an error on parsing failure.
 func NewFromFlags() (*Config, error) {
@@ -90,16 +96,12 @@ func (c *Config) WithClient(client klient.Client) *Config {
 	return c
 }
 
-// Client is a constructor function that returns a previously
+// NewClient is a constructor function that returns a previously
 // created klient.Client or create a new one based on configuration
-// previously set
-func (c *Config) Client() (klient.Client, error) {
+// previously set. Will return an error if unable to do so.
+func (c *Config) NewClient() (klient.Client, error) {
 	if c.client != nil {
 		return c.client, nil
-	}
-
-	if c.kubeconfig == "" {
-		return nil, fmt.Errorf("kubeconfig not set")
 	}
 
 	client, err := klient.NewWithKubeConfigFile(c.kubeconfig)
@@ -108,6 +110,24 @@ func (c *Config) Client() (klient.Client, error) {
 	}
 	c.client = client
 	return c.client, nil
+}
+
+// Client is a constructor function that returns a previously
+// created klient.Client or create a new one based on configuration
+// previously set. Willpanic on any error so it recommended that you
+// are confident in the configuration or call NewClient() to ensure its
+// safe creation.
+func (c *Config) Client() klient.Client {
+	if c.client != nil {
+		return c.client
+	}
+
+	client, err := klient.NewWithKubeConfigFile(c.kubeconfig)
+	if err != nil {
+		panic(fmt.Errorf("envconfig: client failed: %w", err).Error())
+	}
+	c.client = client
+	return c.client
 }
 
 // WithNamespace updates the environment namespace value

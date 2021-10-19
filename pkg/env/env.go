@@ -54,6 +54,24 @@ func NewWithConfig(cfg *envconf.Config) types.Environment {
 	return env
 }
 
+// NewWithKubeConfig creates an environment using an Environment Configuration value
+// and the given kubeconfig.
+func NewWithKubeConfig(kubeconfigfile string) types.Environment {
+	env := newTestEnv()
+	cfg := envconf.NewWithKubeConfig(kubeconfigfile)
+	env.cfg = cfg
+	return env
+}
+
+// NewInClusterConfig creates an environment using an Environment Configuration value
+// and assumes an in-cluster kubeconfig.
+func NewInClusterConfig() types.Environment {
+	env := newTestEnv()
+	cfg := envconf.NewWithKubeConfig("")
+	env.cfg = cfg
+	return env
+}
+
 // NewWithContext creates a new environment with the provided context and config.
 func NewWithContext(ctx context.Context, cfg *envconf.Config) (types.Environment, error) {
 	if ctx == nil {
