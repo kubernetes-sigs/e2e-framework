@@ -43,7 +43,7 @@ func TestAction_Run(t *testing.T) {
 						return ctx, nil
 					},
 				}
-				_, err = action{role: roleSetup, funcs: funcs}.run(ctx, cfg)
+				_, err = (&action{role: roleSetup, funcs: funcs}).run(ctx, cfg)
 				return
 			},
 			expected: 12,
@@ -62,7 +62,7 @@ func TestAction_Run(t *testing.T) {
 						return ctx, nil
 					},
 				}
-				_, err = action{role: roleSetup, funcs: funcs}.run(ctx, cfg)
+				_, err = (&action{role: roleSetup, funcs: funcs}).run(ctx, cfg)
 				return
 			},
 			expected: 24,
@@ -82,7 +82,7 @@ func TestAction_Run(t *testing.T) {
 						return ctx, nil
 					},
 				}
-				_, err = action{role: roleSetup, funcs: funcs}.run(ctx, cfg)
+				_, err = (&action{role: roleSetup, funcs: funcs}).run(ctx, cfg)
 				return
 			},
 			expected: 6,

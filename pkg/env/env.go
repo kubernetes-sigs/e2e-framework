@@ -32,6 +32,7 @@ import (
 type (
 	Environment = types.Environment
 	Func        = types.EnvFunc
+	FeatureFunc = types.FeatureEnvFunc
 
 	actionRole uint8
 )
@@ -116,41 +117,41 @@ func (e *testEnv) Setup(funcs ...Func) types.Environment {
 
 // BeforeEachTest registers environment funcs that are executed
 // before each Env.Test(...)
-func (e *testEnv) BeforeEachTest(funcs ...Func) types.Environment {
+func (e *testEnv) BeforeEachTest(funcs ...types.TestEnvFunc) types.Environment {
 	if len(funcs) == 0 {
 		return e
 	}
-	e.actions = append(e.actions, action{role: roleBeforeTest, funcs: funcs})
+	e.actions = append(e.actions, action{role: roleBeforeTest, testFuncs: funcs})
 	return e
 }
 
 // BeforeEachFeature registers step functions that are executed
 // before each Feature is tested during env.Test call.
-func (e *testEnv) BeforeEachFeature(funcs ...Func) types.Environment {
+func (e *testEnv) BeforeEachFeature(funcs ...FeatureFunc) types.Environment {
 	if len(funcs) == 0 {
 		return e
 	}
-	e.actions = append(e.actions, action{role: roleBeforeFeature, funcs: funcs})
+	e.actions = append(e.actions, action{role: roleBeforeFeature, featureFuncs: funcs})
 	return e
 }
 
 // AfterEachFeature registers step functions that are executed
 // after each feature is tested during an env.Test call.
-func (e *testEnv) AfterEachFeature(funcs ...Func) types.Environment {
+func (e *testEnv) AfterEachFeature(funcs ...FeatureFunc) types.Environment {
 	if len(funcs) == 0 {
 		return e
 	}
-	e.actions = append(e.actions, action{role: roleAfterFeature, funcs: funcs})
+	e.actions = append(e.actions, action{role: roleAfterFeature, featureFuncs: funcs})
 	return e
 }
 
 // AfterEachTest registers environment funcs that are executed
 // after each Env.Test(...).
-func (e *testEnv) AfterEachTest(funcs ...Func) types.Environment {
+func (e *testEnv) AfterEachTest(funcs ...types.TestEnvFunc) types.Environment {
 	if len(funcs) == 0 {
 		return e
 	}
-	e.actions = append(e.actions, action{role: roleAfterTest, funcs: funcs})
+	e.actions = append(e.actions, action{role: roleAfterTest, testFuncs: funcs})
 	return e
 }
 
@@ -180,7 +181,7 @@ func (e *testEnv) Test(t *testing.T, testFeatures ...types.Feature) {
 	beforeTestActions := e.getBeforeTestActions()
 	var err error
 	for _, action := range beforeTestActions {
-		if e.ctx, err = action.run(e.ctx, e.cfg); err != nil {
+		if e.ctx, err = action.runWithT(e.ctx, e.cfg, t); err != nil {
 			t.Fatalf("BeforeEachTest failure: %s", err)
 		}
 	}
@@ -191,7 +192,7 @@ func (e *testEnv) Test(t *testing.T, testFeatures ...types.Feature) {
 	for _, feature := range testFeatures {
 		// execute beforeFeature actions
 		for _, action := range beforeFeatureActions {
-			if e.ctx, err = action.run(e.ctx, e.cfg); err != nil {
+			if e.ctx, err = action.runWithFeature(e.ctx, e.cfg, featureInfoFromFeature(feature)); err != nil {
 				t.Fatalf("BeforeEachTest failure: %s", err)
 			}
 		}
@@ -201,7 +202,7 @@ func (e *testEnv) Test(t *testing.T, testFeatures ...types.Feature) {
 
 		// execute beforeFeature actions
 		for _, action := range afterFeatureActions {
-			if e.ctx, err = action.run(e.ctx, e.cfg); err != nil {
+			if e.ctx, err = action.runWithFeature(e.ctx, e.cfg, featureInfoFromFeature(feature)); err != nil {
 				t.Fatalf("BeforeEachTest failure: %s", err)
 			}
 		}
@@ -210,7 +211,7 @@ func (e *testEnv) Test(t *testing.T, testFeatures ...types.Feature) {
 	// execute afterTest functions
 	afterTestActions := e.getAfterTestActions()
 	for _, action := range afterTestActions {
-		if e.ctx, err = action.run(e.ctx, e.cfg); err != nil {
+		if e.ctx, err = action.runWithT(e.ctx, e.cfg, t); err != nil {
 			t.Fatalf("AfterEachTest failure: %s", err)
 		}
 	}
@@ -364,4 +365,14 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, f types.Feature
 	})
 
 	return ctx
+}
+
+// featureInfoFromFeature just copies the values from the Feature but, as a new type,
+// it has less risk of abuse and side-effects. Meant to solely be informational.
+func featureInfoFromFeature(f types.Feature) types.FeatureInfo {
+	return types.FeatureInfo{
+		Name:   f.Name(),
+		Labels: f.Labels(),
+		Steps:  f.Steps(),
+	}
 }

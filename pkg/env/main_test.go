@@ -58,7 +58,7 @@ func TestMain(m *testing.M) {
 			val = append(val, "setup-2")
 			return context.WithValue(ctx, &ctxTestKeyString{}, val), nil
 		},
-	).BeforeEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+	).BeforeEachTest(func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
 		// update before each test
 		val, ok := ctx.Value(&ctxTestKeyString{}).([]string)
 		if !ok {
@@ -66,7 +66,7 @@ func TestMain(m *testing.M) {
 		}
 		val = append(val, "before-each-test")
 		return context.WithValue(ctx, &ctxTestKeyString{}, val), nil
-	}).AfterEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+	}).AfterEachTest(func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
 		// update after the test
 		val, ok := ctx.Value(&ctxTestKeyString{}).([]string)
 		if !ok {

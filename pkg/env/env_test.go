@@ -22,6 +22,7 @@ import (
 
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
+	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
 
 func TestEnv_New(t *testing.T) {
@@ -69,7 +70,7 @@ func TestEnv_APIMethods(t *testing.T) {
 			name: "before actions",
 			setup: func(t *testing.T) *testEnv {
 				env := newTestEnv()
-				env.BeforeEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				env.BeforeEachTest(func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
 					return ctx, nil
 				})
 				return env
@@ -80,7 +81,7 @@ func TestEnv_APIMethods(t *testing.T) {
 			name: "after actions",
 			setup: func(t *testing.T) *testEnv {
 				env := newTestEnv()
-				env.AfterEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				env.AfterEachTest(func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
 					return ctx, nil
 				})
 				return env
@@ -104,9 +105,9 @@ func TestEnv_APIMethods(t *testing.T) {
 				env := newTestEnv()
 				env.Setup(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					return ctx, nil
-				}).BeforeEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				}).BeforeEachTest(func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
 					return ctx, nil
-				}).AfterEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				}).AfterEachTest(func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
 					return ctx, nil
 				}).Finish(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 					return ctx, nil
@@ -186,7 +187,7 @@ func TestEnv_Test(t *testing.T) {
 			},
 			setup: func(t *testing.T, ctx context.Context) (val []string) {
 				env := newTestEnv()
-				env.BeforeEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				env.BeforeEachTest(func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
 					val = append(val, "before-each-test")
 					return ctx, nil
 				})
@@ -208,10 +209,10 @@ func TestEnv_Test(t *testing.T) {
 			},
 			setup: func(t *testing.T, ctx context.Context) (val []string) {
 				env := newTestEnv()
-				env.AfterEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				env.AfterEachTest(func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
 					val = append(val, "after-each-test")
 					return ctx, nil
-				}).BeforeEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				}).BeforeEachTest(func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
 					val = append(val, "before-each-test")
 					return ctx, nil
 				})
@@ -232,7 +233,7 @@ func TestEnv_Test(t *testing.T) {
 			},
 			setup: func(t *testing.T, ctx context.Context) (val []string) {
 				env := newTestEnv()
-				env.AfterEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				env.AfterEachTest(func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
 					val = append(val, "after-each-test")
 					return ctx, nil
 				})
@@ -284,7 +285,7 @@ func TestEnv_Test(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				env.BeforeEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				env.BeforeEachTest(func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
 					// update before test
 					val, ok := ctx.Value(&ctxTestKeyString{}).([]string)
 					if !ok {
@@ -293,7 +294,7 @@ func TestEnv_Test(t *testing.T) {
 					val = append(val, "before-each-test")
 					return context.WithValue(ctx, &ctxTestKeyString{}, val), nil
 				})
-				env.AfterEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				env.AfterEachTest(func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
 					// update after the test
 					val, ok := ctx.Value(&ctxTestKeyString{}).([]string)
 					if !ok {
@@ -363,11 +364,11 @@ func TestEnv_Test(t *testing.T) {
 			setup: func(t *testing.T, ctx context.Context) (val []string) {
 				env := newTestEnv()
 				val = []string{}
-				env.BeforeEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				env.BeforeEachTest(func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
 					val = append(val, "before-each-test")
 					return ctx, nil
 				})
-				env.AfterEachTest(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				env.AfterEachTest(func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
 					val = append(val, "after-each-test")
 					return ctx, nil
 				})
@@ -397,10 +398,10 @@ func TestEnv_Test(t *testing.T) {
 			setup: func(t *testing.T, ctx context.Context) []string {
 				env := newTestEnv()
 				val := []string{}
-				env.BeforeEachFeature(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				env.BeforeEachFeature(func(ctx context.Context, _ *envconf.Config, info types.FeatureInfo) (context.Context, error) {
 					val = append(val, "before-each-feature")
 					return ctx, nil
-				}).AfterEachFeature(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+				}).AfterEachFeature(func(ctx context.Context, _ *envconf.Config, info types.FeatureInfo) (context.Context, error) {
 					val = append(val, "after-each-feature")
 					return ctx, nil
 				})
