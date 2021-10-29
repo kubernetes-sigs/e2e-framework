@@ -53,6 +53,31 @@ func CreateKindCluster(clusterName string) env.Func {
 	}
 }
 
+// CreateKindClusterWithConfig returns an env.Func that is used to
+// create a kind cluster that is then injected in the context
+// using the name as a key.
+//
+// NOTE: the returned function will update its env config with the
+// kubeconfig file for the config client.
+//
+func CreateKindClusterWithConfig(clusterName, image, configFilePath string) env.Func {
+	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
+		k := kind.NewCluster(clusterName)
+		kubecfg, err := k.CreateWithConfig(image, configFilePath)
+		if err != nil {
+			return ctx, err
+		}
+
+		// stall, wait for pods initializations
+		time.Sleep(7 * time.Second)
+
+		// update envconfig  with kubeconfig
+		cfg.WithKubeconfigFile(kubecfg)
+		// store entire cluster value in ctx for future access using the cluster name
+		return context.WithValue(ctx, kindContextKey(clusterName), k), nil
+	}
+}
+
 // DestroyKindCluster returns an EnvFunc that
 // retrieves a previously saved kind Cluster in the context (using the name), then deletes it.
 //
