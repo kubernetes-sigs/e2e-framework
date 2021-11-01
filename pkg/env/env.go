@@ -192,7 +192,7 @@ func (e *testEnv) Test(t *testing.T, testFeatures ...types.Feature) {
 	for _, feature := range testFeatures {
 		// execute beforeFeature actions
 		for _, action := range beforeFeatureActions {
-			if e.ctx, err = action.runWithFeature(e.ctx, e.cfg, featureInfoFromFeature(feature)); err != nil {
+			if e.ctx, err = action.runWithFeature(e.ctx, e.cfg, deepCopyFeature(feature)); err != nil {
 				t.Fatalf("BeforeEachTest failure: %s", err)
 			}
 		}
@@ -202,7 +202,7 @@ func (e *testEnv) Test(t *testing.T, testFeatures ...types.Feature) {
 
 		// execute beforeFeature actions
 		for _, action := range afterFeatureActions {
-			if e.ctx, err = action.runWithFeature(e.ctx, e.cfg, featureInfoFromFeature(feature)); err != nil {
+			if e.ctx, err = action.runWithFeature(e.ctx, e.cfg, deepCopyFeature(feature)); err != nil {
 				t.Fatalf("BeforeEachTest failure: %s", err)
 			}
 		}
@@ -367,12 +367,16 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, f types.Feature
 	return ctx
 }
 
-// featureInfoFromFeature just copies the values from the Feature but, as a new type,
-// it has less risk of abuse and side-effects. Meant to solely be informational.
-func featureInfoFromFeature(f types.Feature) types.FeatureInfo {
-	return types.FeatureInfo{
-		Name:   f.Name(),
-		Labels: f.Labels(),
-		Steps:  f.Steps(),
+// deepCopyFeature just copies the values from the Feature but creates a deep
+// copy to avoid mutation when we just want an informational copy.
+func deepCopyFeature(f types.Feature) types.Feature {
+	fcopy := features.New(f.Name())
+	for k, v := range f.Labels() {
+		fcopy = fcopy.WithLabel(k, v)
 	}
+	f.Steps()
+	for _, step := range f.Steps() {
+		fcopy = fcopy.WithStep(step.Name(), step.Level(), nil)
+	}
+	return fcopy.Feature()
 }

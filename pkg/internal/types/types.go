@@ -33,7 +33,7 @@ type EnvFunc func(context.Context, *envconf.Config) (context.Context, error)
 // can be used to customized the behavior of the
 // environment. Changes to context are expected to surface
 // to caller. Meant for use with before/after feature hooks.
-type FeatureEnvFunc func(context.Context, *envconf.Config, FeatureInfo) (context.Context, error)
+type FeatureEnvFunc func(context.Context, *envconf.Config, Feature) (context.Context, error)
 
 // TestEnvFunc represents a user-defined operation that
 // can be used to customized the behavior of the
@@ -88,12 +88,6 @@ type Feature interface {
 	Labels() Labels
 	// Steps testing tasks to test the feature
 	Steps() []Step
-}
-
-type FeatureInfo struct {
-	Name   string
-	Labels map[string]string
-	Steps  []Step
 }
 
 type Level uint8
