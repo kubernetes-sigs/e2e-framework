@@ -38,6 +38,12 @@ func (b *FeatureBuilder) WithLabel(key, value string) *FeatureBuilder {
 	return b
 }
 
+// WithStep adds a new step that will be applied prior to feature test.
+func (b *FeatureBuilder) WithStep(name string, level Level, fn Func) *FeatureBuilder {
+	b.feat.steps = append(b.feat.steps, newStep(name, level, fn))
+	return b
+}
+
 // Setup adds a new setup step that will be applied prior to feature test.
 func (b *FeatureBuilder) Setup(fn Func) *FeatureBuilder {
 	b.feat.steps = append(b.feat.steps, newStep(fmt.Sprintf("%s-setup", b.feat.name), types.LevelSetup, fn))
