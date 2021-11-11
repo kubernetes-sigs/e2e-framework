@@ -20,6 +20,7 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/e2e-framework/klient/conf"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
+	"sigs.k8s.io/e2e-framework/klient/wait"
 )
 
 // Client stores values to interact with the
@@ -31,11 +32,16 @@ type Client interface {
 	// This method takes zero or at most 1 namespace (more will panic) that
 	// can be used in List operations.
 	Resources(...string) *resources.Resources
+	// Wait returns an implementation of the wait.Interface that can be used
+	// to perform helper operation such as waiting for certain condition to be
+	// met.
+	Wait() wait.Interface
 }
 
 type client struct {
 	cfg       *rest.Config
 	resources *resources.Resources
+	waiter    wait.Interface
 }
 
 // New returns a new Client value
@@ -44,7 +50,7 @@ func New(cfg *rest.Config) (Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &client{cfg: cfg, resources: res}, nil
+	return &client{cfg: cfg, resources: res, waiter: wait.New(res)}, nil
 }
 
 // NewWithKubeConfigFile creates a client using the kubeconfig filePath
@@ -73,4 +79,8 @@ func (c *client) Resources(namespace ...string) *resources.Resources {
 	default:
 		panic("too many namespaces provided")
 	}
+}
+
+func (c *client) Wait() wait.Interface {
+	return c.waiter
 }
