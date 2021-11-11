@@ -21,9 +21,9 @@ import (
 	"log"
 	"time"
 
-	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	apimachinerywait "k8s.io/apimachinery/pkg/util/wait"
+	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 )
 
@@ -82,13 +82,13 @@ func (w *waiter) PodReadyConditionBySelector(selector string) apimachinerywait.C
 	}
 }
 
-func (w *waiter) DeploymentScaled(deployment *appsv1.Deployment, replica int) apimachinerywait.ConditionFunc {
+func (w *waiter) ResourceScaled(obj k8s.Object, scaleFetcher func(obj k8s.Object) int32, replica int32) apimachinerywait.ConditionFunc {
 	return func() (done bool, err error) {
-		log.Printf("Checking for the Scale of Deployment %s/%s to be %d", deployment.GetNamespace(), deployment.GetName(), replica)
-		if err := w.resources.Get(context.Background(), deployment.GetName(), deployment.GetNamespace(), deployment); err != nil {
+		log.Printf("Checking for the scale of resource %s/%s to be %d", obj.GetNamespace(), obj.GetName(), replica)
+		if err := w.resources.Get(context.Background(), obj.GetName(), obj.GetNamespace(), obj); err != nil {
 			return false, err
 		}
-		return *deployment.Spec.Replicas == int32(replica), nil
+		return scaleFetcher(obj) == replica, nil
 	}
 }
 
