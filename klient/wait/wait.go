@@ -47,6 +47,16 @@ func New(resources *resources.Resources) *waiter {
 	return &waiter{resources: resources}
 }
 
+func (w *waiter) ResourceScaled(obj k8s.Object, scaleFetcher func(object k8s.Object) int32, replica int32) apimachinerywait.ConditionFunc {
+	return func() (done bool, err error) {
+		log.Printf("Checking if the resource %s/%s has been scaled to %d", obj.GetNamespace(), obj.GetName(), replica)
+		if err := w.resources.Get(context.TODO(), obj.GetName(), obj.GetNamespace(), obj); err != nil {
+			return false, nil
+		}
+		return scaleFetcher(obj) == replica, nil
+	}
+}
+
 func (w *waiter) ResourceDeleted(obj k8s.Object) apimachinerywait.ConditionFunc {
 	return func() (done bool, err error) {
 		log.Printf("Checking for Resource deletion of %s/%s", obj.GetNamespace(), obj.GetName())

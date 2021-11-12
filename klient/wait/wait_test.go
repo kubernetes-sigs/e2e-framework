@@ -18,8 +18,11 @@ package wait
 
 import (
 	"context"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"testing"
+	"time"
 )
 
 func TestPodRunning(t *testing.T) {
@@ -86,8 +89,19 @@ func TestResourceDeleted(t *testing.T) {
 	go func() {
 		_ = waitHelper.resources.Delete(context.TODO(), pod)
 	}()
-	err = waitHelper.For(waitHelper.ResourceDeleted(pod))
+	err = waitHelper.ForWithIntervalAndTimeout(7 * time.Second, 5 * time.Minute, waitHelper.ResourceDeleted(pod))
 	if err != nil {
 		t.Error("failed waiting for pod resource to be deleted", err)
+	}
+}
+
+func TestResourceScaled(t *testing.T) {
+	var err error
+	deployment := createDeployment("d1", 2, waitHelper.resources, t)
+	err = waitHelper.For(waitHelper.ResourceScaled(deployment, func(object k8s.Object) int32 {
+		return object.(*appsv1.Deployment).Status.ReadyReplicas
+	}, 2))
+	if err != nil {
+		t.Error("failed waiting for resource to be scaled", err)
 	}
 }
