@@ -22,6 +22,7 @@ import (
 	"time"
 
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	apimachinerywait "k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
@@ -54,17 +55,27 @@ func checkIfPodIsRunning(pod *v1.Pod) bool {
 	}
 }
 
-func (w *waiter) PodReadyCondition(pod *v1.Pod) apimachinerywait.ConditionFunc {
+func (w *waiter) PodReady(pod k8s.Object) apimachinerywait.ConditionFunc {
 	return func() (done bool, err error) {
 		log.Printf("Checking for Pod Ready Condition of %s/%s", pod.GetNamespace(), pod.GetName())
 		if err := w.resources.Get(context.Background(), pod.GetName(), pod.GetNamespace(), pod); err != nil {
 			return false, err
 		}
-		return checkIfPodIsRunning(pod), nil
+		return checkIfPodIsRunning(pod.(*v1.Pod)), nil
 	}
 }
 
-func (w *waiter) PodReadyConditionBySelector(selector string) apimachinerywait.ConditionFunc {
+func (w *waiter) PodPhaseMatch(pod k8s.Object, phase v1.PodPhase) apimachinerywait.ConditionFunc {
+	return func() (done bool, err error) {
+		log.Printf("Checking for Pod %v Condition of %s/%s", phase, pod.GetNamespace(), pod.GetName())
+		if err := w.resources.Get(context.Background(), pod.GetName(), pod.GetNamespace(), pod); err != nil {
+			return false, err
+		}
+		return pod.(*v1.Pod).Status.Phase == phase, nil
+	}
+}
+
+func (w *waiter) PodReadyBySelector(selector string) apimachinerywait.ConditionFunc {
 	return func() (done bool, err error) {
 		log.Printf("Waiting for Pod Ready Condition using Label selector %s", selector)
 		var pods v1.PodList
@@ -79,6 +90,19 @@ func (w *waiter) PodReadyConditionBySelector(selector string) apimachinerywait.C
 			}
 		}
 		return allOk, nil
+	}
+}
+
+func (w *waiter) ResourceDeleted(obj k8s.Object) apimachinerywait.ConditionFunc {
+	return func() (done bool, err error) {
+		log.Printf("Checking for Resource deletion of %s/%s", obj.GetNamespace(), obj.GetName())
+		if err := w.resources.Get(context.Background(), obj.GetName(), obj.GetNamespace(), obj); err != nil {
+			return false, nil
+		}
+		if errors.IsNotFound(err) {
+			return true, nil
+		}
+		return false, err
 	}
 }
 
