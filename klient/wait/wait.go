@@ -18,11 +18,12 @@ package wait
 
 import (
 	"context"
+	batchv1 "k8s.io/api/batch/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"log"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	apimachinerywait "k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
@@ -46,22 +47,46 @@ func New(resources *resources.Resources) *waiter {
 	return &waiter{resources: resources}
 }
 
-func checkIfPodIsRunning(pod *v1.Pod) bool {
-	switch pod.Status.Phase {
-	case v1.PodRunning:
-		return true
-	default:
-		return false
+func (w *waiter) ResourceDeleted(obj k8s.Object) apimachinerywait.ConditionFunc {
+	return func() (done bool, err error) {
+		log.Printf("Checking for Resource deletion of %s/%s", obj.GetNamespace(), obj.GetName())
+		if err := w.resources.Get(context.Background(), obj.GetName(), obj.GetNamespace(), obj); err != nil {
+			if errors.IsNotFound(err) {
+				return true, nil
+			}
+			return false, err
+		}
+		return false, nil
 	}
 }
 
-func (w *waiter) PodRunning(pod k8s.Object) apimachinerywait.ConditionFunc {
+func (w *waiter) JobConditionMatch(job k8s.Object, conditionType batchv1.JobConditionType, conditionState v1.ConditionStatus) apimachinerywait.ConditionFunc {
 	return func() (done bool, err error) {
-		log.Printf("Checking for Pod Ready Condition of %s/%s", pod.GetNamespace(), pod.GetName())
-		if err := w.resources.Get(context.Background(), pod.GetName(), pod.GetNamespace(), pod); err != nil {
+		log.Printf("Checking for Job Condition %s/%s on %s/%s", conditionType, conditionState, job.GetNamespace(), job.GetName())
+		if err := w.resources.Get(context.TODO(), job.GetName(), job.GetNamespace(), job); err != nil {
 			return false, err
 		}
-		return checkIfPodIsRunning(pod.(*v1.Pod)), nil
+		for _, cond := range job.(*batchv1.Job).Status.Conditions {
+			if cond.Type == conditionType && cond.Status == conditionState {
+				done = true
+			}
+		}
+		return
+	}
+}
+
+func (w *waiter) PodConditionMatch(pod k8s.Object, conditionType v1.PodConditionType, conditionState v1.ConditionStatus) apimachinerywait.ConditionFunc {
+	return func() (done bool, err error) {
+		log.Printf("Checking for Pod Condition %s/%s on %s/%s", conditionType, conditionState, pod.GetNamespace(), pod.GetName())
+		if err := w.resources.Get(context.TODO(), pod.GetName(), pod.GetNamespace(), pod); err != nil {
+			return false, err
+		}
+		for _, cond := range pod.(*v1.Pod).Status.Conditions {
+			if cond.Type == conditionType && cond.Status == conditionState {
+				done = true
+			}
+		}
+		return
 	}
 }
 
@@ -75,45 +100,24 @@ func (w *waiter) PodPhaseMatch(pod k8s.Object, phase v1.PodPhase) apimachinerywa
 	}
 }
 
-func (w *waiter) PodRunningBySelector(selector string) apimachinerywait.ConditionFunc {
-	return func() (done bool, err error) {
-		log.Printf("Waiting for Pod Ready Condition using Label selector %s", selector)
-		var pods v1.PodList
-		if err := w.resources.List(context.Background(), &pods, resources.WithLabelSelector(selector)); err != nil {
-			return false, err
-		}
-		allOk := true
-		for _, pod := range pods.Items {
-			if ok := checkIfPodIsRunning(&pod); !ok {
-				allOk = false
-				break
-			}
-		}
-		return allOk, nil
-	}
+func (w *waiter) PodReady(pod k8s.Object) apimachinerywait.ConditionFunc {
+	return w.PodConditionMatch(pod, v1.PodReady, v1.ConditionTrue)
 }
 
-func (w *waiter) ResourceDeleted(obj k8s.Object) apimachinerywait.ConditionFunc {
-	return func() (done bool, err error) {
-		log.Printf("Checking for Resource deletion of %s/%s", obj.GetNamespace(), obj.GetName())
-		if err := w.resources.Get(context.Background(), obj.GetName(), obj.GetNamespace(), obj); err != nil {
-			return false, nil
-		}
-		if errors.IsNotFound(err) {
-			return true, nil
-		}
-		return false, err
-	}
+func (w *waiter) ContainersReady(pod k8s.Object) apimachinerywait.ConditionFunc {
+	return w.PodConditionMatch(pod, v1.ContainersReady, v1.ConditionTrue)
 }
 
-func (w *waiter) ResourceScaled(obj k8s.Object, scaleFetcher func(obj k8s.Object) int32, replica int32) apimachinerywait.ConditionFunc {
-	return func() (done bool, err error) {
-		log.Printf("Checking for the scale of resource %s/%s to be %d", obj.GetNamespace(), obj.GetName(), replica)
-		if err := w.resources.Get(context.Background(), obj.GetName(), obj.GetNamespace(), obj); err != nil {
-			return false, err
-		}
-		return scaleFetcher(obj) == replica, nil
-	}
+func (w *waiter) PodRunning(pod k8s.Object) apimachinerywait.ConditionFunc {
+	return w.PodPhaseMatch(pod, v1.PodRunning)
+}
+
+func (w *waiter) JobCompleted(job k8s.Object) apimachinerywait.ConditionFunc {
+	return w.JobConditionMatch(job, batchv1.JobComplete, v1.ConditionTrue)
+}
+
+func (w *waiter) JobFailed(job k8s.Object) apimachinerywait.ConditionFunc {
+	return w.JobConditionMatch(job, batchv1.JobFailed, v1.ConditionTrue)
 }
 
 func (w *waiter) For(cond apimachinerywait.ConditionFunc) error {

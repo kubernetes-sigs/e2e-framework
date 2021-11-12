@@ -18,7 +18,7 @@ package wait
 
 import (
 	"context"
-	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
@@ -77,7 +77,7 @@ func createNamespace(r *resources.Resources) {
 	}
 }
 
-func createPod(name string, r *resources.Resources) (*corev1.Pod, error) {
+func createPod(name string, r *resources.Resources, t *testing.T) *corev1.Pod {
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, Labels: map[string]string{"app": name}},
 		Spec: corev1.PodSpec{
@@ -86,23 +86,32 @@ func createPod(name string, r *resources.Resources) (*corev1.Pod, error) {
 			},
 		},
 	}
-	return pod, r.Create(context.TODO(), pod)
+	err := r.Create(context.TODO(), pod)
+	if err != nil {
+		t.Error("failed to create pod due to an error", err)
+	}
+	return pod
 }
 
-func createDeployment(name string, r *resources.Resources) (*appsv1.Deployment, error) {
-	var replica int32 = 1
-	deployment := &appsv1.Deployment{
+func createJob(name, cmd, arg string, r *resources.Resources, t *testing.T) *batchv1.Job {
+	var backOff int32 = 1
+	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, Labels: map[string]string{"app": name}},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: &replica,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{"app": name},
-			},
+		Spec: batchv1.JobSpec{
+			BackoffLimit: &backOff,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"app": name}},
-				Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: name, Image: "nginx"}}},
+				Spec:       corev1.PodSpec{
+					RestartPolicy: corev1.RestartPolicyNever,
+					Containers: []corev1.Container{
+					{Name: name, Image: "alpine", Command: []string{cmd}, Args: []string{arg}},
+				}},
 			},
 		},
 	}
-	return deployment, r.Create(context.TODO(), deployment)
+	err := r.Create(context.TODO(), job)
+	if err != nil {
+		t.Error("failed to create a job due to an error", err)
+	}
+	return job
 }
