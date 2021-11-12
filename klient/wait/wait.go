@@ -35,7 +35,7 @@ const (
 
 type Interface interface {
 	For(cond apimachinerywait.ConditionFunc) error
-	ForWithIntervalAndTimeout(interval time.Duration, timeout time.Duration, resource *resources.Resources, cond apimachinerywait.ConditionFunc) error
+	ForWithIntervalAndTimeout(interval time.Duration, timeout time.Duration, cond apimachinerywait.ConditionFunc) error
 }
 
 type waiter struct {
@@ -55,7 +55,7 @@ func checkIfPodIsRunning(pod *v1.Pod) bool {
 	}
 }
 
-func (w *waiter) PodReady(pod k8s.Object) apimachinerywait.ConditionFunc {
+func (w *waiter) PodRunning(pod k8s.Object) apimachinerywait.ConditionFunc {
 	return func() (done bool, err error) {
 		log.Printf("Checking for Pod Ready Condition of %s/%s", pod.GetNamespace(), pod.GetName())
 		if err := w.resources.Get(context.Background(), pod.GetName(), pod.GetNamespace(), pod); err != nil {
@@ -75,7 +75,7 @@ func (w *waiter) PodPhaseMatch(pod k8s.Object, phase v1.PodPhase) apimachinerywa
 	}
 }
 
-func (w *waiter) PodReadyBySelector(selector string) apimachinerywait.ConditionFunc {
+func (w *waiter) PodRunningBySelector(selector string) apimachinerywait.ConditionFunc {
 	return func() (done bool, err error) {
 		log.Printf("Waiting for Pod Ready Condition using Label selector %s", selector)
 		var pods v1.PodList
@@ -120,6 +120,6 @@ func (w *waiter) For(cond apimachinerywait.ConditionFunc) error {
 	return apimachinerywait.PollImmediate(defaultPollInterval, defaultPollTimeout, cond)
 }
 
-func (w *waiter) ForWithIntervalAndTimeout(interval time.Duration, timeout time.Duration, resource *resources.Resources, cond apimachinerywait.ConditionFunc) error {
+func (w *waiter) ForWithIntervalAndTimeout(interval time.Duration, timeout time.Duration, cond apimachinerywait.ConditionFunc) error {
 	return apimachinerywait.PollImmediate(interval, timeout, cond)
 }
