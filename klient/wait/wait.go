@@ -17,16 +17,8 @@ limitations under the License.
 package wait
 
 import (
-	"context"
-	batchv1 "k8s.io/api/batch/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"log"
-	"time"
-
-	v1 "k8s.io/api/core/v1"
 	apimachinerywait "k8s.io/apimachinery/pkg/util/wait"
-	"sigs.k8s.io/e2e-framework/klient/k8s"
-	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
+	"time"
 )
 
 const (
@@ -34,106 +26,67 @@ const (
 	defaultPollInterval = 5 * time.Second
 )
 
-type Interface interface {
-	For(cond apimachinerywait.ConditionFunc) error
-	ForWithIntervalAndTimeout(interval time.Duration, timeout time.Duration, cond apimachinerywait.ConditionFunc) error
+type Options struct {
+	// Interval is used to specify the poll interval while waiting for a condition to be met
+	Interval time.Duration
+	// Timeout is used to indicate the total time to be spent in polling for the condition
+	// to be met.
+	Timeout time.Duration
+	// StopChan is used to setup a wait mechanism using the apimachinerywait.PollUntil method
+	StopChan chan struct{}
+	// Immediate is used to indicate if the apimachinerywait's immediate wait method are to be
+	// called instead of the regular one
+	Immediate bool
 }
 
-type waiter struct {
-	resources *resources.Resources
-}
+type Option func(*Options)
 
-func New(resources *resources.Resources) *waiter {
-	return &waiter{resources: resources}
-}
-
-func (w *waiter) ResourceScaled(obj k8s.Object, scaleFetcher func(object k8s.Object) int32, replica int32) apimachinerywait.ConditionFunc {
-	return func() (done bool, err error) {
-		log.Printf("Checking if the resource %s/%s has been scaled to %d", obj.GetNamespace(), obj.GetName(), replica)
-		if err := w.resources.Get(context.TODO(), obj.GetName(), obj.GetNamespace(), obj); err != nil {
-			return false, nil
-		}
-		return scaleFetcher(obj) == replica, nil
+func WithTimeout(timeout time.Duration) Option {
+	return func(options *Options) {
+		options.Timeout = timeout
 	}
 }
 
-func (w *waiter) ResourceDeleted(obj k8s.Object) apimachinerywait.ConditionFunc {
-	return func() (done bool, err error) {
-		log.Printf("Checking for Resource deletion of %s/%s", obj.GetNamespace(), obj.GetName())
-		if err := w.resources.Get(context.Background(), obj.GetName(), obj.GetNamespace(), obj); err != nil {
-			if errors.IsNotFound(err) {
-				return true, nil
-			}
-			return false, err
-		}
-		return false, nil
+func WithInterval(interval time.Duration) Option {
+	return func(options *Options) {
+		options.Interval = interval
 	}
 }
 
-func (w *waiter) JobConditionMatch(job k8s.Object, conditionType batchv1.JobConditionType, conditionState v1.ConditionStatus) apimachinerywait.ConditionFunc {
-	return func() (done bool, err error) {
-		log.Printf("Checking for Job Condition %s/%s on %s/%s", conditionType, conditionState, job.GetNamespace(), job.GetName())
-		if err := w.resources.Get(context.TODO(), job.GetName(), job.GetNamespace(), job); err != nil {
-			return false, err
-		}
-		for _, cond := range job.(*batchv1.Job).Status.Conditions {
-			if cond.Type == conditionType && cond.Status == conditionState {
-				done = true
-			}
-		}
-		return
+func WithStopChannel(stopChan chan struct{}) Option {
+	return func(options *Options) {
+		options.StopChan = stopChan
 	}
 }
 
-func (w *waiter) PodConditionMatch(pod k8s.Object, conditionType v1.PodConditionType, conditionState v1.ConditionStatus) apimachinerywait.ConditionFunc {
-	return func() (done bool, err error) {
-		log.Printf("Checking for Pod Condition %s/%s on %s/%s", conditionType, conditionState, pod.GetNamespace(), pod.GetName())
-		if err := w.resources.Get(context.TODO(), pod.GetName(), pod.GetNamespace(), pod); err != nil {
-			return false, err
-		}
-		for _, cond := range pod.(*v1.Pod).Status.Conditions {
-			if cond.Type == conditionType && cond.Status == conditionState {
-				done = true
-			}
-		}
-		return
+func WithImmediate() Option {
+	return func(options *Options) {
+		options.Immediate = true
 	}
 }
 
-func (w *waiter) PodPhaseMatch(pod k8s.Object, phase v1.PodPhase) apimachinerywait.ConditionFunc {
-	return func() (done bool, err error) {
-		log.Printf("Checking for Pod %v Condition of %s/%s", phase, pod.GetNamespace(), pod.GetName())
-		if err := w.resources.Get(context.Background(), pod.GetName(), pod.GetNamespace(), pod); err != nil {
-			return false, err
-		}
-		return pod.(*v1.Pod).Status.Phase == phase, nil
+func For(conditionFunc apimachinerywait.ConditionFunc, opts ...Option) error {
+	options := &Options{
+		Interval: defaultPollInterval,
+		Timeout: defaultPollTimeout,
+		StopChan: nil,
+		Immediate: false,
 	}
-}
 
-func (w *waiter) PodReady(pod k8s.Object) apimachinerywait.ConditionFunc {
-	return w.PodConditionMatch(pod, v1.PodReady, v1.ConditionTrue)
-}
+	for _, fn := range opts {
+		fn(options)
+	}
 
-func (w *waiter) ContainersReady(pod k8s.Object) apimachinerywait.ConditionFunc {
-	return w.PodConditionMatch(pod, v1.ContainersReady, v1.ConditionTrue)
-}
+	// Setting the options.StopChan will force the usage of `PollUntil`
+	if options.StopChan != nil {
+		if options.Immediate {
+			return apimachinerywait.PollImmediateUntil(options.Interval, conditionFunc, options.StopChan)
+		}
+		return apimachinerywait.PollUntil(options.Interval, conditionFunc, options.StopChan)
+	}
 
-func (w *waiter) PodRunning(pod k8s.Object) apimachinerywait.ConditionFunc {
-	return w.PodPhaseMatch(pod, v1.PodRunning)
-}
-
-func (w *waiter) JobCompleted(job k8s.Object) apimachinerywait.ConditionFunc {
-	return w.JobConditionMatch(job, batchv1.JobComplete, v1.ConditionTrue)
-}
-
-func (w *waiter) JobFailed(job k8s.Object) apimachinerywait.ConditionFunc {
-	return w.JobConditionMatch(job, batchv1.JobFailed, v1.ConditionTrue)
-}
-
-func (w *waiter) For(cond apimachinerywait.ConditionFunc) error {
-	return apimachinerywait.PollImmediate(defaultPollInterval, defaultPollTimeout, cond)
-}
-
-func (w *waiter) ForWithIntervalAndTimeout(interval time.Duration, timeout time.Duration, cond apimachinerywait.ConditionFunc) error {
-	return apimachinerywait.PollImmediate(interval, timeout, cond)
+	if options.Immediate {
+		return apimachinerywait.PollImmediate(options.Interval, options.Timeout, conditionFunc)
+	}
+	return apimachinerywait.Poll(options.Interval, options.Timeout, conditionFunc)
 }

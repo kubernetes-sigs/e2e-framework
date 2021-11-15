@@ -26,6 +26,7 @@ import (
 	"os"
 	"sigs.k8s.io/e2e-framework/internal/testutil"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
+	"sync"
 	"testing"
 
 	"k8s.io/client-go/rest"
@@ -35,9 +36,9 @@ import (
 var (
 	cfg        *rest.Config
 	kc         *kind.Cluster
-	waitHelper *waiter
 	resourceManager *resources.Resources
 	namespace = "wait-test"
+	resourceManagerOnce sync.Once
 )
 
 func TestMain(m *testing.M) {
@@ -49,15 +50,18 @@ func TestMain(m *testing.M) {
 }
 
 func setup() {
-	resourceManager, err := resources.New(cfg)
-	if err != nil {
-		log.Fatalln("failed to create a resource manager instance", err)
-	}
+	createNamespace()
+}
 
-	resourceManager = resourceManager.WithNamespace(namespace)
-
-	waitHelper = New(resourceManager)
-	createNamespace(waitHelper.resources)
+func getResourceManager() *resources.Resources {
+	resourceManagerOnce.Do(func() {
+		resourceMgr, err := resources.New(cfg)
+		if err != nil {
+			log.Fatalln("failed to create a resource manager instance", err)
+		}
+		resourceManager = resourceMgr.WithNamespace(namespace)
+	})
+	return resourceManager
 }
 
 func tearDown() {
@@ -67,18 +71,18 @@ func tearDown() {
 
 func deleteNamespace() {
 	namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}}
-	_ = waitHelper.resources.Delete(context.TODO(), namespace)
+	_ = getResourceManager().Delete(context.TODO(), namespace)
 }
 
-func createNamespace(r *resources.Resources) {
+func createNamespace() {
 	namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}}
-	err := r.Create(context.TODO(), namespace)
+	err := getResourceManager().Create(context.TODO(), namespace)
 	if err != nil {
 		log.Fatalln("failed to create test namespace for wait helper test", err)
 	}
 }
 
-func createPod(name string, r *resources.Resources, t *testing.T) *corev1.Pod {
+func createPod(name string, t *testing.T) *corev1.Pod {
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, Labels: map[string]string{"app": name}},
 		Spec: corev1.PodSpec{
@@ -87,14 +91,14 @@ func createPod(name string, r *resources.Resources, t *testing.T) *corev1.Pod {
 			},
 		},
 	}
-	err := r.Create(context.TODO(), pod)
+	err := getResourceManager().Create(context.TODO(), pod)
 	if err != nil {
 		t.Error("failed to create pod due to an error", err)
 	}
 	return pod
 }
 
-func createDeployment(name string, replicas int32, r *resources.Resources, t *testing.T) *appsv1.Deployment {
+func createDeployment(name string, replicas int32, t *testing.T) *appsv1.Deployment {
 	 deployment := &appsv1.Deployment{
 		 ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, Labels: map[string]string{"app": name}},
 		 Spec: appsv1.DeploymentSpec{
@@ -108,14 +112,14 @@ func createDeployment(name string, replicas int32, r *resources.Resources, t *te
 			 },
 		 },
 	 }
-	 err := r.Create(context.TODO(), deployment)
+	 err := getResourceManager().Create(context.TODO(), deployment)
 	 if err != nil {
 		 t.Error("failed to create deployment due to an error", err)
 	 }
 	 return deployment
 }
 
-func createJob(name, cmd, arg string, r *resources.Resources, t *testing.T) *batchv1.Job {
+func createJob(name, cmd, arg string, t *testing.T) *batchv1.Job {
 	var backOff int32 = 1
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, Labels: map[string]string{"app": name}},
@@ -131,7 +135,7 @@ func createJob(name, cmd, arg string, r *resources.Resources, t *testing.T) *bat
 			},
 		},
 	}
-	err := r.Create(context.TODO(), job)
+	err := getResourceManager().Create(context.TODO(), job)
 	if err != nil {
 		t.Error("failed to create a job due to an error", err)
 	}
