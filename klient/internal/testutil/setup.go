@@ -29,37 +29,48 @@ import (
 	"sigs.k8s.io/e2e-framework/support/kind"
 )
 
-func SetupTestCluster(path string) (kc *kind.Cluster, kubeConfig string, cfg *rest.Config, clientSet kubernetes.Interface) {
+type TestCluster struct {
+	KindCluster *kind.Cluster
+	Kubeconfig string
+	RESTConfig *rest.Config
+	Clientset kubernetes.Interface
+}
+
+func SetupTestCluster(path string) *TestCluster {
 	if path == "" {
 		home := homedir.HomeDir()
 		path = filepath.Join(home, ".kube", "config")
 	}
 
+	tc := &TestCluster{}
 	var err error
-	kc, err = setupKind()
+	kc, err := setupKind()
 	if err != nil {
 		log.Fatalln("error while setting up the kind cluster", err)
 	}
-	flag.StringVar(&kubeConfig, "kubeconfig", "", "Paths to a kubeconfig. Only required if out-of-cluster.")
+	tc.KindCluster = kc
+	flag.StringVar(&tc.Kubeconfig, "kubeconfig", "", "Paths to a kubeconfig. Only required if out-of-cluster.")
 	err = flag.Set("kubeconfig", path)
 	if err != nil {
 		log.Fatalln("unexpected error while setting the flag value for kubeconfig", err)
 	}
 	flag.Parse()
 
-	cfg, err = conf.New(conf.ResolveKubeConfigFile())
+	cfg, err := conf.New(conf.ResolveKubeConfigFile())
 	if err != nil {
 		log.Fatalln("error while client connection trying to resolve kubeconfig", err)
 	}
-	clientSet, err = kubernetes.NewForConfig(cfg)
+	tc.RESTConfig = cfg
+	clientSet, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		log.Fatalln("failed to create new Client set for kind cluster", err)
 	}
-	return
+	tc.Clientset = clientSet
+	return tc
 }
 
-func DestroyTestCluster(kc *kind.Cluster) {
-	err := kc.Destroy()
+func (t *TestCluster) DestroyTestCluster() {
+	err := t.KindCluster.Destroy()
 	if err != nil {
 		log.Println("error while deleting the cluster", err)
 		return

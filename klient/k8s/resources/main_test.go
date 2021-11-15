@@ -26,13 +26,12 @@ import (
 	"k8s.io/client-go/rest"
 	"log"
 	"os"
-	"sigs.k8s.io/e2e-framework/internal/testutil"
-	"sigs.k8s.io/e2e-framework/support/kind"
+	"sigs.k8s.io/e2e-framework/klient/internal/testutil"
 	"testing"
 )
 
 var (
-	kubeconfig   string
+	tc *testutil.TestCluster
 	dep          *appsv1.Deployment
 	clientset    kubernetes.Interface
 	count        uint64
@@ -40,11 +39,12 @@ var (
 	ctx                = context.TODO()
 	cfg          *rest.Config
 	namespace    *corev1.Namespace
-	kc           *kind.Cluster
 )
 
 func TestMain(m *testing.M) {
-	kc, kubeconfig, cfg, clientset = testutil.SetupTestCluster("")
+	tc = testutil.SetupTestCluster("")
+	clientset = tc.Clientset
+	cfg = tc.RESTConfig
 	initializeResObjects()
 	code := m.Run()
 	teardown()
@@ -55,7 +55,7 @@ func teardown() {
 	deleteDeployment(ctx, dep, namespace.Name)
 	deleteNamespace(ctx, namespace)
 
-	testutil.DestroyTestCluster(kc)
+	tc.DestroyTestCluster()
 }
 
 func deleteDeployment(ctx context.Context, dep *appsv1.Deployment, ns string) {

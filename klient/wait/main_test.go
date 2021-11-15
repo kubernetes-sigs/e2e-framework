@@ -24,25 +24,25 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"os"
-	"sigs.k8s.io/e2e-framework/internal/testutil"
+	"sigs.k8s.io/e2e-framework/klient/internal/testutil"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sync"
 	"testing"
 
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/e2e-framework/support/kind"
 )
 
 var (
+	tc *testutil.TestCluster
 	cfg        *rest.Config
-	kc         *kind.Cluster
 	resourceManager *resources.Resources
 	namespace = "wait-test"
 	resourceManagerOnce sync.Once
 )
 
 func TestMain(m *testing.M) {
-	kc, _, cfg, _ = testutil.SetupTestCluster("")
+	tc = testutil.SetupTestCluster("")
+	cfg = tc.RESTConfig
 	setup()
 	exitCode := m.Run()
 	tearDown()
@@ -66,7 +66,7 @@ func getResourceManager() *resources.Resources {
 
 func tearDown() {
 	deleteNamespace()
-	testutil.DestroyTestCluster(kc)
+	tc.DestroyTestCluster()
 }
 
 func deleteNamespace() {
