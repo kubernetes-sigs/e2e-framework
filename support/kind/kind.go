@@ -46,32 +46,9 @@ func (k *Cluster) WithVersion(ver string) *Cluster {
 	return k
 }
 
-func (k *Cluster) CreateWithConfig(imageName, kindConfigFile string) (string, error) {
-	log.Println("Creating kind cluster ", k.name)
-	if err := k.findOrInstallKind(k.e); err != nil {
-		return "", err
-	}
-
-	if strings.Contains(k.e.Run("kind get clusters"), k.name) {
-		log.Println("Skipping Kind Cluster.Create: cluster already created: ", k.name)
-		return "", nil
-	}
-
-	log.Println("launching: kind create cluster --name", k.name, "--image", imageName, "--config", kindConfigFile)
-	p := k.e.RunProc(fmt.Sprintf(`kind create cluster --name %s --image %s --config %s`, k.name, imageName, kindConfigFile))
-	if p.Err() != nil {
-		return "", fmt.Errorf("failed to create kind cluster: %s : %s", p.Err(), p.Result())
-	}
-
-	clusters := k.e.Run("kind get clusters")
-	if !strings.Contains(clusters, k.name) {
-		return "", fmt.Errorf("kind Cluster.Create: cluster %v still not in 'cluster list' after creation: %v", k.name, clusters)
-	}
-	log.Println("kind clusters available: ", clusters)
-
-	// Grab kubeconfig file for cluster.
+func (k *Cluster) getKubeconfig() (string, error) {
 	kubecfg := fmt.Sprintf("%s-kubecfg", k.name)
-	p = k.e.RunProc(fmt.Sprintf(`kind get kubeconfig --name %s`, k.name))
+	p := k.e.RunProc(fmt.Sprintf(`kind get kubeconfig --name %s`, k.name))
 	if p.Err() != nil {
 		return "", fmt.Errorf("kind get kubeconfig: %s: %w", p.Result(), p.Err())
 	}
@@ -91,6 +68,33 @@ func (k *Cluster) CreateWithConfig(imageName, kindConfigFile string) (string, er
 	return file.Name(), nil
 }
 
+func (k *Cluster) CreateWithConfig(imageName, kindConfigFile string) (string, error) {
+	log.Println("Creating kind cluster ", k.name)
+	if err := k.findOrInstallKind(k.e); err != nil {
+		return "", err
+	}
+
+	if strings.Contains(k.e.Run("kind get clusters"), k.name) {
+		log.Println("Skipping Kind Cluster.Create: cluster already created: ", k.name)
+		return k.getKubeconfig()
+	}
+
+	log.Println("launching: kind create cluster --name", k.name, "--image", imageName, "--config", kindConfigFile)
+	p := k.e.RunProc(fmt.Sprintf(`kind create cluster --name %s --image %s --config %s`, k.name, imageName, kindConfigFile))
+	if p.Err() != nil {
+		return "", fmt.Errorf("failed to create kind cluster: %s : %s", p.Err(), p.Result())
+	}
+
+	clusters := k.e.Run("kind get clusters")
+	if !strings.Contains(clusters, k.name) {
+		return "", fmt.Errorf("kind Cluster.Create: cluster %v still not in 'cluster list' after creation: %v", k.name, clusters)
+	}
+	log.Println("kind clusters available: ", clusters)
+
+	// Grab kubeconfig file for cluster.
+	return k.getKubeconfig()
+}
+
 func (k *Cluster) Create() (string, error) {
 	log.Println("Creating kind cluster ", k.name)
 	if err := k.findOrInstallKind(k.e); err != nil {
@@ -99,7 +103,7 @@ func (k *Cluster) Create() (string, error) {
 
 	if strings.Contains(k.e.Run("kind get clusters"), k.name) {
 		log.Println("Skipping Kind Cluster.Create: cluster already created: ", k.name)
-		return "", nil
+		return k.getKubeconfig()
 	}
 
 	log.Println("launching: kind create cluster --name", k.name)
@@ -115,25 +119,7 @@ func (k *Cluster) Create() (string, error) {
 	log.Println("kind clusters available: ", clusters)
 
 	// Grab kubeconfig file for cluster.
-	kubecfg := fmt.Sprintf("%s-kubecfg", k.name)
-	p = k.e.RunProc(fmt.Sprintf(`kind get kubeconfig --name %s`, k.name))
-	if p.Err() != nil {
-		return "", fmt.Errorf("kind get kubeconfig: %s: %w", p.Result(), p.Err())
-	}
-
-	file, err := ioutil.TempFile("", fmt.Sprintf("kind-cluser-%s", kubecfg))
-	if err != nil {
-		return "", fmt.Errorf("kind kubeconfig file: %w", err)
-	}
-	defer file.Close()
-
-	k.kubecfgFile = file.Name()
-
-	if n, err := io.Copy(file, strings.NewReader(p.Result())); n == 0 || err != nil {
-		return "", fmt.Errorf("kind kubecfg file: bytes copied: %d: %w]", n, err)
-	}
-
-	return file.Name(), nil
+	return k.getKubeconfig()
 }
 
 // GetKubeconfig returns the path of the kubeconfig file
