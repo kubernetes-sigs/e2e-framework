@@ -18,25 +18,27 @@ package wait
 
 import (
 	"context"
+	"log"
+	"os"
+	"sync"
+	"testing"
+
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"log"
-	"os"
+
 	"sigs.k8s.io/e2e-framework/klient/internal/testutil"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
-	"sync"
-	"testing"
 
 	"k8s.io/client-go/rest"
 )
 
 var (
-	tc *testutil.TestCluster
-	cfg        *rest.Config
-	resourceManager *resources.Resources
-	namespace = "wait-test"
+	tc                  *testutil.TestCluster
+	cfg                 *rest.Config
+	resourceManager     *resources.Resources
+	namespace           = "wait-test"
 	resourceManagerOnce sync.Once
 )
 
@@ -102,24 +104,24 @@ func createPod(name string, t *testing.T) *corev1.Pod {
 }
 
 func createDeployment(name string, replicas int32, t *testing.T) *appsv1.Deployment {
-	 deployment := &appsv1.Deployment{
-		 ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, Labels: map[string]string{"app": name}},
-		 Spec: appsv1.DeploymentSpec{
-			 Replicas: &replicas,
-			 Selector: &metav1.LabelSelector{
-				 MatchLabels: map[string]string{"app": name},
-			 },
-			 Template: corev1.PodTemplateSpec{
-				 ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"app": name}},
-				 Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: name, Image: "nginx"}}},
-			 },
-		 },
-	 }
-	 err := getResourceManager().Create(context.TODO(), deployment)
-	 if err != nil {
-		 t.Error("failed to create deployment due to an error", err)
-	 }
-	 return deployment
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, Labels: map[string]string{"app": name}},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{"app": name},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"app": name}},
+				Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: name, Image: "nginx"}}},
+			},
+		},
+	}
+	err := getResourceManager().Create(context.TODO(), deployment)
+	if err != nil {
+		t.Error("failed to create deployment due to an error", err)
+	}
+	return deployment
 }
 
 func createJob(name, cmd, arg string, t *testing.T) *batchv1.Job {
@@ -130,11 +132,12 @@ func createJob(name, cmd, arg string, t *testing.T) *batchv1.Job {
 			BackoffLimit: &backOff,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"app": name}},
-				Spec:       corev1.PodSpec{
+				Spec: corev1.PodSpec{
 					RestartPolicy: corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
-					{Name: name, Image: "alpine", Command: []string{cmd}, Args: []string{arg}},
-				}},
+						{Name: name, Image: "alpine", Command: []string{cmd}, Args: []string{arg}},
+					},
+				},
 			},
 		},
 	}

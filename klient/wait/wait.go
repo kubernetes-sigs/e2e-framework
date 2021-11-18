@@ -17,8 +17,9 @@ limitations under the License.
 package wait
 
 import (
-	apimachinerywait "k8s.io/apimachinery/pkg/util/wait"
 	"time"
+
+	apimachinerywait "k8s.io/apimachinery/pkg/util/wait"
 )
 
 const (
@@ -85,9 +86,9 @@ func WithImmediate() Option {
 // for your test is not already provided by the helper utility.
 func For(conditionFunc apimachinerywait.ConditionFunc, opts ...Option) error {
 	options := &Options{
-		Interval: defaultPollInterval,
-		Timeout: defaultPollTimeout,
-		StopChan: nil,
+		Interval:  defaultPollInterval,
+		Timeout:   defaultPollTimeout,
+		StopChan:  nil,
 		Immediate: false,
 	}
 

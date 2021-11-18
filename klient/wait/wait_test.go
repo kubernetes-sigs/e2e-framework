@@ -18,13 +18,15 @@ package wait
 
 import (
 	"context"
-	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
 	"log"
-	"sigs.k8s.io/e2e-framework/klient/k8s"
-	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"testing"
 	"time"
+
+	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
+
+	"sigs.k8s.io/e2e-framework/klient/k8s"
+	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 )
 
 func TestPodRunning(t *testing.T) {
@@ -48,7 +50,7 @@ func TestPodPhaseMatch(t *testing.T) {
 func TestPodReady(t *testing.T) {
 	var err error
 	pod := createPod("p3", t)
-	err = For(conditions.New(getResourceManager()).PodReady(pod), WithInterval(2 * time.Second))
+	err = For(conditions.New(getResourceManager()).PodReady(pod), WithInterval(2*time.Second))
 	if err != nil {
 		t.Error("failed to wait for pod to reach Ready condition", err)
 	}
@@ -89,9 +91,12 @@ func TestResourceDeleted(t *testing.T) {
 		t.Error("failed to wait for containers to reach Ready condition", err)
 	}
 	go func() {
-		_ = getResourceManager().Delete(context.TODO(), pod)
+		err := getResourceManager().Delete(context.TODO(), pod)
+		if err != nil {
+			log.Println("ran into an error trying to delete the resource", err)
+		}
 	}()
-	err = For(conditions.New(getResourceManager()).ResourceDeleted(pod), WithInterval(2 * time.Second), WithTimeout(7 * time.Minute), WithImmediate())
+	err = For(conditions.New(getResourceManager()).ResourceDeleted(pod), WithInterval(2*time.Second), WithTimeout(7*time.Minute), WithImmediate())
 	if err != nil {
 		t.Error("failed waiting for pod resource to be deleted", err)
 	}

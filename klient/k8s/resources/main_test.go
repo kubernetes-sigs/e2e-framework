@@ -19,19 +19,21 @@ package resources
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
+	"testing"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"log"
-	"os"
+
 	"sigs.k8s.io/e2e-framework/klient/internal/testutil"
-	"testing"
 )
 
 var (
-	tc *testutil.TestCluster
+	tc           *testutil.TestCluster
 	dep          *appsv1.Deployment
 	clientset    kubernetes.Interface
 	count        uint64

@@ -28,9 +28,9 @@ import (
 
 type TestCluster struct {
 	KindCluster *kind.Cluster
-	Kubeconfig string
-	RESTConfig *rest.Config
-	Clientset kubernetes.Interface
+	Kubeconfig  string
+	RESTConfig  *rest.Config
+	Clientset   kubernetes.Interface
 }
 
 func SetupTestCluster(path string) *TestCluster {

@@ -18,11 +18,13 @@ package conditions
 
 import (
 	"context"
+	"log"
+
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	apimachinerywait "k8s.io/apimachinery/pkg/util/wait"
-	"log"
+
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 )
@@ -37,8 +39,8 @@ type Condition struct {
 
 // New is used to create a new Condition that can be used to perform a series of pre-defined wait checks
 // against a resource in question
-func New(resources *resources.Resources) *Condition {
-	return &Condition{resources: resources}
+func New(r *resources.Resources) *Condition {
+	return &Condition{resources: r}
 }
 
 // WithVerboseLog is used to enable additional verbose logs from the Wait condition to help debug tests
