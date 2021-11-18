@@ -1,6 +1,6 @@
 # Go E2E Test Framework for Kubernetes
 
-This document captures high-level design ideas for the next generation of a Go framework for testing components runnking on Kubernetes. The framework, referred to as `e2e-framework` provides ways that makes it easy to define tests functions that can programmatically test components running on a cluster.  The two overall goals of the new framework are to allow developers to quickly and easily assemble end-to-end tests and to provide a collection of support packages to help with interacting with the API-server.
+This document captures high-level design ideas for the next generation of a Go framework for testing components running on Kubernetes. The framework, referred to as `e2e-framework` provides ways that makes it easy to define tests functions that can programmatically test components running on a cluster.  The two overall goals of the new framework are to allow developers to quickly and easily assemble end-to-end tests and to provide a collection of support packages to help with interacting with the API-server.
 
 > See the original Google Doc design document [here](https://docs.google.com/document/d/11JKqcnUOrw5Lk98f_ylJXBXyxWSW1z3CZu27OLX1CbM/edit).
 
@@ -45,7 +45,7 @@ The initial design of the end-to-end test framework, defined here, will be heavi
 ![](./e2e-environment-design.png)
 
 ### Environment
-The environment component is the heart of the framework. It allows devlopers to define attributes and features to be tested (see Test Features below).  The environment uses callback functions to let developers implement customized behaviors before or after a test suite has been exercised.
+The environment component is the heart of the framework. It allows developers to define attributes and features to be tested (see Test Features below).  The environment uses callback functions to let developers implement customized behaviors before or after a test suite has been exercised.
 
 The following shows a proposed type for the environment:
 
@@ -107,7 +107,7 @@ Before an `Environment` can be used to run tests, it goes through several stages
 
 
 #### Propagating environment context
-This framework is designed for a context to be injected early during the contstruction of the `Environment` value (see constructor functions above). A context can optionally be provided using constructor function `env.NewWithContext`. All other constructor function shall create a default context internally.
+This framework is designed for a context to be injected early during the construction of the `Environment` value (see constructor functions above). A context can optionally be provided using constructor function `env.NewWithContext`. All other constructor function shall create a default context internally.
 
 #### Updating the `Environment` context
 In some instances, it will be necessary to update a previously injected (or the default) context. To update an environment's context, after the environment has been already created, test writers should use `Environment.WithContext` method to update the context and get a new environment with the newly updated context.
