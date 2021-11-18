@@ -41,30 +41,48 @@ type Options struct {
 
 type Option func(*Options)
 
+// WithTimeout sets the max timeout that the Wait checks will run trying to see if the resource under
+// question has reached a final expected state. An error will be raised if the resource has not reached
+// the final expected state within the time defined by this configuration
 func WithTimeout(timeout time.Duration) Option {
 	return func(options *Options) {
 		options.Timeout = timeout
 	}
 }
 
+// WithInterval configures the interval between the retries to check if a condition has been met while performing
+// the polling wait on a resource under question
 func WithInterval(interval time.Duration) Option {
 	return func(options *Options) {
 		options.Interval = interval
 	}
 }
 
+// WithStopChannel provides a way to configure a Stop channel that can be used to run wait condition checks
+// either until the condition has been successfully met or until the channel has been closed. This will enable
+// end users to write test in cases where the max timeout is not really predictable or is a factor of a different
+// configuration or event.
 func WithStopChannel(stopChan chan struct{}) Option {
 	return func(options *Options) {
 		options.StopChan = stopChan
 	}
 }
 
+// WithImmediate configures the way the Wait Checks are invoked. Setting this will invoke the condition check
+// right away before the first wait for the interval kicks in. If not configured, the first check of the
+// condition match will be triggered after the value configured by the WithInterval or defaultPollInterval
 func WithImmediate() Option {
 	return func(options *Options) {
 		options.Immediate = true
 	}
 }
 
+// For provides a way to perform poll checks against the kubernetes resource to make sure the resource under
+// test has reached a suitable state before moving to the next action or fail with an error message.
+//
+// The conditions sub-packages provides a series of pre-defined wait functions that can be used by the developers
+// or a custom wait function can be passed as an argument to get a similar functionality if the check required
+// for your test is not already provided by the helper utility.
 func For(conditionFunc apimachinerywait.ConditionFunc, opts ...Option) error {
 	options := &Options{
 		Interval: defaultPollInterval,

@@ -30,7 +30,7 @@ import (
 func TestPodRunning(t *testing.T) {
 	var err error
 	pod := createPod("p1", t)
-	err = For(conditions.New(getResourceManager()).PodRunning(pod), WithImmediate())
+	err = For(conditions.New(getResourceManager()).WithVerboseLog().PodRunning(pod), WithImmediate())
 	if err != nil {
 		t.Error("failed to wait for pod to reach running condition", err)
 	}

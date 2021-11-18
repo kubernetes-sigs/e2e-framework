@@ -17,10 +17,7 @@ limitations under the License.
 package testutil
 
 import (
-	"flag"
-	"k8s.io/client-go/util/homedir"
 	"log"
-	"path/filepath"
 	"time"
 
 	"k8s.io/client-go/kubernetes"
@@ -38,8 +35,7 @@ type TestCluster struct {
 
 func SetupTestCluster(path string) *TestCluster {
 	if path == "" {
-		home := homedir.HomeDir()
-		path = filepath.Join(home, ".kube", "config")
+		path = conf.ResolveKubeConfigFile()
 	}
 
 	tc := &TestCluster{}
@@ -49,14 +45,8 @@ func SetupTestCluster(path string) *TestCluster {
 		log.Fatalln("error while setting up the kind cluster", err)
 	}
 	tc.KindCluster = kc
-	flag.StringVar(&tc.Kubeconfig, "kubeconfig", "", "Paths to a kubeconfig. Only required if out-of-cluster.")
-	err = flag.Set("kubeconfig", path)
-	if err != nil {
-		log.Fatalln("unexpected error while setting the flag value for kubeconfig", err)
-	}
-	flag.Parse()
 
-	cfg, err := conf.New(conf.ResolveKubeConfigFile())
+	cfg, err := conf.New(path)
 	if err != nil {
 		log.Fatalln("error while client connection trying to resolve kubeconfig", err)
 	}

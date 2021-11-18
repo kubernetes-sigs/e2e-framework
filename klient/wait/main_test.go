@@ -65,13 +65,16 @@ func getResourceManager() *resources.Resources {
 }
 
 func tearDown() {
-	deleteNamespace()
+	err := deleteNamespace()
+	if err != nil {
+		log.Println("ran into an error trying to delete the namespace as part of the cleanup", err)
+	}
 	tc.DestroyTestCluster()
 }
 
-func deleteNamespace() {
+func deleteNamespace() error {
 	namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}}
-	_ = getResourceManager().Delete(context.TODO(), namespace)
+	return getResourceManager().Delete(context.TODO(), namespace)
 }
 
 func createNamespace() {
