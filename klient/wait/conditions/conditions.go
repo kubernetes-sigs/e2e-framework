@@ -18,7 +18,6 @@ package conditions
 
 import (
 	"context"
-	"log"
 
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
@@ -31,10 +30,6 @@ import (
 
 type Condition struct {
 	resources *resources.Resources
-
-	// verbose is used to enable additional logs from the Wait function that is getting executed.
-	// This can help in debugging long-running tests.
-	verbose bool
 }
 
 // New is used to create a new Condition that can be used to perform a series of pre-defined wait checks
@@ -43,25 +38,11 @@ func New(r *resources.Resources) *Condition {
 	return &Condition{resources: r}
 }
 
-// WithVerboseLog is used to enable additional verbose logs from the Wait condition to help debug tests
-func (c *Condition) WithVerboseLog() *Condition {
-	c.verbose = true
-	return c
-}
-
-// log is used to enable additional logs conditionally based on c.verbose configuration
-func (c *Condition) log(message string, args ...interface{}) {
-	if c.verbose {
-		log.Printf(message, args...)
-	}
-}
-
 // ResourceScaled is a helper function used to check if the resource under question has a pre-defined number of
 // replicas. This can be leveraged for checking cases such as scaling up and down a deployment or STS and any
 // other scalable resources.
 func (c *Condition) ResourceScaled(obj k8s.Object, scaleFetcher func(object k8s.Object) int32, replica int32) apimachinerywait.ConditionFunc {
 	return func() (done bool, err error) {
-		c.log("Checking if the resource %s/%s has been scaled to %d", obj.GetNamespace(), obj.GetName(), replica)
 		if err := c.resources.Get(context.TODO(), obj.GetName(), obj.GetNamespace(), obj); err != nil {
 			return false, nil
 		}
@@ -77,7 +58,6 @@ func (c *Condition) ResourceScaled(obj k8s.Object, scaleFetcher func(object k8s.
 // checking the resource and waiting until it obtains a v1.StatusReasonNotFound error from the API
 func (c *Condition) ResourceDeleted(obj k8s.Object) apimachinerywait.ConditionFunc {
 	return func() (done bool, err error) {
-		c.log("Checking for Resource deletion of %s/%s", obj.GetNamespace(), obj.GetName())
 		if err := c.resources.Get(context.Background(), obj.GetName(), obj.GetNamespace(), obj); err != nil {
 			if errors.IsNotFound(err) {
 				return true, nil
@@ -93,7 +73,6 @@ func (c *Condition) ResourceDeleted(obj k8s.Object) apimachinerywait.ConditionFu
 // to match both positive or negative cases with suitable values passed to the arguments.
 func (c *Condition) JobConditionMatch(job k8s.Object, conditionType batchv1.JobConditionType, conditionState v1.ConditionStatus) apimachinerywait.ConditionFunc {
 	return func() (done bool, err error) {
-		c.log("Checking for Job Condition %s/%s on %s/%s", conditionType, conditionState, job.GetNamespace(), job.GetName())
 		if err := c.resources.Get(context.TODO(), job.GetName(), job.GetNamespace(), job); err != nil {
 			return false, err
 		}
@@ -110,7 +89,6 @@ func (c *Condition) JobConditionMatch(job k8s.Object, conditionType batchv1.JobC
 // This is extended into a few simplified match helpers such as PodReady and ContainersReady as well.
 func (c *Condition) PodConditionMatch(pod k8s.Object, conditionType v1.PodConditionType, conditionState v1.ConditionStatus) apimachinerywait.ConditionFunc {
 	return func() (done bool, err error) {
-		c.log("Checking for Pod Condition %s/%s on %s/%s", conditionType, conditionState, pod.GetNamespace(), pod.GetName())
 		if err := c.resources.Get(context.TODO(), pod.GetName(), pod.GetNamespace(), pod); err != nil {
 			return false, err
 		}
@@ -128,7 +106,6 @@ func (c *Condition) PodConditionMatch(pod k8s.Object, conditionType v1.PodCondit
 // This will enable validation such as checking against CLB of a POD.
 func (c *Condition) PodPhaseMatch(pod k8s.Object, phase v1.PodPhase) apimachinerywait.ConditionFunc {
 	return func() (done bool, err error) {
-		c.log("Checking for Pod %v Condition of %s/%s", phase, pod.GetNamespace(), pod.GetName())
 		if err := c.resources.Get(context.Background(), pod.GetName(), pod.GetNamespace(), pod); err != nil {
 			return false, err
 		}
