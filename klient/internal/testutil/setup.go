@@ -17,12 +17,15 @@ limitations under the License.
 package testutil
 
 import (
+	"context"
 	"time"
 
-	log "k8s.io/klog/v2"
-
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	log "k8s.io/klog/v2"
 	"sigs.k8s.io/e2e-framework/klient/conf"
 	"sigs.k8s.io/e2e-framework/support/kind"
 )
@@ -57,6 +60,9 @@ func SetupTestCluster(path string) *TestCluster {
 		log.Fatalln("failed to create new Client set for kind cluster", err)
 	}
 	tc.Clientset = clientSet
+	if err := waitForControlPlane(clientSet); err != nil {
+		log.Fatalln("failed to wait for Kind Cluster control-plane components", err)
+	}
 	return tc
 }
 
@@ -73,9 +79,67 @@ func setupKind() (kc *kind.Cluster, err error) {
 	if _, err = kc.Create(); err != nil {
 		return
 	}
-
-	waitPeriod := 10 * time.Second
-	log.Info("Waiting for kind pods to be initialized...")
-	time.Sleep(waitPeriod)
 	return
+}
+
+func waitForControlPlane(c kubernetes.Interface) error {
+	selector, err := metav1.LabelSelectorAsSelector(
+		&metav1.LabelSelector{
+			MatchExpressions: []metav1.LabelSelectorRequirement{
+				{Key: "component", Operator: metav1.LabelSelectorOpIn, Values: []string{"etcd", "kube-apiserver", "kube-controller-manager", "kube-scheduler"}},
+			},
+		},
+	)
+	if err != nil {
+		return err
+	}
+	options := metav1.ListOptions{LabelSelector: selector.String()}
+	log.Info("Waiting for kind control-plane pods to be initialized...")
+	err = wait.Poll(5*time.Second, time.Minute*2,
+		func() (bool, error) {
+			pods, err := c.CoreV1().Pods("kube-system").List(context.TODO(), options)
+			if err != nil {
+				return false, err
+			}
+			running := 0
+			for i := range pods.Items {
+				if pods.Items[i].Status.Phase == v1.PodRunning {
+					running++
+				}
+			}
+			// a kind cluster with one control-plane node will have 4 pods running the core apiserver components
+			return running >= 4, nil
+		})
+	if err != nil {
+		return err
+	}
+
+	selector, err = metav1.LabelSelectorAsSelector(
+		&metav1.LabelSelector{
+			MatchExpressions: []metav1.LabelSelectorRequirement{
+				{Key: "k8s-app", Operator: metav1.LabelSelectorOpIn, Values: []string{"kindnet", "kube-dns", "kube-proxy"}},
+			},
+		},
+	)
+	if err != nil {
+		return err
+	}
+	options = metav1.ListOptions{LabelSelector: selector.String()}
+	log.Info("Waiting for kind networking pods to be initialized...")
+	err = wait.Poll(5*time.Second, time.Minute*2,
+		func() (bool, error) {
+			pods, err := c.CoreV1().Pods("kube-system").List(context.TODO(), options)
+			if err != nil {
+				return false, err
+			}
+			running := 0
+			for i := range pods.Items {
+				if pods.Items[i].Status.Phase == v1.PodRunning {
+					running++
+				}
+			}
+			// a kind cluster with one control-plane node will have 4 k8s-app pods running networking components
+			return running >= 4, nil
+		})
+	return err
 }
