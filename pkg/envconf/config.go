@@ -19,10 +19,11 @@ package envconf
 import (
 	"encoding/hex"
 	"fmt"
-	"log"
 	"math/rand"
 	"regexp"
 	"time"
+
+	log "k8s.io/klog/v2"
 
 	"sigs.k8s.io/e2e-framework/klient"
 	"sigs.k8s.io/e2e-framework/pkg/flags"

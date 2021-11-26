@@ -18,9 +18,10 @@ package wait
 
 import (
 	"context"
-	"log"
 	"testing"
 	"time"
+
+	log "k8s.io/klog/v2"
 
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -93,7 +94,7 @@ func TestResourceDeleted(t *testing.T) {
 	go func() {
 		err := getResourceManager().Delete(context.TODO(), pod)
 		if err != nil {
-			log.Println("ran into an error trying to delete the resource", err)
+			log.ErrorS(err, "ran into an error trying to delete the resource")
 		}
 	}()
 	err = For(conditions.New(getResourceManager()).ResourceDeleted(pod), WithInterval(2*time.Second), WithTimeout(7*time.Minute), WithImmediate())
@@ -112,5 +113,5 @@ func TestResourceScaled(t *testing.T) {
 	if err != nil {
 		t.Error("failed waiting for resource to be scaled", err)
 	}
-	log.Println("Dione")
+	log.Info("Done")
 }

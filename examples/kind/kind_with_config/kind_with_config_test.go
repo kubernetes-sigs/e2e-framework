@@ -29,7 +29,6 @@ import (
 )
 
 func TestKindCluster(t *testing.T) {
-
 	deploymentFeature := features.New("appsv1/deployment").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			// start a deployment

@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -170,6 +172,9 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 	if flag.Lookup(skipFeatureFlag.Name) == nil {
 		flag.StringVar(&skipFeature, skipFeatureFlag.Name, skipFeatureFlag.DefValue, skipFeatureFlag.Usage)
 	}
+
+	// Enable klog/v2 flag integration
+	klog.InitFlags(nil)
 
 	if err := flag.CommandLine.Parse(args); err != nil {
 		return nil, fmt.Errorf("flags parsing: %w", err)

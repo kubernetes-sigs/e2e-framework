@@ -25,9 +25,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
 )
 
-var (
-	testenv env.Environment
-)
+var testenv env.Environment
 
 func TestMain(m *testing.M) {
 	testenv = env.New()

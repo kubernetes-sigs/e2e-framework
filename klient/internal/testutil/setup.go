@@ -17,8 +17,9 @@ limitations under the License.
 package testutil
 
 import (
-	"log"
 	"time"
+
+	log "k8s.io/klog/v2"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -62,7 +63,7 @@ func SetupTestCluster(path string) *TestCluster {
 func (t *TestCluster) DestroyTestCluster() {
 	err := t.KindCluster.Destroy()
 	if err != nil {
-		log.Println("error while deleting the cluster", err)
+		log.ErrorS(err, "error while deleting the cluster")
 		return
 	}
 }
@@ -74,7 +75,7 @@ func setupKind() (kc *kind.Cluster, err error) {
 	}
 
 	waitPeriod := 10 * time.Second
-	log.Println("Waiting for kind pods to be initlaized...")
+	log.Info("Waiting for kind pods to be initialized...")
 	time.Sleep(waitPeriod)
 	return
 }

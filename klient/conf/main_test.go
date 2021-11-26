@@ -19,11 +19,12 @@ package conf
 import (
 	"flag"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	log "k8s.io/klog/v2"
 
 	"k8s.io/client-go/util/homedir"
 )
@@ -47,7 +48,7 @@ func setup() {
 	if os.IsNotExist(err) {
 		err = os.MkdirAll(kubeconfigdir, 0o777)
 		if err != nil {
-			log.Println("failed to create .kube dir", err)
+			log.ErrorS(err, "failed to create .kube dir")
 			return
 		}
 
@@ -56,19 +57,19 @@ func setup() {
 
 		err = createFile(kubeconfigpath, data)
 		if err != nil {
-			log.Println("failed to create config file", err)
+			log.ErrorS(err, "failed to create config file")
 			return
 		}
 	}
 
-	log.Println("file created successfully", kubeconfigpath)
+	log.Info("file created successfully", kubeconfigpath)
 
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Paths to a kubeconfig. Only required if out-of-cluster.")
 
 	// set --kubeconfig flag
 	err = flag.Set("kubeconfig", kubeconfigpath)
 	if err != nil {
-		log.Println("unexpected error while setting flag value", err)
+		log.ErrorS(err, "unexpected error while setting flag value")
 		return
 	}
 
@@ -120,6 +121,6 @@ func teardown() {
 	home := homedir.HomeDir()
 	err := os.RemoveAll(filepath.Join(home, "test"))
 	if err != nil {
-		log.Println("failed to delete .kube dir", err)
+		log.ErrorS(err, "failed to delete .kube dir")
 	}
 }

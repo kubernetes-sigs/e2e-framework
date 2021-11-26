@@ -18,10 +18,11 @@ package skip_funcs
 
 import (
 	"context"
-	"log"
 	"os"
 	"testing"
 	"time"
+
+	log "k8s.io/klog/v2"
 
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -29,9 +30,7 @@ import (
 	"sigs.k8s.io/e2e-framework/support/kind"
 )
 
-var (
-	test env.Environment
-)
+var test env.Environment
 
 func TestMain(m *testing.M) {
 	// parse and load flags to configure environment

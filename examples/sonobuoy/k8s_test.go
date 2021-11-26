@@ -43,6 +43,6 @@ func TestAPICall(t *testing.T) {
 		}).Feature()
 
 	// testenv is the one global that we rely on; it passes the context
-	//and *envconf.Config to our feature.
+	// and *envconf.Config to our feature.
 	testenv.Test(t, feat)
 }
