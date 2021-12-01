@@ -17,6 +17,7 @@ limitations under the License.
 package kind
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -49,8 +50,16 @@ func (k *Cluster) WithVersion(ver string) *Cluster {
 
 func (k *Cluster) getKubeconfig() (string, error) {
 	kubecfg := fmt.Sprintf("%s-kubecfg", k.name)
-	p := k.e.RunProc(fmt.Sprintf(`kind get kubeconfig --name %s`, k.name))
+
+	p := k.e.StartProc(fmt.Sprintf(`kind get kubeconfig --name %s`, k.name))
 	if p.Err() != nil {
+		return "", fmt.Errorf("kind get kubeconfig: %w", p.Err())
+	}
+	var stdout bytes.Buffer
+	if _, err := stdout.ReadFrom(p.StdOut()); err != nil {
+		return "", fmt.Errorf("kind kubeconfig stdout bytes: %w", err)
+	}
+	if p.Wait().Err() != nil {
 		return "", fmt.Errorf("kind get kubeconfig: %s: %w", p.Result(), p.Err())
 	}
 
@@ -62,7 +71,7 @@ func (k *Cluster) getKubeconfig() (string, error) {
 
 	k.kubecfgFile = file.Name()
 
-	if n, err := io.Copy(file, strings.NewReader(p.Result())); n == 0 || err != nil {
+	if n, err := io.Copy(file, &stdout); n == 0 || err != nil {
 		return "", fmt.Errorf("kind kubecfg file: bytes copied: %d: %w]", n, err)
 	}
 
