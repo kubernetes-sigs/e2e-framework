@@ -45,7 +45,7 @@ The overall design of klient will be to provide functionalities in following cat
 ### Resource representation
 Users of this framework will be spared the burden of figuring out which Kubernetes object representation to use, mainly, typed or unstructured. To do this, klient uses the following types to wrap API objects and object lists. This is based on a model found in the runtime-controller project.
 
-```go=
+```go
 import (
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -67,7 +67,7 @@ type ObjectList interface {
 ### Specifying optional parameters
 Most methods used in this design will use an `Option` type (defined as a function) that will allow framework users to specify optional method arguments (as a variable list of arguments). For instance, the following shows how method `List` could receive optional arguments using type `ListOption`:
 
-```go=
+```go
 import (
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -80,7 +80,7 @@ func (_ Resource) List(ctx context.Context, namespace string, l ObjectList, opts
 
 Optional parameters can be omitted from the call (as shown below), in which case the framework would use sensible default values where applicable.
 
-```go=
+```go
 func main() {
     var deps v1.DeploymentList
     if res.List(
@@ -94,7 +94,7 @@ func main() {
 
 `klient` should define ready-made convenience functions, for commonly used optional arguments, to facilitate usage of this pattern. For example, below you can see the same example using a predefined function that sets the label values.
 
-```go=
+```go
 func main() {
     var deps v1.DeploymentList
     if res.List(
@@ -111,7 +111,7 @@ Often, when issuing operations against resources in distributed infrastructure r
 
 For instance, if we assume that type `ListOptions` includes a `RetryTimeout` field, the  following example shows how klient could specify an optional argument to cause the call to the API server to be retried for a given amount of time.
 
-```go=
+```go
 func main() {
     var deps v1.DeploymentList
     if res.List(
@@ -133,7 +133,7 @@ This package helps initialize Kubernetes configuration of type `*rest.Client` to
 ### Configuration creator functions
 The package should provide creator functions to create a new instance of `*rest.Config` as shown below:
 
-```go=
+```go
 import (
     "k8s.io/client-go/rest"
 )
@@ -152,7 +152,7 @@ func NewInCluster() (*rest.Config, error)
 ```
 
 Additionally, package `conf` should provide helper functions that help create the config.
-```go=
+```go
 // ResolveKubeConfigFile returns the kubeconfig file from
 // either flag --kubeconfig or env KUBECONFIG. 
 // It will only call flag.Parse() if flag.Parsed() is false.
@@ -194,12 +194,12 @@ type Resources struct {}
 ```
 
 #### Constructor function
-```go=
+```go
 func New(cfg *rest.Config) *Resources {...}
 ```
 
 #### Example - creating a resource
-```go=
+```go
 import (
     "sigs.k8s.io/e2e-framework/klient/conf"
     "sigs.k8s.io/e2e-framework/klient/k8s/resources"
@@ -218,7 +218,7 @@ func main() {
 ### Method `Resources.Search`
 Method Search allows for the search of arbitrary API resources that match provided arguments.  The following snippets outline the types used to construct an object search.
 
-```go=
+```go
 type SearchOptions struct {
     Groups     []string
     Categories []string
@@ -247,7 +247,7 @@ func (c *Resources) Search(ctx context.Context, opts... SearchOption)(SearchResu
 The following shows an example that retrieves all pods whose names starts with `"Dns"` from
 namespace `"default"` or `"net-svc"`.
 
-```go=
+```go
 import (
     "sigs.k8s.io/e2e-framework/klient/conf"
     "sigs.k8s.io/e2e-framework/klient/k8s/resources"
@@ -272,13 +272,13 @@ func main() {
 ### Method `Resources.Get`
 Method `Resources.Get` retrieves a specific object instance based on name.
 
-```go=
+```go
 // Get retrieves a specific API object based on specified `name` and type of parameter `obj`
 func (c *Resources) Get(ctx context.Context, name, namespace string, obj k8s.Object) error
 ```
 
 #### Example
-```go=
+```go
 import (
     "sigs.k8s.io/e2e-framework/klient/conf"
     "sigs.k8s.io/e2e-framework/klient/k8s/resources"
@@ -299,7 +299,7 @@ func main() {
 ### Method `Resources.List`
 Method `Resources.List` retrieves a list of API objects of a given type.
 
-```go=
+```go
 import (
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -313,7 +313,7 @@ func (c *Resources) List(ctx context.Context, namespace string, objs k8s.ObjectL
 
 #### Example
 
-```go=
+```go
 import (
     "sigs.k8s.io/e2e-framework/klient/conf"
     "sigs.k8s.io/e2e-framework/klient/k8s/resources"
@@ -336,7 +336,7 @@ func main() {
 
 #### Possible convenience functions
 Note in the above example, the `List` method uses function `resources.WithLabelSelector` to cleanly specify a label selctor for the call. This could be done with pre-defined convenience functions as listed below:
-```go=
+```go
 package "resources"
 func WithLabelSelector(sel string) ListOption{}
 func WithFieldSelector(sel string) ListOption{}
@@ -347,7 +347,7 @@ func WithTimeout(to time.Duration) ListOption{}
 ### Method `Resource.Create`
 Method `Resource.Create` creates and stores a new object on the API server.
 
-```go=
+```go
 package "resources"
 import (
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -362,7 +362,7 @@ func (c *Resources) Create(ctx context.Context, obj k8s.Object, opts...k8s.Creat
 
 #### Example
 
-```go=
+```go
 import (
     "sigs.k8s.io/e2e-framework/klient/conf"
     "sigs.k8s.io/e2e-framework/klient/k8s/resources"
@@ -394,7 +394,7 @@ func main() {
 #### Object constructor functions
 The`resources` package could include helper functions to help construct common object resources such as pods, deployment, services etc. For instance, the previous could be rewritten as follows:
 
-```go=
+```go
 func main() {
     cfg, _ := conf.New(conf.ResolveKubeConfigFile())
     res, _ := resources.New(cfg)
@@ -409,7 +409,7 @@ func main() {
 ### Method `Resources.Update`
 The `Resources.Update` method updates an existing cluster object.
 
-```go=
+```go
 import (
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -423,7 +423,7 @@ func (c *Resources) Update(ctx context.Context, obj Object, opts...UpdateOption)
 
 #### Example
 
-```go=
+```go
 import (
     "sigs.k8s.io/e2e-framework/klient/conf"
     "sigs.k8s.io/e2e-framework/klient/k8s/resources"
@@ -454,7 +454,7 @@ func main() {
 ### Method `Resources.Delete`
 Method `Resources.Delete` deletes an existing API object.
 
-```go=
+```go
 import (
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -468,7 +468,7 @@ func (c *Resources) Delete(ctx context.Context, obj Object, opts...UpdateOption)
 
 #### Example
 
-```go=
+```go
 import (
     "sigs.k8s.io/e2e-framework/klient/conf"
     "sigs.k8s.io/e2e-framework/klient/k8s/resources"
@@ -495,7 +495,7 @@ func main() {
 
 #### Possible convenience functions
 Package `resources` could include helper functions to help specify delete options as shown below:
-```go=
+```go
 package "resources"
 
 func WithGracePeriod(sel int64) DeleteOption
@@ -505,7 +505,7 @@ func WithDeletePropagation(prop v1.DeletePropagation) ListOption
 ### Method `Resources.Patch`
 This method facilitates patching portions of an existing object with new data from another object of the same type.
 
-```go=
+```go
 import (
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
     "k8s.io/apimachinery/pkg/types"
@@ -520,7 +520,7 @@ func (c *Resources) Patch(ctx context.Context, orig Object, patch Object, opts..
 
 #### Example
 
-```go=
+```go
 import (
     "sigs.k8s.io/e2e-framework/klient/conf"
     "sigs.k8s.io/e2e-framework/klient/k8s/resources"
@@ -569,7 +569,7 @@ func (r *Resources) BuildFromJSON(ctx context.Context, obj kclient.Object, json 
 
 #### Example
 
-```go=
+```go
 func main() {
 import (
     "sigs.k8s.io/e2e-framework/klient/conf"
