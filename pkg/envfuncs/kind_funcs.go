@@ -102,3 +102,51 @@ func DestroyKindCluster(name string) env.Func {
 		return ctx, nil
 	}
 }
+
+// LoadDockerImageToCluster returns an EnvFunc that
+// retrieves a previously saved kind Cluster in the context (using the name), and then loads a docker image
+// from the host into the cluster.
+//
+func LoadDockerImageToCluster(name, image string) env.Func {
+	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
+		clusterVal := ctx.Value(kindContextKey(name))
+		if clusterVal == nil {
+			return ctx, fmt.Errorf("load docker image func: context cluster is nil")
+		}
+
+		cluster, ok := clusterVal.(*kind.Cluster)
+		if !ok {
+			return ctx, fmt.Errorf("load docker image func: unexpected type for cluster value")
+		}
+
+		if err := cluster.LoadDockerImage(image); err != nil {
+			return ctx, fmt.Errorf("load docker image: %w", err)
+		}
+
+		return ctx, nil
+	}
+}
+
+// LoadImageArchiveToCluster returns an EnvFunc that
+// retrieves a previously saved kind Cluster in the context (using the name), and then loads a docker image TAR archive
+// from the host into the cluster.
+//
+func LoadImageArchiveToCluster(name, imageArchive string) env.Func {
+	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
+		clusterVal := ctx.Value(kindContextKey(name))
+		if clusterVal == nil {
+			return ctx, fmt.Errorf("load image archive func: context cluster is nil")
+		}
+
+		cluster, ok := clusterVal.(*kind.Cluster)
+		if !ok {
+			return ctx, fmt.Errorf("load image archive func: unexpected type for cluster value")
+		}
+
+		if err := cluster.LoadImageArchive(imageArchive); err != nil {
+			return ctx, fmt.Errorf("load image archive: %w", err)
+		}
+
+		return ctx, nil
+	}
+}

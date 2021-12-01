@@ -211,3 +211,21 @@ func (k *Cluster) installKind(e *gexe.Echo) error {
 	}
 	return fmt.Errorf("kind not available even after installation")
 }
+
+// LoadDockerImage loads a docker image from the host into the kind cluster
+func (k *Cluster) LoadDockerImage(image string) error {
+	p := k.e.RunProc(fmt.Sprintf(`kind load docker-image --name %s %s`, k.name, image))
+	if p.Err() != nil {
+		return fmt.Errorf("kind: load docker-image failed: %s: %s", p.Err(), p.Result())
+	}
+	return nil
+}
+
+// LoadImageArchive loads a docker image TAR archive from the host into the kind cluster
+func (k *Cluster) LoadImageArchive(imageArchive string) error {
+	p := k.e.RunProc(fmt.Sprintf(`kind load image-archive --name %s %s`, k.name, imageArchive))
+	if p.Err() != nil {
+		return fmt.Errorf("kind: load image-archive failed: %s: %s", p.Err(), p.Result())
+	}
+	return nil
+}
