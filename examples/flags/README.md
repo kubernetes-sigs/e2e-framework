@@ -32,6 +32,10 @@ There are several supported flags (for more accurate list, see package `pkg/flag
 * `skip-assessment`
 * `skip-features`
 * `skip-labels`
+* `v`
+
+> We also embed all supported flags from klog into supported flags. For details of these flags please
+> refer to [k8s.io/klog/v2](https://github.com/kubernetes/klog/blob/main/klog.go#L424)
 
 ### Running tests with flags
 
@@ -57,4 +61,10 @@ To skip a particular assessment , do the following
 
 ```shell
 ./flags.test --skip-assessment en
+```
+
+To get additional verbose logs
+
+```shell
+./flags.test --assess es --v 2
 ```

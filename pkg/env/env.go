@@ -21,8 +21,9 @@ package env
 import (
 	"context"
 	"fmt"
-	"log"
 	"testing"
+
+	log "k8s.io/klog/v2"
 
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -257,7 +258,7 @@ func (e *testEnv) Run(m *testing.M) int {
 	for _, fin := range finishes {
 		// context passed down to each finish step
 		if e.ctx, err = fin.run(e.ctx, e.cfg); err != nil {
-			log.Println(err)
+			log.V(2).ErrorS(err, "Finish action handlers")
 		}
 	}
 

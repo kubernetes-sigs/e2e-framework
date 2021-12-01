@@ -19,8 +19,9 @@ package resources
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"testing"
+
+	log "k8s.io/klog/v2"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -70,7 +71,7 @@ func TestRes(t *testing.T) {
 	}
 
 	if actual == dep {
-		log.Println("deployment found", dep.Name)
+		log.Info("deployment found", dep.Name)
 	}
 
 	var depObj appsv1.Deployment

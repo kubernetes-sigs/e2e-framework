@@ -20,9 +20,10 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
+
+	log "k8s.io/klog/v2"
 
 	"github.com/vladimirvivien/gexe"
 )
@@ -69,17 +70,17 @@ func (k *Cluster) getKubeconfig() (string, error) {
 }
 
 func (k *Cluster) CreateWithConfig(imageName, kindConfigFile string) (string, error) {
-	log.Println("Creating kind cluster ", k.name)
+	log.V(4).Info("Creating kind cluster ", k.name)
 	if err := k.findOrInstallKind(k.e); err != nil {
 		return "", err
 	}
 
 	if strings.Contains(k.e.Run("kind get clusters"), k.name) {
-		log.Println("Skipping Kind Cluster.Create: cluster already created: ", k.name)
+		log.V(4).Info("Skipping Kind Cluster.Create: cluster already created: ", k.name)
 		return k.getKubeconfig()
 	}
 
-	log.Println("launching: kind create cluster --name", k.name, "--image", imageName, "--config", kindConfigFile)
+	log.V(4).Info("Launching: kind create cluster --name", k.name, "--image", imageName, "--config", kindConfigFile)
 	p := k.e.RunProc(fmt.Sprintf(`kind create cluster --name %s --image %s --config %s`, k.name, imageName, kindConfigFile))
 	if p.Err() != nil {
 		return "", fmt.Errorf("failed to create kind cluster: %s : %s", p.Err(), p.Result())
@@ -89,24 +90,24 @@ func (k *Cluster) CreateWithConfig(imageName, kindConfigFile string) (string, er
 	if !strings.Contains(clusters, k.name) {
 		return "", fmt.Errorf("kind Cluster.Create: cluster %v still not in 'cluster list' after creation: %v", k.name, clusters)
 	}
-	log.Println("kind clusters available: ", clusters)
+	log.V(4).Info("kind clusters available: ", clusters)
 
 	// Grab kubeconfig file for cluster.
 	return k.getKubeconfig()
 }
 
 func (k *Cluster) Create() (string, error) {
-	log.Println("Creating kind cluster ", k.name)
+	log.V(4).Info("Creating kind cluster ", k.name)
 	if err := k.findOrInstallKind(k.e); err != nil {
 		return "", err
 	}
 
 	if strings.Contains(k.e.Run("kind get clusters"), k.name) {
-		log.Println("Skipping Kind Cluster.Create: cluster already created: ", k.name)
+		log.V(4).Info("Skipping Kind Cluster.Create: cluster already created: ", k.name)
 		return k.getKubeconfig()
 	}
 
-	log.Println("launching: kind create cluster --name", k.name)
+	log.V(4).Info("Launching: kind create cluster --name", k.name)
 	p := k.e.RunProc(fmt.Sprintf(`kind create cluster --name %s`, k.name))
 	if p.Err() != nil {
 		return "", fmt.Errorf("failed to create kind cluster: %s : %s", p.Err(), p.Result())
@@ -116,7 +117,7 @@ func (k *Cluster) Create() (string, error) {
 	if !strings.Contains(clusters, k.name) {
 		return "", fmt.Errorf("kind Cluster.Create: cluster %v still not in 'cluster list' after creation: %v", k.name, clusters)
 	}
-	log.Println("kind clusters available: ", clusters)
+	log.V(4).Info("kind clusters available: ", clusters)
 
 	// Grab kubeconfig file for cluster.
 	return k.getKubeconfig()
@@ -133,7 +134,7 @@ func (k *Cluster) GetKubeCtlContext() string {
 }
 
 func (k *Cluster) Destroy() error {
-	log.Println("Destroying kind cluster ", k.name)
+	log.V(4).Info("Destroying kind cluster ", k.name)
 	if err := k.findOrInstallKind(k.e); err != nil {
 		return err
 	}
@@ -143,7 +144,7 @@ func (k *Cluster) Destroy() error {
 		return fmt.Errorf("kind: delete cluster failed: %s: %s", p.Err(), p.Result())
 	}
 
-	log.Println("Removing kubeconfig file ", k.kubecfgFile)
+	log.V(4).Info("Removing kubeconfig file ", k.kubecfgFile)
 	if err := os.RemoveAll(k.kubecfgFile); err != nil {
 		return fmt.Errorf("kind: remove kubefconfig failed: %w", err)
 	}
@@ -153,7 +154,7 @@ func (k *Cluster) Destroy() error {
 
 func (k *Cluster) findOrInstallKind(e *gexe.Echo) error {
 	if e.Prog().Avail("kind") == "" {
-		log.Println(`kind not found, installing with GO111MODULE="on" go get sigs.k8s.io/kind@v0.11.0`)
+		log.V(4).Infof(`kind not found, installing with GO111MODULE="on" go get sigs.k8s.io/kind@%s`, kindVersion)
 		if err := k.installKind(e); err != nil {
 			return err
 		}
@@ -166,7 +167,7 @@ func (k *Cluster) installKind(e *gexe.Echo) error {
 		kindVersion = k.version
 	}
 
-	log.Println("installing: go get sigs.k8s.io/kind@", kindVersion)
+	log.V(4).Infof("Installing: go get sigs.k8s.io/kind@%s", kindVersion)
 	p := e.SetEnv("GO111MODULE", "on").RunProc(fmt.Sprintf("go get sigs.k8s.io/kind@%s", kindVersion))
 	if p.Err() != nil {
 		return fmt.Errorf("failed to install kind: %s", p.Err())
@@ -178,7 +179,7 @@ func (k *Cluster) installKind(e *gexe.Echo) error {
 
 	// PATH may already be set to include $GOPATH/bin so we don't need to.
 	if kindPath := e.Prog().Avail("kind"); kindPath != "" {
-		log.Println("installed kind at", kindPath)
+		log.V(4).Info("Installed kind at", kindPath)
 		return nil
 	}
 
@@ -192,11 +193,11 @@ func (k *Cluster) installKind(e *gexe.Echo) error {
 		return fmt.Errorf("failed to install kind: %s", p.Err())
 	}
 
-	log.Println(`Setting path to include $GOPATH/bin:`, p.Result())
+	log.V(4).Info(`Setting path to include $GOPATH/bin:`, p.Result())
 	e.SetEnv("PATH", p.Result())
 
 	if kindPath := e.Prog().Avail("kind"); kindPath != "" {
-		log.Println("installed kind at", kindPath)
+		log.V(4).Info("Installed kind at", kindPath)
 		return nil
 	}
 	return fmt.Errorf("kind not available even after installation")

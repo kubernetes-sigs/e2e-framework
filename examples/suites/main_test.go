@@ -18,9 +18,10 @@ package suites
 
 import (
 	"context"
-	"log"
 	"os"
 	"testing"
+
+	log "k8s.io/klog/v2"
 
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"

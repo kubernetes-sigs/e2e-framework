@@ -19,9 +19,10 @@ package resources
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"testing"
+
+	log "k8s.io/klog/v2"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -65,7 +66,7 @@ func deleteDeployment(ctx context.Context, dep *appsv1.Deployment, ns string) {
 	if err == nil {
 		err = clientset.AppsV1().Deployments(ns).Delete(ctx, dep.Name, metav1.DeleteOptions{})
 		if err != nil {
-			log.Println("error while deleting deployment", err)
+			log.ErrorS(err, "error while deleting deployment")
 		}
 	}
 }
@@ -78,7 +79,7 @@ func deleteNamespace(ctx context.Context, ns *corev1.Namespace) {
 
 	err = clientset.CoreV1().Namespaces().Delete(ctx, ns.Name, metav1.DeleteOptions{})
 	if err != nil {
-		log.Println("error while deleting namespace", err)
+		log.ErrorS(err, "error while deleting namespace")
 	}
 }
 

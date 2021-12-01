@@ -18,9 +18,10 @@ package flags
 
 import (
 	"context"
-	"log"
 	"os"
 	"testing"
+
+	log "k8s.io/klog/v2"
 
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -72,6 +73,7 @@ func TestWithFlags(t *testing.T) {
 		return ctx
 	})
 	f.Assess("es", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+		log.V(2).InfoS("Processing Assessment", "name", "es")
 		if greet("es") != "Olá" {
 			t.Error("unexpected message: es")
 		}

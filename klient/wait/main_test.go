@@ -18,10 +18,11 @@ package wait
 
 import (
 	"context"
-	"log"
 	"os"
 	"sync"
 	"testing"
+
+	log "k8s.io/klog/v2"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -69,7 +70,7 @@ func getResourceManager() *resources.Resources {
 func tearDown() {
 	err := deleteNamespace()
 	if err != nil {
-		log.Println("ran into an error trying to delete the namespace as part of the cleanup", err)
+		log.ErrorS(err, "ran into an error trying to delete the namespace as part of the cleanup")
 	}
 	tc.DestroyTestCluster()
 }

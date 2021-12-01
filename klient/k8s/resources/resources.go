@@ -19,7 +19,6 @@ package resources
 import (
 	"context"
 	"errors"
-	"log"
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -51,15 +50,11 @@ type Resources struct {
 // 2. if controller runtime client instantiation fails.
 func New(cfg *rest.Config) (*Resources, error) {
 	if cfg == nil {
-		// TODO: logging
-		log.Println("must provide rest.Config")
 		return nil, errors.New("must provide rest.Config")
 	}
 
 	cl, err := cr.New(cfg, cr.Options{Scheme: scheme.Scheme})
 	if err != nil {
-		// TODO: log error
-		log.Println("unexpected error creating client using provided config and client options", err)
 		return nil, err
 	}
 
