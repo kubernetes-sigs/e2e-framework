@@ -40,6 +40,7 @@ type Config struct {
 	skipFeatureRegex    *regexp.Regexp
 	skipLabels          map[string]string
 	skipAssessmentRegex *regexp.Regexp
+	parallelTests       bool
 }
 
 // New creates and initializes an empty environment configuration
@@ -77,6 +78,7 @@ func NewFromFlags() (*Config, error) {
 		e.skipAssessmentRegex = regexp.MustCompile(envFlags.SkipAssessment())
 	}
 	e.skipLabels = envFlags.SkipLabels()
+	e.parallelTests = envFlags.Parallel()
 
 	return e, nil
 }
@@ -213,6 +215,15 @@ func (c *Config) WithSkipLabels(lbls map[string]string) *Config {
 // SkipLabels returns the environment's label filters
 func (c *Config) SkipLabels() map[string]string {
 	return c.skipLabels
+}
+
+func (c *Config) WithParallelTestEnabled() *Config {
+	c.parallelTests = true
+	return c
+}
+
+func (c *Config) ParallelTestEnabled() bool {
+	return c.parallelTests
 }
 
 func randNS() string {

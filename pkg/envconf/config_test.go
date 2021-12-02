@@ -17,6 +17,7 @@ limitations under the License.
 package envconf
 
 import (
+	"os"
 	"testing"
 )
 
@@ -30,5 +31,19 @@ func TestConfig_New(t *testing.T) {
 	}
 	if cfg.featureRegex != nil || cfg.assessmentRegex != nil {
 		t.Errorf("regex filters should be nil")
+	}
+	if cfg.ParallelTestEnabled() {
+		t.Errorf("parallel test should be disabled by default")
+	}
+}
+
+func TestConfig_New_WithParallel(t *testing.T) {
+	os.Args = []string{"test-binary", "-parallel"}
+	cfg, err := NewFromFlags()
+	if err != nil {
+		t.Error("failed to parse args", err)
+	}
+	if !cfg.ParallelTestEnabled() {
+		t.Error("expected parallel test to be enabled when -parallel argument is provided")
 	}
 }

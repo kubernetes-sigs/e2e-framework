@@ -67,6 +67,11 @@ type Environment interface {
 	// This method surfaces context for further updates.
 	Test(*testing.T, ...Feature)
 
+	// TestInParallel executes a series of test features defined in a
+	// TestXXX function in parallel. This works the same way Test method
+	// does with the caveat that the features will all be run in parallel
+	TestInParallel(*testing.T, ...Feature)
+
 	// AfterEachTest registers environment funcs that are executed
 	// after each Env.Test(...).
 	AfterEachTest(...TestEnvFunc) Environment

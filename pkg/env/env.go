@@ -22,6 +22,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"sync"
 	"testing"
 	"time"
 
@@ -50,6 +51,10 @@ type testEnv struct {
 // New creates a test environment with no config attached.
 func New() types.Environment {
 	return newTestEnv()
+}
+
+func NewParallel() types.Environment {
+	return newTestEnvWithParallel()
 }
 
 // NewWithConfig creates an environment using an Environment Configuration value
@@ -93,6 +98,13 @@ func newTestEnv() *testEnv {
 		ctx: context.Background(),
 		cfg: envconf.New(),
 		rnd: rand.NewSource(time.Now().UnixNano()),
+	}
+}
+
+func newTestEnvWithParallel() *testEnv {
+	return &testEnv{
+		ctx: context.Background(),
+		cfg: envconf.New().WithParallelTestEnabled(),
 	}
 }
 
@@ -160,6 +172,119 @@ func (e *testEnv) AfterEachTest(funcs ...types.TestEnvFunc) types.Environment {
 	return e
 }
 
+// panicOnMissingContext is used to check if the test Env has a non-nil context setup
+// and fail fast if the context has not already been set
+func (e *testEnv) panicOnMissingContext() {
+	if e.ctx == nil {
+		panic("context not set") // something is terribly wrong.
+	}
+}
+
+// processTestActions is used to run a series of test action that were configured as
+// BeforeEachTest or AfterEachTest
+func (e *testEnv) processTestActions(t *testing.T, actions []action) {
+	var err error
+	for _, action := range actions {
+		if e.ctx, err = action.runWithT(e.ctx, e.cfg, t); err != nil {
+			t.Fatalf("BeforeEachTest failure: %s", err)
+		}
+	}
+}
+
+// processTestFeature is used to trigger the execution of the actual feature. This function wraps the entire
+// workflow of orchestrating the feature execution be running the action configured by BeforeEachFeature /
+// AfterEachFeature.
+func (e *testEnv) processTestFeature(t *testing.T, featureName string, feature types.Feature) {
+	var err error
+
+	// execute each feature
+	beforeFeatureActions := e.getBeforeFeatureActions()
+	afterFeatureActions := e.getAfterFeatureActions()
+
+	for _, action := range beforeFeatureActions {
+		if e.ctx, err = action.runWithFeature(e.ctx, e.cfg, deepCopyFeature(feature)); err != nil {
+			t.Fatalf("BeforeEachTest failure: %s", err)
+		}
+	}
+
+	// execute feature test
+	e.ctx = e.execFeature(e.ctx, t, featureName, feature)
+
+	// execute beforeFeature actions
+	for _, action := range afterFeatureActions {
+		if e.ctx, err = action.runWithFeature(e.ctx, e.cfg, deepCopyFeature(feature)); err != nil {
+			t.Fatalf("BeforeEachTest failure: %s", err)
+		}
+	}
+}
+
+// processTests is a wrapper function that can be invoked by either Test or TestInParallel methods.
+// Depending on the configuration of if the parallel tests are enabled or not, this will change the
+// nature of how the test gets executed.
+//
+// In case if the parallel run of test features are enabled, this function will invoke the processTestFeature
+// as a go-routine to get them to run in parallel
+func (e *testEnv) processTests(t *testing.T, enableParallelRun bool, testFeatures ...types.Feature) {
+	e.panicOnMissingContext()
+	if len(testFeatures) == 0 {
+		t.Log("No test testFeatures provided, skipping test")
+		return
+	}
+	beforeTestActions := e.getBeforeTestActions()
+	afterTestActions := e.getAfterTestActions()
+
+	e.processTestActions(t, beforeTestActions)
+
+	runInParallel := e.cfg.ParallelTestEnabled() && enableParallelRun
+
+	if runInParallel {
+		log.V(4).Info("Running test features in parallel")
+	}
+
+	var wg sync.WaitGroup
+	for i, feature := range testFeatures {
+		featName := feature.Name()
+		if featName == "" {
+			featName = fmt.Sprintf("Feature-%d", i+1)
+		}
+		if runInParallel {
+			wg.Add(1)
+			go func(w *sync.WaitGroup) {
+				defer w.Done()
+				e.processTestFeature(t, featName, feature)
+			}(&wg)
+		} else {
+			e.processTestFeature(t, featName, feature)
+		}
+	}
+	if runInParallel {
+		wg.Wait()
+	}
+	e.processTestActions(t, afterTestActions)
+}
+
+// TestInParallel executes a series a feature tests from within a
+// TestXXX function in parallel
+//
+// Feature setups and teardowns are executed at the same *testing.T
+// contextual level as the "test" that invoked this method. Assessments
+// are executed as a subtests of the feature.  This approach allows
+// features/assessments to be filtered using go test -run flag.
+//
+// Feature tests will have access to and able to update the context
+// passed to it.
+//
+// BeforeTest and AfterTest operations are executed before and after
+// the feature is tested respectively.
+//
+// BeforeTest and AfterTest operations are run in series of the entire
+// set of features being passed to this call while the feature themselves
+// are executed in parallel to avoid duplication of action that might happen
+// in BeforeTest and AfterTest actions
+func (e *testEnv) TestInParallel(t *testing.T, testFeatures ...types.Feature) {
+	e.processTests(t, true, testFeatures...)
+}
+
 // Test executes a feature test from within a TestXXX function.
 //
 // Feature setups and teardowns are executed at the same *testing.T
@@ -173,57 +298,7 @@ func (e *testEnv) AfterEachTest(funcs ...types.TestEnvFunc) types.Environment {
 // BeforeTest and AfterTest operations are executed before and after
 // the feature is tested respectively.
 func (e *testEnv) Test(t *testing.T, testFeatures ...types.Feature) {
-	if e.ctx == nil {
-		panic("context not set") // something is terribly wrong.
-	}
-
-	if len(testFeatures) == 0 {
-		t.Log("No test testFeatures provided, skipping test")
-		return
-	}
-
-	// execute the beforeTest functions
-	beforeTestActions := e.getBeforeTestActions()
-	var err error
-	for _, action := range beforeTestActions {
-		if e.ctx, err = action.runWithT(e.ctx, e.cfg, t); err != nil {
-			t.Fatalf("BeforeEachTest failure: %s", err)
-		}
-	}
-
-	// execute each feature
-	beforeFeatureActions := e.getBeforeFeatureActions()
-	afterFeatureActions := e.getAfterFeatureActions()
-	for i, feature := range testFeatures {
-		// execute beforeFeature actions
-		for _, action := range beforeFeatureActions {
-			if e.ctx, err = action.runWithFeature(e.ctx, e.cfg, deepCopyFeature(feature)); err != nil {
-				t.Fatalf("BeforeEachTest failure: %s", err)
-			}
-		}
-
-		// execute feature test
-		featName := feature.Name()
-		if featName == "" {
-			featName = fmt.Sprintf("Feature-%d", i+1)
-		}
-		e.ctx = e.execFeature(e.ctx, t, featName, feature)
-
-		// execute beforeFeature actions
-		for _, action := range afterFeatureActions {
-			if e.ctx, err = action.runWithFeature(e.ctx, e.cfg, deepCopyFeature(feature)); err != nil {
-				t.Fatalf("BeforeEachTest failure: %s", err)
-			}
-		}
-	}
-
-	// execute afterTest functions
-	afterTestActions := e.getAfterTestActions()
-	for _, action := range afterTestActions {
-		if e.ctx, err = action.runWithT(e.ctx, e.cfg, t); err != nil {
-			t.Fatalf("AfterEachTest failure: %s", err)
-		}
-	}
+	e.processTests(t, false, testFeatures...)
 }
 
 // Finish registers funcs that are executed at the end of the

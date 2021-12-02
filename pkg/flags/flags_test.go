@@ -28,7 +28,7 @@ func TestParseFlags(t *testing.T) {
 	}{
 		{
 			name:  "with all",
-			args:  []string{"-assess", "volume test", "--feature", "beta", "--labels", "k0=v0, k1=v1, k2=v2", "--skip-labels", "k0=v0, k1=v1", "-skip-features", "networking", "-skip-assessment", "volume test"},
+			args:  []string{"-assess", "volume test", "--feature", "beta", "--labels", "k0=v0, k1=v1, k2=v2", "--skip-labels", "k0=v0, k1=v1", "-skip-features", "networking", "-skip-assessment", "volume test", "-parallel"},
 			flags: &EnvFlags{assess: "volume test", feature: "beta", labels: LabelsMap{"k0": "v0", "k1": "v1", "k2": "v2"}, skiplabels: LabelsMap{"k0": "v0", "k1": "v1"}, skipFeatures: "networking", skipAssessments: "volume test"},
 		},
 	}
@@ -65,6 +65,10 @@ func TestParseFlags(t *testing.T) {
 
 			if testFlags.SkipAssessment() != test.flags.SkipAssessment() {
 				t.Errorf("unmatched assessment name for skip: %s", testFlags.SkipFeatures())
+			}
+
+			if !testFlags.Parallel() {
+				t.Errorf("unmatched flag parsed. Expected paralle to be true.")
 			}
 		})
 	}

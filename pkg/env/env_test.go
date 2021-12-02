@@ -19,6 +19,9 @@ package env
 import (
 	"context"
 	"testing"
+	"time"
+
+	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -527,5 +530,57 @@ func TestEnv_Context_Propagation(t *testing.T) {
 			t.Errorf("Expected:\n%v but got result:\n%v", expected, finalVal)
 			break
 		}
+	}
+}
+
+func TestTestEnv_TestInParallel(t *testing.T) {
+	env := NewParallel()
+	beforeEachCallCount := 0
+	afterEachCallCount := 0
+	beforeFeatureCount := 0
+	afterFeatureCount := 0
+	env.BeforeEachTest(func(ctx context.Context, config *envconf.Config, t *testing.T) (context.Context, error) {
+		beforeEachCallCount++
+		return ctx, nil
+	})
+
+	env.AfterEachTest(func(ctx context.Context, config *envconf.Config, t *testing.T) (context.Context, error) {
+		afterEachCallCount++
+		return ctx, nil
+	})
+
+	env.BeforeEachFeature(func(ctx context.Context, config *envconf.Config, feature types.Feature) (context.Context, error) {
+		t.Logf("Running before each feature for feature %s", feature.Name())
+		beforeFeatureCount++
+		return ctx, nil
+	})
+
+	env.AfterEachFeature(func(ctx context.Context, config *envconf.Config, feature types.Feature) (context.Context, error) {
+		t.Logf("Running after each feature for feature %s", feature.Name())
+		afterFeatureCount++
+		return ctx, nil
+	})
+
+	f1 := features.New("test-parallel-feature1").
+		Assess("check addition", func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
+			t.Log("assertion in feature1 for assessment 1")
+			time.Sleep(2 * time.Second)
+			return ctx
+		}).
+		Assess("check addition again", func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
+			t.Log("assertion in feature1 for assessment 2")
+			time.Sleep(1 * time.Second)
+			return ctx
+		})
+
+	f2 := features.New("test-parallel-feature2").
+		Assess("check subtraction", func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
+			t.Log("Assertion in feature2")
+			return ctx
+		})
+
+	env.TestInParallel(t, f1.Feature(), f2.Feature())
+	if beforeEachCallCount > 1 {
+		t.Fatal("BeforeEachTest handler should be invoked only once")
 	}
 }

@@ -34,6 +34,7 @@ const (
 	flagSkipLabelName      = "skip-labels"
 	flagSkipFeatureName    = "skip-features"
 	flagSkipAssessmentName = "skip-assessment"
+	flagParallelTestsName  = "parallel"
 )
 
 // Supported flag definitions
@@ -70,6 +71,10 @@ var (
 		Name:  flagSkipAssessmentName,
 		Usage: "Regular expression to skip assessment(s) to run",
 	}
+	parallelTestsFlag = flag.Flag{
+		Name:  flagParallelTestsName,
+		Usage: "Run test features in parallel",
+	}
 )
 
 // EnvFlags surfaces all resolved flag values for the testing framework
@@ -82,6 +87,7 @@ type EnvFlags struct {
 	skiplabels      LabelsMap
 	skipFeatures    string
 	skipAssessments string
+	parallelTests   bool
 }
 
 // Feature returns value for `-feature` flag
@@ -121,6 +127,10 @@ func (f *EnvFlags) Kubeconfig() string {
 	return f.kubeconfig
 }
 
+func (f *EnvFlags) Parallel() bool {
+	return f.parallelTests
+}
+
 // Parse parses defined CLI args os.Args[1:]
 func Parse() (*EnvFlags, error) {
 	return ParseArgs(os.Args[1:])
@@ -136,6 +146,7 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 		kubeconfig     string
 		skipFeature    string
 		skipAssessment string
+		parallelTests  bool
 	)
 
 	labels := make(LabelsMap)
@@ -173,6 +184,10 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 		flag.StringVar(&skipFeature, skipFeatureFlag.Name, skipFeatureFlag.DefValue, skipFeatureFlag.Usage)
 	}
 
+	if flag.Lookup(parallelTestsFlag.Name) == nil {
+		flag.BoolVar(&parallelTests, parallelTestsFlag.Name, false, parallelTestsFlag.Usage)
+	}
+
 	// Enable klog/v2 flag integration
 	klog.InitFlags(nil)
 
@@ -189,6 +204,7 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 		skiplabels:      skipLabels,
 		skipFeatures:    skipFeature,
 		skipAssessments: skipAssessment,
+		parallelTests:   parallelTests,
 	}, nil
 }
 
