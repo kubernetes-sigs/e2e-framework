@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: example-4
+  labels:
+    example: four
+data:
+  foo: |
+    foo: bar
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: example-5
+data:
+  foo: |
+    foo: bar

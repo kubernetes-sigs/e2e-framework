@@ -1,0 +1,7 @@
+apiVersion: mycrd.domain.com/v1alpha1
+kind: MyType
+metadata:
+  name: example-fake-instance
+  namespace: example
+spec:
+  example: value

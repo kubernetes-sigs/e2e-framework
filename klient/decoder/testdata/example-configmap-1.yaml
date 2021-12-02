@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: example-1
+data:
+  foo.cfg: |
+    foo: bar
