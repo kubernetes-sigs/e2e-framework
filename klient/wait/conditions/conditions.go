@@ -22,9 +22,11 @@ import (
 
 	log "k8s.io/klog/v2"
 
+	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	apimachinerywait "k8s.io/apimachinery/pkg/util/wait"
 
 	"sigs.k8s.io/e2e-framework/klient/k8s"
@@ -55,6 +57,124 @@ func (c *Condition) ResourceScaled(obj k8s.Object, scaleFetcher func(object k8s.
 			return false, nil
 		}
 		return scaleFetcher(obj) == replica, nil
+	}
+}
+
+// ResourceMatch is a helper function used to check if the resource under question has met a pre-defined state. This can
+// be leveraged for checking fields on a resource that may not be immediately present upon creation.
+func (c *Condition) ResourceMatch(obj k8s.Object, matchFetcher func(object k8s.Object) bool) apimachinerywait.ConditionFunc {
+	return func() (done bool, err error) {
+		if err := c.resources.Get(context.TODO(), obj.GetName(), obj.GetNamespace(), obj); err != nil {
+			return false, nil
+		}
+		return matchFetcher(obj), nil
+	}
+}
+
+// ResourceListN is a helper function that can be used to check for a minimum number of returned objects in a list. This function
+// accepts list options that can be used to adjust the set of objects queried for in the List resource operation.
+func (c *Condition) ResourceListN(list k8s.ObjectList, n int, listOptions ...resources.ListOption) apimachinerywait.ConditionFunc {
+	return c.ResourceListMatchN(list, n, func(object k8s.Object) bool { return true }, listOptions...)
+}
+
+// ResourceListMatchN is a helper function that can be used to check for a minimum number of returned objects in a list. This function
+// accepts list options and a match function that can be used to adjust the set of objects queried for in the List resource operation.
+func (c *Condition) ResourceListMatchN(list k8s.ObjectList, n int, matchFetcher func(object k8s.Object) bool, listOptions ...resources.ListOption) apimachinerywait.ConditionFunc {
+	return func() (done bool, err error) {
+		if err := c.resources.List(context.TODO(), list, listOptions...); err != nil {
+			return false, nil
+		}
+		var found int
+		metaList, err := meta.ExtractList(list)
+		if err != nil {
+			return false, err
+		}
+		for _, obj := range metaList {
+			if o, ok := obj.(k8s.Object); ok && matchFetcher(o) {
+				found++
+			} else if !ok {
+				return false, fmt.Errorf("condition: unexpected type %T in list, does not satisfy k8s.Object", obj)
+			}
+		}
+		return found >= n, nil
+	}
+}
+
+// ResourcesFound is a helper function that can be used to check for a set of objects. This function accepts a list
+// of named objects and will wait until it is able to retrieve each.
+func (c *Condition) ResourcesFound(list k8s.ObjectList) apimachinerywait.ConditionFunc {
+	return c.ResourcesMatch(list, func(object k8s.Object) bool { return true })
+}
+
+// ResourcesMatch is a helper function that can be used to check for a set of objects. This function accepts a list
+// of named objects and a match function, and will wait until it is able to retrieve each while passing the match validation.
+func (c *Condition) ResourcesMatch(list k8s.ObjectList, matchFetcher func(object k8s.Object) bool) apimachinerywait.ConditionFunc {
+	metaList, err := meta.ExtractList(list)
+	if err != nil {
+		return func() (done bool, err error) { return false, err }
+	}
+	objects := make(map[k8s.Object]bool)
+	for _, o := range metaList {
+		obj, ok := o.(k8s.Object)
+		if !ok {
+			return func() (done bool, err error) {
+				return false, fmt.Errorf("condition: unexpected type %T in list, does not satisfy k8s.Object", obj)
+			}
+		}
+		if obj.GetName() != "" {
+			objects[obj] = false
+		}
+	}
+	return func() (done bool, err error) {
+		found := 0
+		for obj, created := range objects {
+			if !created {
+				if err := c.resources.Get(context.TODO(), obj.GetName(), obj.GetNamespace(), obj); errors.IsNotFound(err) {
+					continue
+				} else if err != nil {
+					return false, err
+				}
+				if !matchFetcher(obj) {
+					continue
+				}
+			}
+			objects[obj] = true
+			found++
+		}
+		return len(objects) == found, nil
+	}
+}
+
+// ResourcesDeleted is a helper function that can be used to check for if a set of objects has been deleted. This function
+// accepts a list of named objects and will wait until it is not able to find each.
+func (c *Condition) ResourcesDeleted(list k8s.ObjectList) apimachinerywait.ConditionFunc {
+	metaList, err := meta.ExtractList(list)
+	if err != nil {
+		return func() (done bool, err error) { return false, err }
+	}
+	objects := make(map[k8s.Object]bool)
+	for _, o := range metaList {
+		obj, ok := o.(k8s.Object)
+		if !ok {
+			return func() (done bool, err error) {
+				return false, fmt.Errorf("condition: unexpected type %T in list, does not satisfy k8s.Object", obj)
+			}
+		}
+		if obj.GetName() != "" {
+			objects[obj] = true
+		}
+	}
+	return func() (done bool, err error) {
+		for obj, created := range objects {
+			if created {
+				if err := c.resources.Get(context.TODO(), obj.GetName(), obj.GetNamespace(), obj); errors.IsNotFound(err) {
+					delete(objects, obj)
+				} else if err != nil {
+					return false, err
+				}
+			}
+		}
+		return len(objects) == 0, nil
 	}
 }
 
@@ -89,6 +209,21 @@ func (c *Condition) JobConditionMatch(job k8s.Object, conditionType batchv1.JobC
 		status := job.(*batchv1.Job).Status
 		log.V(4).InfoS("Current Status of the job resource", "status", status)
 		for _, cond := range status.Conditions {
+			if cond.Type == conditionType && cond.Status == conditionState {
+				done = true
+			}
+		}
+		return
+	}
+}
+
+// DeploymentConditionMatch is a helper function that can be used to check a specific condition match for the Deployment in question.
+func (c *Condition) DeploymentConditionMatch(deployment k8s.Object, conditionType appsv1.DeploymentConditionType, conditionState v1.ConditionStatus) apimachinerywait.ConditionFunc {
+	return func() (done bool, err error) {
+		if err := c.resources.Get(context.TODO(), deployment.GetName(), deployment.GetNamespace(), deployment); err != nil {
+			return false, err
+		}
+		for _, cond := range deployment.(*appsv1.Deployment).Status.Conditions {
 			if cond.Type == conditionType && cond.Status == conditionState {
 				done = true
 			}

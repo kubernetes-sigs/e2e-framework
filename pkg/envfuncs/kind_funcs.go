@@ -19,8 +19,13 @@ package envfuncs
 import (
 	"context"
 	"fmt"
-	"time"
 
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/e2e-framework/klient"
+	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
+	"sigs.k8s.io/e2e-framework/klient/wait"
+	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/support/kind"
@@ -43,11 +48,14 @@ func CreateKindCluster(clusterName string) env.Func {
 			return ctx, err
 		}
 
-		// stall, wait for pods initializations
-		time.Sleep(7 * time.Second)
-
 		// update envconfig  with kubeconfig
 		cfg.WithKubeconfigFile(kubecfg)
+
+		// stall, wait for pods initializations
+		if err := waitForControlPlane(cfg.Client()); err != nil {
+			return ctx, err
+		}
+
 		// store entire cluster value in ctx for future access using the cluster name
 		return context.WithValue(ctx, kindContextKey(clusterName), k), nil
 	}
@@ -68,14 +76,55 @@ func CreateKindClusterWithConfig(clusterName, image, configFilePath string) env.
 			return ctx, err
 		}
 
-		// stall, wait for pods initializations
-		time.Sleep(7 * time.Second)
-
 		// update envconfig  with kubeconfig
 		cfg.WithKubeconfigFile(kubecfg)
+
+		// stall, wait for pods initializations
+		if err := waitForControlPlane(cfg.Client()); err != nil {
+			return ctx, err
+		}
+
 		// store entire cluster value in ctx for future access using the cluster name
 		return context.WithValue(ctx, kindContextKey(clusterName), k), nil
 	}
+}
+
+func waitForControlPlane(client klient.Client) error {
+	r, err := resources.New(client.RESTConfig())
+	if err != nil {
+		return err
+	}
+	selector, err := metav1.LabelSelectorAsSelector(
+		&metav1.LabelSelector{
+			MatchExpressions: []metav1.LabelSelectorRequirement{
+				{Key: "component", Operator: metav1.LabelSelectorOpIn, Values: []string{"etcd", "kube-apiserver", "kube-controller-manager", "kube-scheduler"}},
+			},
+		},
+	)
+	if err != nil {
+		return err
+	}
+	// a kind cluster with one control-plane node will have 4 pods running the core apiserver components
+	err = wait.For(conditions.New(r).ResourceListN(&v1.PodList{}, 4, resources.WithLabelSelector(selector.String())))
+	if err != nil {
+		return err
+	}
+	selector, err = metav1.LabelSelectorAsSelector(
+		&metav1.LabelSelector{
+			MatchExpressions: []metav1.LabelSelectorRequirement{
+				{Key: "k8s-app", Operator: metav1.LabelSelectorOpIn, Values: []string{"kindnet", "kube-dns", "kube-proxy"}},
+			},
+		},
+	)
+	if err != nil {
+		return err
+	}
+	// a kind cluster with one control-plane node will have 4 k8s-app pods running networking components
+	err = wait.For(conditions.New(r).ResourceListN(&v1.PodList{}, 4, resources.WithLabelSelector(selector.String())))
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // DestroyKindCluster returns an EnvFunc that
