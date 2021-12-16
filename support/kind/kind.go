@@ -78,52 +78,43 @@ func (k *Cluster) getKubeconfig() (string, error) {
 	return file.Name(), nil
 }
 
-func (k *Cluster) CreateWithConfig(imageName, kindConfigFile string) (string, error) {
-	log.V(4).Info("Creating kind cluster ", k.name)
-	if err := k.findOrInstallKind(k.e); err != nil {
-		return "", err
-	}
-
-	if strings.Contains(k.e.Run("kind get clusters"), k.name) {
-		log.V(4).Info("Skipping Kind Cluster.Create: cluster already created: ", k.name)
-		return k.getKubeconfig()
-	}
-
-	log.V(4).Info("Launching: kind create cluster --name", k.name, "--image", imageName, "--config", kindConfigFile)
-	p := k.e.RunProc(fmt.Sprintf(`kind create cluster --name %s --image %s --config %s`, k.name, imageName, kindConfigFile))
-	if p.Err() != nil {
-		return "", fmt.Errorf("failed to create kind cluster: %s : %s", p.Err(), p.Result())
-	}
-
+func (k *Cluster) clusterExists(name string) (string, bool) {
 	clusters := k.e.Run("kind get clusters")
-	if !strings.Contains(clusters, k.name) {
-		return "", fmt.Errorf("kind Cluster.Create: cluster %v still not in 'cluster list' after creation: %v", k.name, clusters)
+	for _, c := range strings.Split(clusters, "\n") {
+		if c == name {
+			return clusters, true
+		}
 	}
-	log.V(4).Info("kind clusters available: ", clusters)
-
-	// Grab kubeconfig file for cluster.
-	return k.getKubeconfig()
+	return clusters, false
 }
 
-func (k *Cluster) Create() (string, error) {
+func (k *Cluster) CreateWithConfig(imageName, kindConfigFile string) (string, error) {
+	return k.Create("--image", imageName, "--config", kindConfigFile)
+}
+
+func (k *Cluster) Create(args ...string) (string, error) {
 	log.V(4).Info("Creating kind cluster ", k.name)
 	if err := k.findOrInstallKind(k.e); err != nil {
 		return "", err
 	}
 
-	if strings.Contains(k.e.Run("kind get clusters"), k.name) {
+	if _, ok := k.clusterExists(k.name); ok {
 		log.V(4).Info("Skipping Kind Cluster.Create: cluster already created: ", k.name)
 		return k.getKubeconfig()
 	}
 
-	log.V(4).Info("Launching: kind create cluster --name", k.name)
-	p := k.e.RunProc(fmt.Sprintf(`kind create cluster --name %s`, k.name))
+	command := fmt.Sprintf(`kind create cluster --name %s`, k.name)
+	if len(args) > 0 {
+		command = fmt.Sprintf("%s %s", command, strings.Join(args, " "))
+	}
+	log.V(4).Info("Launching:", command)
+	p := k.e.RunProc(command)
 	if p.Err() != nil {
 		return "", fmt.Errorf("failed to create kind cluster: %s : %s", p.Err(), p.Result())
 	}
 
-	clusters := k.e.Run("kind get clusters")
-	if !strings.Contains(clusters, k.name) {
+	clusters, ok := k.clusterExists(k.name)
+	if !ok {
 		return "", fmt.Errorf("kind Cluster.Create: cluster %v still not in 'cluster list' after creation: %v", k.name, clusters)
 	}
 	log.V(4).Info("kind clusters available: ", clusters)
