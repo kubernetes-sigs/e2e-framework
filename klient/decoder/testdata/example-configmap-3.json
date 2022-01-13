@@ -1,0 +1,10 @@
+{
+    "apiVersion": "v1",
+    "kind": "ConfigMap",
+    "metadata": {
+      "name": "example-3"
+    },
+    "data": {
+      "foo.cfg": "foo: bar3\n"
+    }
+}
