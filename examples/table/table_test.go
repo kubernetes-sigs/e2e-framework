@@ -29,7 +29,8 @@ import (
 )
 
 var test = env.New()
-func TestMain(m *testing.M){
+
+func TestMain(m *testing.M) {
 	// Setup the rand number source and a limit
 	test.Setup(func(ctx context.Context, config *envconf.Config) (context.Context, error) {
 		rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -46,8 +47,8 @@ func TestTableDriven(t *testing.T) {
 		{
 			Name: "less than equal 64",
 			Assessment: func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
-				rnd := ctx.Value("randsrc").(*rand.Rand)  // in real test, check asserted type
-				lim := ctx.Value("limit").(int32) // check type assertion
+				rnd := ctx.Value("randsrc").(*rand.Rand) // in real test, check asserted type
+				lim := ctx.Value("limit").(int32)        // check type assertion
 				if rnd.Int31n(lim) > 64 {
 					t.Log("limit should be less than 64")
 				}
@@ -57,8 +58,8 @@ func TestTableDriven(t *testing.T) {
 		{
 			Name: "more than than equal 128",
 			Assessment: func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
-				rnd := ctx.Value("randsrc").(*rand.Rand)  // in real test, check asserted type
-				lim := ctx.Value("limit").(int32) // check type assertion
+				rnd := ctx.Value("randsrc").(*rand.Rand) // in real test, check asserted type
+				lim := ctx.Value("limit").(int32)        // check type assertion
 				if rnd.Int31n(lim) > 128 {
 					t.Log("limit should be less than 128")
 				}
@@ -67,8 +68,8 @@ func TestTableDriven(t *testing.T) {
 		},
 		{
 			Assessment: func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
-				rnd := ctx.Value("randsrc").(*rand.Rand)  // in real test, check asserted type
-				lim := ctx.Value("limit").(int32) // check type assertion
+				rnd := ctx.Value("randsrc").(*rand.Rand) // in real test, check asserted type
+				lim := ctx.Value("limit").(int32)        // check type assertion
 				if rnd.Int31n(lim) > 256 {
 					t.Log("limit should be less than 256")
 				}
@@ -91,5 +92,5 @@ func TestTableDriven(t *testing.T) {
 		},
 	}
 
-	test.Test(t, table0, table1.Build().Feature() )
+	test.Test(t, table0, table1.Build().Feature())
 }
