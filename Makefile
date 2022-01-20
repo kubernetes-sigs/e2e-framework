@@ -55,8 +55,12 @@ update-deps-go: ## Update all golang dependencies for this repo
 
 ##@ Tests
 
-.PHONY: test
-test: ## Runs golang unit tests
+.PHONY: install-helm test
+
+install-helm:  ## Install Helm toolchain for 3rd party integration
+	./hack/install-helm.sh
+
+test: install-helm ## Runs golang unit tests
 	./hack/test-go.sh
 
 ##@ Helpers
