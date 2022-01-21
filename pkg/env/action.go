@@ -71,7 +71,7 @@ func (a *action) runWithT(ctx context.Context, cfg *envconf.Config, t *testing.T
 }
 
 // runWithFeature will run the action and inject a FeatureInfo object into the callback function.
-func (a *action) runWithFeature(ctx context.Context, cfg *envconf.Config, fi types.Feature) (context.Context, error) {
+func (a *action) runWithFeature(ctx context.Context, cfg *envconf.Config, t *testing.T, fi types.Feature) (context.Context, error) {
 	switch a.role {
 	case roleBeforeFeature, roleAfterFeature:
 		for _, f := range a.featureFuncs {
@@ -80,7 +80,7 @@ func (a *action) runWithFeature(ctx context.Context, cfg *envconf.Config, fi typ
 			}
 
 			var err error
-			ctx, err = f(ctx, cfg, fi)
+			ctx, err = f(ctx, cfg, t, fi)
 			if err != nil {
 				return ctx, err
 			}

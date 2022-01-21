@@ -400,10 +400,10 @@ func TestEnv_Test(t *testing.T) {
 			setup: func(t *testing.T, ctx context.Context) []string {
 				env := newTestEnv()
 				val := []string{}
-				env.BeforeEachFeature(func(ctx context.Context, _ *envconf.Config, info features.Feature) (context.Context, error) {
+				env.BeforeEachFeature(func(ctx context.Context, _ *envconf.Config, _ *testing.T, info features.Feature) (context.Context, error) {
 					val = append(val, "before-each-feature")
 					return ctx, nil
-				}).AfterEachFeature(func(ctx context.Context, _ *envconf.Config, info features.Feature) (context.Context, error) {
+				}).AfterEachFeature(func(ctx context.Context, _ *envconf.Config, _ *testing.T, info features.Feature) (context.Context, error) {
 					val = append(val, "after-each-feature")
 					return ctx, nil
 				})
@@ -433,7 +433,7 @@ func TestEnv_Test(t *testing.T) {
 			setup: func(t *testing.T, ctx context.Context) []string {
 				env := newTestEnv()
 				val := []string{}
-				env.BeforeEachFeature(func(ctx context.Context, _ *envconf.Config, info features.Feature) (context.Context, error) {
+				env.BeforeEachFeature(func(ctx context.Context, _ *envconf.Config, _ *testing.T, info features.Feature) (context.Context, error) {
 					val = append(val, "before-each-feature")
 					t.Logf("%#v, len(steps)=%v step[0].Name: %v\n", info, len(info.Steps()), info.Steps()[0].Name())
 
@@ -452,7 +452,7 @@ func TestEnv_Test(t *testing.T) {
 					labelMap := info.Labels()
 					labelMap["foo"] = "bar"
 					return ctx, nil
-				}).AfterEachFeature(func(ctx context.Context, _ *envconf.Config, info features.Feature) (context.Context, error) {
+				}).AfterEachFeature(func(ctx context.Context, _ *envconf.Config, _ *testing.T, info features.Feature) (context.Context, error) {
 					val = append(val, "after-each-feature")
 					t.Logf("%#v, len(steps)=%v\n", info, len(info.Steps()))
 					if info.Labels()["foo"] == "bar" {
@@ -549,13 +549,13 @@ func TestTestEnv_TestInParallel(t *testing.T) {
 		return ctx, nil
 	})
 
-	env.BeforeEachFeature(func(ctx context.Context, config *envconf.Config, feature types.Feature) (context.Context, error) {
+	env.BeforeEachFeature(func(ctx context.Context, config *envconf.Config, _ *testing.T, feature types.Feature) (context.Context, error) {
 		t.Logf("Running before each feature for feature %s", feature.Name())
 		beforeFeatureCount++
 		return ctx, nil
 	})
 
-	env.AfterEachFeature(func(ctx context.Context, config *envconf.Config, feature types.Feature) (context.Context, error) {
+	env.AfterEachFeature(func(ctx context.Context, config *envconf.Config, _ *testing.T, feature types.Feature) (context.Context, error) {
 		t.Logf("Running after each feature for feature %s", feature.Name())
 		afterFeatureCount++
 		return ctx, nil

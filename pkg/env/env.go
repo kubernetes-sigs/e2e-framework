@@ -202,7 +202,7 @@ func (e *testEnv) processTestFeature(t *testing.T, featureName string, feature t
 	afterFeatureActions := e.getAfterFeatureActions()
 
 	for _, action := range beforeFeatureActions {
-		if e.ctx, err = action.runWithFeature(e.ctx, e.cfg, deepCopyFeature(feature)); err != nil {
+		if e.ctx, err = action.runWithFeature(e.ctx, e.cfg, t, deepCopyFeature(feature)); err != nil {
 			t.Fatalf("BeforeEachTest failure: %s", err)
 		}
 	}
@@ -212,7 +212,7 @@ func (e *testEnv) processTestFeature(t *testing.T, featureName string, feature t
 
 	// execute beforeFeature actions
 	for _, action := range afterFeatureActions {
-		if e.ctx, err = action.runWithFeature(e.ctx, e.cfg, deepCopyFeature(feature)); err != nil {
+		if e.ctx, err = action.runWithFeature(e.ctx, e.cfg, t, deepCopyFeature(feature)); err != nil {
 			t.Fatalf("BeforeEachTest failure: %s", err)
 		}
 	}

@@ -33,7 +33,9 @@ type EnvFunc func(context.Context, *envconf.Config) (context.Context, error)
 // can be used to customized the behavior of the
 // environment. Changes to context are expected to surface
 // to caller. Meant for use with before/after feature hooks.
-type FeatureEnvFunc func(context.Context, *envconf.Config, Feature) (context.Context, error)
+// *testing.T is provided in order to provide pass/fail context to
+// features.
+type FeatureEnvFunc func(context.Context, *envconf.Config, *testing.T, Feature) (context.Context, error)
 
 // TestEnvFunc represents a user-defined operation that
 // can be used to customized the behavior of the
