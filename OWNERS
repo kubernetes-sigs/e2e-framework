@@ -2,18 +2,17 @@
 
 approvers:
 - andrewsykim
-- BenTheElder
 - spiffxp
 - vladimirvivien
 reviewers:
 - andrewsykim
-- BenTheElder
 - cpanato
 - spiffxp
 - vladimirvivien
 - ShwethaKumbla
 
 emeritus_approvers:
+- BenTheElder
 - alejandrox1
 
 labels:
