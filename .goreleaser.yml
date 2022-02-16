@@ -1,0 +1,9 @@
+project_name: e2e-framework
+
+builds:
+  - skip: true
+
+release:
+  prerelease: allow
+  draft: true # allow for manual edits
+  github:

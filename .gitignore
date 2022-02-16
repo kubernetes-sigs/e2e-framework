@@ -4,3 +4,4 @@
 /coverage.out
 .DS_Store
 .vscode
+/dist/*
