@@ -61,3 +61,15 @@ func TestConfig_New_WithDryRun(t *testing.T) {
 		t.Errorf("expected dryRun mode to be enabled with invoked with --dry-run arguments")
 	}
 }
+
+func TestConfig_New_WithFailFastAndIgnoreFinalize(t *testing.T) {
+	flag.CommandLine = &flag.FlagSet{}
+	os.Args = []string{"test-binary", "-fail-fast"}
+	cfg, err := NewFromFlags()
+	if err != nil {
+		t.Error("failed to parse args", err)
+	}
+	if !cfg.FailFast() {
+		t.Error("expected fail-fast mode to be enabled when -fail-fast argument is passed")
+	}
+}

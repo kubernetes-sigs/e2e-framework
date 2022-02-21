@@ -260,6 +260,11 @@ func (e *testEnv) processTests(t *testing.T, enableParallelRun bool, testFeature
 			}(&wg, featName, featureCopy)
 		} else {
 			e.processTestFeature(t, featName, featureCopy)
+			// In case if the feature under test has failed, skip reset of the features
+			// that are part of the same test
+			if e.cfg.FailFast() && t.Failed() {
+				break
+			}
 		}
 	}
 	if runInParallel {
@@ -417,6 +422,7 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, featName string
 		// assessments run as feature/assessment sub level
 		assessments := features.GetStepsByLevel(f.Steps(), types.LevelAssess)
 
+		failed := false
 		for i, assess := range assessments {
 			assessName := assess.Name()
 			if assessName == "" {
@@ -429,6 +435,20 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, featName string
 				}
 				ctx = e.executeSteps(ctx, t, []types.Step{assess})
 			})
+			// Check if the Test assessment under question performed a `t.Fail()` or `t.Failed()` invocation.
+			// We need to track that and stop the next set of assessment in the feature under test from getting
+			// executed
+			if e.cfg.FailFast() && t.Failed() {
+				failed = true
+				break
+			}
+		}
+
+		// Let us fail the test fast and not run the teardown in case if the framework specific fail-fast mode is
+		// invoked to make sure we leave the traces of the failed test behind to enable better debugging for the
+		// test developers
+		if e.cfg.FailFast() && failed {
+			t.FailNow()
 		}
 
 		// teardowns run at feature-level

@@ -36,6 +36,7 @@ const (
 	flagSkipAssessmentName = "skip-assessment"
 	flagParallelTestsName  = "parallel"
 	flagDryRunName         = "dry-run"
+	flagFailFast           = "fail-fast"
 )
 
 // Supported flag definitions
@@ -80,6 +81,11 @@ var (
 		Name:  flagDryRunName,
 		Usage: "Run Test suite in dry-run mode. This will list the tests to be executed without actually running them",
 	}
+
+	failFastFlag = flag.Flag{
+		Name:  flagFailFast,
+		Usage: "Fail immediately and stop running untested code",
+	}
 )
 
 // EnvFlags surfaces all resolved flag values for the testing framework
@@ -94,6 +100,7 @@ type EnvFlags struct {
 	skipAssessments string
 	parallelTests   bool
 	dryRun          bool
+	failFast        bool
 }
 
 // Feature returns value for `-feature` flag
@@ -116,14 +123,21 @@ func (f *EnvFlags) Namespace() string {
 	return f.namespace
 }
 
+// SkipFeatures is used to get a RegExp pattern that can be used
+// to skip test features from getting executed
 func (f *EnvFlags) SkipFeatures() string {
 	return f.skipFeatures
 }
 
+// SkipAssessment is used to track the RegExp pattern that can be
+// used to skip certain assessments of the current feature being
+// executed
 func (f *EnvFlags) SkipAssessment() string {
 	return f.skipAssessments
 }
 
+// SkipLabels is used to define a series of labels that can be used
+// to skip test cases during execution
 func (f *EnvFlags) SkipLabels() LabelsMap {
 	return f.skiplabels
 }
@@ -133,12 +147,21 @@ func (f *EnvFlags) Kubeconfig() string {
 	return f.kubeconfig
 }
 
+// Parallel is used to indicate if the test features should be run in parallel
+// under a go-routine
 func (f *EnvFlags) Parallel() bool {
 	return f.parallelTests
 }
 
 func (f *EnvFlags) DryRun() bool {
 	return f.dryRun
+}
+
+// FailFast is used to indicate if the failure of an assessment should continue
+// assessing the rest of the features or skip it and continue to the next one.
+// This is set to false by default.
+func (f *EnvFlags) FailFast() bool {
+	return f.failFast
 }
 
 // Parse parses defined CLI args os.Args[1:]
@@ -158,6 +181,7 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 		skipAssessment string
 		parallelTests  bool
 		dryRun         bool
+		failFast       bool
 	)
 
 	labels := make(LabelsMap)
@@ -203,6 +227,10 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 		flag.BoolVar(&dryRun, dryRunFlag.Name, false, dryRunFlag.Usage)
 	}
 
+	if flag.Lookup(failFastFlag.Name) == nil {
+		flag.BoolVar(&failFast, failFastFlag.Name, false, failFastFlag.Usage)
+	}
+
 	// Enable klog/v2 flag integration
 	klog.InitFlags(nil)
 
@@ -216,6 +244,10 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 		dryRun = true
 	}
 
+	if failFast && parallelTests {
+		panic(fmt.Errorf("--fail-fast and --parallel are mutually exclusive options"))
+	}
+
 	return &EnvFlags{
 		feature:         feature,
 		assess:          assess,
@@ -227,6 +259,7 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 		skipAssessments: skipAssessment,
 		parallelTests:   parallelTests,
 		dryRun:          dryRun,
+		failFast:        failFast,
 	}, nil
 }
 
