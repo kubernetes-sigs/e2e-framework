@@ -108,6 +108,21 @@ func TestFeatureBuilder(t *testing.T) {
 				}
 			},
 		},
+		{ // nolint
+			name: "named setups",
+			setup: func(t *testing.T) types.Feature {
+				return New("test").WithSetup("setup-test", func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
+					return ctx
+				}).Feature()
+			},
+			eval: func(t *testing.T, f types.Feature) {
+				ft := f.(*defaultFeature) //nolint
+				setups := GetStepsByLevel(ft.Steps(), types.LevelSetup)
+				if setups[0].Name() != "setup-test" {
+					t.Errorf("unexpected setup name: %s", setups[0].Name())
+				}
+			},
+		},
 		{
 			name: "one teardown",
 			setup: func(t *testing.T) types.Feature {
@@ -149,6 +164,21 @@ func TestFeatureBuilder(t *testing.T) {
 				}
 			},
 		},
+		{ // nolint
+			name: "named teardowns",
+			setup: func(t *testing.T) types.Feature {
+				return New("test").WithTeardown("teardown-test", func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
+					return ctx
+				}).Feature()
+			},
+			eval: func(t *testing.T, f types.Feature) {
+				ft := f.(*defaultFeature) //nolint
+				setups := GetStepsByLevel(ft.Steps(), types.LevelTeardown)
+				if setups[0].Name() != "teardown-test" {
+					t.Errorf("unexpected teardown name: %s", setups[0].Name())
+				}
+			},
+		},
 		{
 			name: "single assessment",
 			setup: func(t *testing.T) types.Feature {
@@ -174,7 +204,7 @@ func TestFeatureBuilder(t *testing.T) {
 				return New("test").Assess("some test", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					// test
 					return ctx
-				}).Assess("some tets 2", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+				}).Assess("some tests 2", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					// test
 					return ctx
 				}).Feature()
@@ -196,10 +226,10 @@ func TestFeatureBuilder(t *testing.T) {
 				return New("test").Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					// test
 					return ctx
-				}).Assess("some tets 2", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+				}).Assess("some tests 2", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					// test
 					return ctx
-				}).Assess("some tets 3", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+				}).Assess("some tests 3", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					// test
 					return ctx
 				}).Teardown(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
