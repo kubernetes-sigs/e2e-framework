@@ -29,7 +29,7 @@ import (
 	"github.com/vladimirvivien/gexe"
 )
 
-var kindVersion = "v0.11.0"
+var kindVersion = "v0.12.0"
 
 type Cluster struct {
 	name        string
@@ -154,7 +154,7 @@ func (k *Cluster) Destroy() error {
 
 func (k *Cluster) findOrInstallKind(e *gexe.Echo) error {
 	if e.Prog().Avail("kind") == "" {
-		log.V(4).Infof(`kind not found, installing with GO111MODULE="on" go get sigs.k8s.io/kind@%s`, kindVersion)
+		log.V(4).Infof(`kind not found, installing with go install sigs.k8s.io/kind@%s`, kindVersion)
 		if err := k.installKind(e); err != nil {
 			return err
 		}
@@ -167,8 +167,8 @@ func (k *Cluster) installKind(e *gexe.Echo) error {
 		kindVersion = k.version
 	}
 
-	log.V(4).Infof("Installing: go get sigs.k8s.io/kind@%s", kindVersion)
-	p := e.SetEnv("GO111MODULE", "on").RunProc(fmt.Sprintf("go get sigs.k8s.io/kind@%s", kindVersion))
+	log.V(4).Infof("Installing: go install sigs.k8s.io/kind@%s", kindVersion)
+	p := e.RunProc(fmt.Sprintf("go install sigs.k8s.io/kind@%s", kindVersion))
 	if p.Err() != nil {
 		return fmt.Errorf("failed to install kind: %s", p.Err())
 	}
