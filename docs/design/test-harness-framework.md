@@ -469,7 +469,7 @@ The framework should automatically inject these filter values into the environme
 ### Skipping features
 The test framework should provide the ability to explicitly exclude features during a test run.  This could be done with the following flags:
 
-* `--skip-feature` - a regular expression that skips features with matching names
+* `--skip-features` - a regular expression that skips features with matching names
 * `--skip-assessment` - a regular expression that skips assessment with matching name
 * `--skip-lables` - a comma-separated list of key/value pairs used to skip features with matching lables
 
