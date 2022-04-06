@@ -20,8 +20,11 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"time"
 
+	"github.com/vladimirvivien/gexe"
 	log "k8s.io/klog/v2"
+	"sigs.k8s.io/e2e-framework/klient/k8s/resources/testdata/projectExample"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -236,4 +239,44 @@ func TestListAllPods(t *testing.T) {
 	}
 
 	t.Logf("pod list contains %d pods", len(pods.Items))
+}
+
+func TestGetCRDs(t *testing.T) {
+	res, err := New(cfg)
+	if err != nil {
+		t.Fatalf("Error creating new resources object: %v", err)
+	}
+
+	// Register type for the API server.
+	e := gexe.New()
+	p := e.RunProc(`kubectl apply -f ./testdata/projectExample/resourcedefinition.yaml`)
+	if p.Err() != nil {
+		t.Fatalf("Failed to register CRD: %v %v", p.Err(), p.Result())
+	}
+	// Sometimes CRDs need just a bit of time before being ready to use.
+	time.Sleep(5 * time.Second)
+
+	// Create one
+	p = e.RunProc(`kubectl apply -f ./testdata/projectExample/project.yaml`)
+	if p.Err() != nil {
+		t.Fatalf("Failed to create a CRD via yaml: %v %v", p.Err(), p.Result())
+	}
+
+	// See that we can't list it because we don't know the type.
+	ps := &projectExample.ProjectList{}
+	err = res.List(context.TODO(), ps)
+	if err == nil {
+		t.Error("Expected error while listing custom resources before adding it to scheme, but got none")
+	}
+
+	// Register type with klient.
+	if err := projectExample.AddToScheme(res.GetScheme()); err != nil {
+		t.Fatalf("Failed to add to resource scheme: %v", err)
+	}
+
+	// See that we can after registering it.
+	err = res.List(context.TODO(), ps)
+	if err != nil {
+		t.Error("error while listing custom resources", err)
+	}
 }

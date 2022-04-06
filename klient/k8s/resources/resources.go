@@ -21,11 +21,10 @@ import (
 	"errors"
 	"time"
 
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/rest"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	cr "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 )
@@ -178,4 +177,8 @@ func (r *Resources) Annotate(obj k8s.Object, annotation map[string]string) {
 // Label apply labels to an existing resources.
 func (r *Resources) Label(obj k8s.Object, label map[string]string) {
 	obj.SetLabels(label)
+}
+
+func (r *Resources) GetScheme() *runtime.Scheme {
+	return r.scheme
 }
