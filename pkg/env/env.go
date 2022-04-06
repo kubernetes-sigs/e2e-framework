@@ -243,18 +243,19 @@ func (e *testEnv) processTests(t *testing.T, enableParallelRun bool, testFeature
 
 	var wg sync.WaitGroup
 	for i, feature := range testFeatures {
+		featureCopy := feature
 		featName := feature.Name()
 		if featName == "" {
 			featName = fmt.Sprintf("Feature-%d", i+1)
 		}
 		if runInParallel {
 			wg.Add(1)
-			go func(w *sync.WaitGroup) {
+			go func(w *sync.WaitGroup, featName string, f types.Feature) {
 				defer w.Done()
-				e.processTestFeature(t, featName, feature)
-			}(&wg)
+				e.processTestFeature(t, featName, f)
+			}(&wg, featName, featureCopy)
 		} else {
-			e.processTestFeature(t, featName, feature)
+			e.processTestFeature(t, featName, featureCopy)
 		}
 	}
 	if runInParallel {
