@@ -112,6 +112,7 @@ func (c *Config) NewClient() (klient.Client, error) {
 		return nil, fmt.Errorf("envconfig: client failed: %w", err)
 	}
 	c.client = client
+
 	return c.client, nil
 }
 
