@@ -350,7 +350,7 @@ func TestMain(m *testing.M) {
     })
 
     env.Finish(func(ctx context.Context, cfg envconf.Config) (context.Context, error){
-        // setup environment
+        // teardown environment
         return ctx, nil
     })
     ...
