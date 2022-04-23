@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # If you update this file, please follow
-# https://suva.sh/posts/well-documented-makefiles
+# https://suva.sh/en/writings/well-documented-makefiles/
 
 .DEFAULT_GOAL:=help
 SHELL:=/usr/bin/env bash
