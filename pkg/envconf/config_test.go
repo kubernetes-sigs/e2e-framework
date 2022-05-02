@@ -17,6 +17,7 @@ limitations under the License.
 package envconf
 
 import (
+	"flag"
 	"os"
 	"testing"
 )
@@ -39,11 +40,24 @@ func TestConfig_New(t *testing.T) {
 
 func TestConfig_New_WithParallel(t *testing.T) {
 	os.Args = []string{"test-binary", "-parallel"}
+	flag.CommandLine = &flag.FlagSet{}
 	cfg, err := NewFromFlags()
 	if err != nil {
 		t.Error("failed to parse args", err)
 	}
 	if !cfg.ParallelTestEnabled() {
 		t.Error("expected parallel test to be enabled when -parallel argument is provided")
+	}
+}
+
+func TestConfig_New_WithDryRun(t *testing.T) {
+	os.Args = []string{"test-binary", "--dry-run"}
+	flag.CommandLine = &flag.FlagSet{}
+	cfg, err := NewFromFlags()
+	if err != nil {
+		t.Error("failed to parse args", err)
+	}
+	if !cfg.DryRunMode() {
+		t.Errorf("expected dryRun mode to be enabled with invoked with --dry-run arguments")
 	}
 }

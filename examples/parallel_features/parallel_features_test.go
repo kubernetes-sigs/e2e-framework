@@ -24,7 +24,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	log "k8s.io/klog/v2"
 
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
@@ -43,7 +42,6 @@ var (
 
 func TestMain(m *testing.M) {
 	cfg, _ := envconf.NewFromFlags()
-	log.InfoS("Args", "flag", cfg)
 	testEnv = env.NewWithConfig(cfg)
 
 	clusterName = envconf.RandomName("kind-parallel", 16)

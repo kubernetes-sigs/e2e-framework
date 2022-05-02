@@ -17,6 +17,7 @@ limitations under the License.
 package flags
 
 import (
+	"flag"
 	"testing"
 )
 
@@ -28,13 +29,14 @@ func TestParseFlags(t *testing.T) {
 	}{
 		{
 			name:  "with all",
-			args:  []string{"-assess", "volume test", "--feature", "beta", "--labels", "k0=v0, k1=v1, k2=v2", "--skip-labels", "k0=v0, k1=v1", "-skip-features", "networking", "-skip-assessment", "volume test", "-parallel"},
+			args:  []string{"-assess", "volume test", "--feature", "beta", "--labels", "k0=v0, k1=v1, k2=v2", "--skip-labels", "k0=v0, k1=v1", "-skip-features", "networking", "-skip-assessment", "volume test", "-parallel", "--dry-run"},
 			flags: &EnvFlags{assess: "volume test", feature: "beta", labels: LabelsMap{"k0": "v0", "k1": "v1", "k2": "v2"}, skiplabels: LabelsMap{"k0": "v0", "k1": "v1"}, skipFeatures: "networking", skipAssessments: "volume test"},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			flag.CommandLine = &flag.FlagSet{}
 			testFlags, err := ParseArgs(test.args)
 			if err != nil {
 				t.Fatal(err)
@@ -68,7 +70,11 @@ func TestParseFlags(t *testing.T) {
 			}
 
 			if !testFlags.Parallel() {
-				t.Errorf("unmatched flag parsed. Expected paralle to be true.")
+				t.Errorf("unmatched flag parsed. Expected parallel to be true.")
+			}
+
+			if !testFlags.DryRun() {
+				t.Errorf("unmatched flag parsed. Expected dryRun to be true.")
 			}
 		})
 	}

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"testing"
 
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
@@ -52,6 +53,10 @@ type action struct {
 func (a *action) runWithT(ctx context.Context, cfg *envconf.Config, t *testing.T) (context.Context, error) {
 	switch a.role {
 	case roleBeforeTest, roleAfterTest:
+		if cfg.DryRunMode() {
+			klog.V(2).Info("Skipping execution of roleBeforeTest and roleAfterTest due to framework being in dry-run mode")
+			return ctx, nil
+		}
 		for _, f := range a.testFuncs {
 			if f == nil {
 				continue
@@ -74,6 +79,10 @@ func (a *action) runWithT(ctx context.Context, cfg *envconf.Config, t *testing.T
 func (a *action) runWithFeature(ctx context.Context, cfg *envconf.Config, t *testing.T, fi types.Feature) (context.Context, error) {
 	switch a.role {
 	case roleBeforeFeature, roleAfterFeature:
+		if cfg.DryRunMode() {
+			klog.V(2).Info("Skipping execution of roleBeforeFeature and roleAfterFeature due to framework being in dry-run mode")
+			return ctx, nil
+		}
 		for _, f := range a.featureFuncs {
 			if f == nil {
 				continue
@@ -92,6 +101,10 @@ func (a *action) runWithFeature(ctx context.Context, cfg *envconf.Config, t *tes
 }
 
 func (a *action) run(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
+	if cfg.DryRunMode() {
+		klog.V(2).InfoS("Skipping processing of action due to framework being in dry-run mode")
+		return ctx, nil
+	}
 	for _, f := range a.funcs {
 		if f == nil {
 			continue

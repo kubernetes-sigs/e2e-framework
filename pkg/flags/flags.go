@@ -35,6 +35,7 @@ const (
 	flagSkipFeatureName    = "skip-features"
 	flagSkipAssessmentName = "skip-assessment"
 	flagParallelTestsName  = "parallel"
+	flagDryRunName         = "dry-run"
 )
 
 // Supported flag definitions
@@ -75,6 +76,10 @@ var (
 		Name:  flagParallelTestsName,
 		Usage: "Run test features in parallel",
 	}
+	dryRunFlag = flag.Flag{
+		Name:  flagDryRunName,
+		Usage: "Run Test suite in dry-run mode. This will list the tests to be executed without actually running them",
+	}
 )
 
 // EnvFlags surfaces all resolved flag values for the testing framework
@@ -88,6 +93,7 @@ type EnvFlags struct {
 	skipFeatures    string
 	skipAssessments string
 	parallelTests   bool
+	dryRun          bool
 }
 
 // Feature returns value for `-feature` flag
@@ -131,6 +137,10 @@ func (f *EnvFlags) Parallel() bool {
 	return f.parallelTests
 }
 
+func (f *EnvFlags) DryRun() bool {
+	return f.dryRun
+}
+
 // Parse parses defined CLI args os.Args[1:]
 func Parse() (*EnvFlags, error) {
 	return ParseArgs(os.Args[1:])
@@ -147,6 +157,7 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 		skipFeature    string
 		skipAssessment string
 		parallelTests  bool
+		dryRun         bool
 	)
 
 	labels := make(LabelsMap)
@@ -188,11 +199,21 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 		flag.BoolVar(&parallelTests, parallelTestsFlag.Name, false, parallelTestsFlag.Usage)
 	}
 
+	if flag.Lookup(dryRunFlag.Name) == nil {
+		flag.BoolVar(&dryRun, dryRunFlag.Name, false, dryRunFlag.Usage)
+	}
+
 	// Enable klog/v2 flag integration
 	klog.InitFlags(nil)
 
 	if err := flag.CommandLine.Parse(args); err != nil {
 		return nil, fmt.Errorf("flags parsing: %w", err)
+	}
+
+	// Hook into the default test.list of the `go test` and integrate that with the `--dry-run` behavior. Treat them the same way
+	if !dryRun && flag.Lookup("test.list") != nil && flag.Lookup("test.list").Value.String() == "true" {
+		klog.V(2).Info("Enabling dry-run mode as the tests were invoked in list mode")
+		dryRun = true
 	}
 
 	return &EnvFlags{
@@ -205,6 +226,7 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 		skipFeatures:    skipFeature,
 		skipAssessments: skipAssessment,
 		parallelTests:   parallelTests,
+		dryRun:          dryRun,
 	}, nil
 }
 
