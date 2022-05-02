@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"os"
 	"strings"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -90,6 +91,20 @@ func DecodeAllFiles(ctx context.Context, fsys fs.FS, pattern string, options ...
 		return nil
 	}, options...)
 	return objects, err
+}
+
+// ApplyWithManifestDir resolves all the files in the Directory dirPath against the globbing pattern and creates a kubernetes
+// resource for each of the resources found under the manifest directory.
+func ApplyWithManifestDir(ctx context.Context, r *resources.Resources, dirPath, pattern string, createOptions []resources.CreateOption, options ...DecodeOption) error {
+	err := DecodeEachFile(ctx, os.DirFS(dirPath), pattern, CreateHandler(r, createOptions...), options...)
+	return err
+}
+
+// DeleteWithManifestDir does the reverse of ApplyUsingManifestDir does. This will resolve all files in the dirPath against the pattern and then
+// delete those kubernetes resources found under the manifest directory.
+func DeleteWithManifestDir(ctx context.Context, r *resources.Resources, dirPath, pattern string, deleteOptions []resources.DeleteOption, options ...DecodeOption) error {
+	err := DecodeEachFile(ctx, os.DirFS(dirPath), pattern, DeleteHandler(r, deleteOptions...), options...)
+	return err
 }
 
 // Decode a stream of documents of any Kind using either the innate typing of the scheme.
