@@ -35,6 +35,7 @@ func TestAction_Run(t *testing.T) {
 	}{
 		{
 			name: "single-step action",
+			cfg:  &envconf.Config{},
 			ctx:  context.WithValue(context.TODO(), &ctxTestKeyString{}, 1),
 			setup: func(ctx context.Context, cfg *envconf.Config) (val int, err error) {
 				funcs := []types.EnvFunc{
@@ -50,6 +51,7 @@ func TestAction_Run(t *testing.T) {
 		},
 		{
 			name: "multi-step action",
+			cfg:  &envconf.Config{},
 			ctx:  context.WithValue(context.TODO(), &ctxTestKeyString{}, 1),
 			setup: func(ctx context.Context, cfg *envconf.Config) (val int, err error) {
 				funcs := []types.EnvFunc{
@@ -69,6 +71,7 @@ func TestAction_Run(t *testing.T) {
 		},
 		{
 			name: "read from context",
+			cfg:  &envconf.Config{},
 			ctx:  context.WithValue(context.TODO(), &ctxTestKeyString{}, 1),
 			setup: func(ctx context.Context, cfg *envconf.Config) (val int, err error) {
 				funcs := []types.EnvFunc{

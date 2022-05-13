@@ -41,6 +41,7 @@ type Config struct {
 	skipLabels          map[string]string
 	skipAssessmentRegex *regexp.Regexp
 	parallelTests       bool
+	dryRun              bool
 }
 
 // New creates and initializes an empty environment configuration
@@ -79,6 +80,7 @@ func NewFromFlags() (*Config, error) {
 	}
 	e.skipLabels = envFlags.SkipLabels()
 	e.parallelTests = envFlags.Parallel()
+	e.dryRun = envFlags.DryRun()
 
 	return e, nil
 }
@@ -225,6 +227,15 @@ func (c *Config) WithParallelTestEnabled() *Config {
 
 func (c *Config) ParallelTestEnabled() bool {
 	return c.parallelTests
+}
+
+func (c *Config) WithDryRunMode() *Config {
+	c.dryRun = true
+	return c
+}
+
+func (c *Config) DryRunMode() bool {
+	return c.dryRun
 }
 
 func randNS() string {
