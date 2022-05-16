@@ -197,7 +197,7 @@ func (m *Manager) RunInstall(opts ...Option) error {
 // RunUninstall provides a way to uninstall the specified helm chart (useful in teardowns etc...)
 func (m *Manager) RunUninstall(opts ...Option) error {
 	o := m.processOpts(opts...)
-	o.mode = "install"
+	o.mode = "uninstall"
 	return m.run(o)
 }
 
