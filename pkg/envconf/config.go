@@ -42,6 +42,7 @@ type Config struct {
 	skipAssessmentRegex *regexp.Regexp
 	parallelTests       bool
 	dryRun              bool
+	failFast            bool
 }
 
 // New creates and initializes an empty environment configuration
@@ -81,6 +82,7 @@ func NewFromFlags() (*Config, error) {
 	e.skipLabels = envFlags.SkipLabels()
 	e.parallelTests = envFlags.Parallel()
 	e.dryRun = envFlags.DryRun()
+	e.failFast = envFlags.FailFast()
 
 	return e, nil
 }
@@ -220,11 +222,15 @@ func (c *Config) SkipLabels() map[string]string {
 	return c.skipLabels
 }
 
+// WithParallelTestEnabled can be used to enable parallel run of the test
+// features
 func (c *Config) WithParallelTestEnabled() *Config {
 	c.parallelTests = true
 	return c
 }
 
+// ParallelTestEnabled indicates if the test features are being run in
+// parallel or not
 func (c *Config) ParallelTestEnabled() bool {
 	return c.parallelTests
 }
@@ -236,6 +242,21 @@ func (c *Config) WithDryRunMode() *Config {
 
 func (c *Config) DryRunMode() bool {
 	return c.dryRun
+}
+
+// WithFailFast can be used to enable framework specific fail fast mode
+// that controls the test execution of the features and assessments under
+// test
+func (c *Config) WithFailFast() *Config {
+	c.failFast = true
+	return c
+}
+
+// FailFast indicate if the framework is running in fail fast mode. This
+// controls the behavior of how the assessments and features are handled
+// if a test encounters a failure result
+func (c *Config) FailFast() bool {
+	return c.failFast
 }
 
 func randNS() string {
