@@ -14,7 +14,7 @@ dep := appsv1.Deployment{
 			}
 
 			// watch for the deployment and triger action based on the event recieved.
-			go cl.Resources().Watch(&appsv1.DeploymentList{}, &client.ListOptions{
+			cl.Resources().Watch(&appsv1.DeploymentList{}, &client.ListOptions{
 				FieldSelector: fields.OneTermEqualSelector("metadata.name", dep.Name),
 				Namespace:     dep.Namespace}, cl.RESTConfig()).WithAddFunc(onAdd).WithDeleteFunc(onDelete).Start(ctx)
 ...

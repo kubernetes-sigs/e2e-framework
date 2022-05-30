@@ -44,7 +44,7 @@ func TestWatchForResources(t *testing.T) {
 			}
 
 			// watch for the deployment and triger action based on the event recieved.
-			go cl.Resources().Watch(&appsv1.DeploymentList{}, resources.WithFieldSelector(labels.FormatLabels(map[string]string{"metadata.name": dep.Name}))).
+			cl.Resources().Watch(&appsv1.DeploymentList{}, resources.WithFieldSelector(labels.FormatLabels(map[string]string{"metadata.name": dep.Name}))).
 				WithAddFunc(onAdd).WithDeleteFunc(onDelete).Start(ctx)
 
 			return ctx
@@ -96,12 +96,10 @@ func TestWatchForResourcesWithStop(t *testing.T) {
 			w = cl.Resources().Watch(&appsv1.DeploymentList{}, resources.WithFieldSelector(labels.FormatLabels(map[string]string{"metadata.name": dep.Name}))).
 				WithAddFunc(onAdd).WithDeleteFunc(onDelete)
 
-			go func() {
-				err := w.Start(ctx)
-				if err != nil {
-					t.Error(err)
-				}
-			}()
+			err = w.Start(ctx)
+			if err != nil {
+				t.Error(err)
+			}
 
 			return ctx
 		}).

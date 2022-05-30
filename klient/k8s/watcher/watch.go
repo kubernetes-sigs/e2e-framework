@@ -49,6 +49,11 @@ type EventHandler interface {
 // Start triggers the registered methods based on the event received for
 // particular k8s resources
 func (e *EventHandlerFuncs) Start(ctx context.Context) error {
+	// check if context is valid and that it has not been cancelled.
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+
 	cl, err := cr.NewWithWatch(e.Cfg, cr.Options{})
 	if err != nil {
 		return err
@@ -62,28 +67,37 @@ func (e *EventHandlerFuncs) Start(ctx context.Context) error {
 	// set watcher object
 	e.watcher = w
 
-	for event := range e.watcher.ResultChan() {
-		// retrieve the event type
-		eventType := event.Type
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				if ctx.Err() != nil {
+					return
+				}
+			case event := <-e.watcher.ResultChan():
+				// retrieve the event type
+				eventType := event.Type
 
-		switch eventType {
-		case watch.Added:
-			// calls AddFunc if it's not nil.
-			if e.addFunc != nil {
-				e.addFunc(event.Object)
-			}
-		case watch.Modified:
-			// calls UpdateFunc if it's not nil.
-			if e.updateFunc != nil {
-				e.updateFunc(event.Object)
-			}
-		case watch.Deleted:
-			// calls DeleteFunc if it's not nil.
-			if e.deleteFunc != nil {
-				e.deleteFunc(event.Object)
+				switch eventType {
+				case watch.Added:
+					// calls AddFunc if it's not nil.
+					if e.addFunc != nil {
+						e.addFunc(event.Object)
+					}
+				case watch.Modified:
+					// calls UpdateFunc if it's not nil.
+					if e.updateFunc != nil {
+						e.updateFunc(event.Object)
+					}
+				case watch.Deleted:
+					// calls DeleteFunc if it's not nil.
+					if e.deleteFunc != nil {
+						e.deleteFunc(event.Object)
+					}
+				}
 			}
 		}
-	}
+	}()
 
 	return nil
 }
