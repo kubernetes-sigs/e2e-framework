@@ -29,7 +29,7 @@ func TestParseFlags(t *testing.T) {
 	}{
 		{
 			name:  "with all",
-			args:  []string{"-assess", "volume test", "--feature", "beta", "--labels", "k0=v0, k1=v1, k2=v2", "--skip-labels", "k0=v0, k1=v1", "-skip-features", "networking", "-skip-assessment", "volume test", "-parallel", "--dry-run"},
+			args:  []string{"-assess", "volume test", "--feature", "beta", "--labels", "k0=v0, k1=v1, k2=v2", "--skip-labels", "k0=v0, k1=v1", "-skip-features", "networking", "-skip-assessment", "volume test", "-parallel", "--dry-run", "--disable-graceful-teardown"},
 			flags: &EnvFlags{assess: "volume test", feature: "beta", labels: LabelsMap{"k0": "v0", "k1": "v1", "k2": "v2"}, skiplabels: LabelsMap{"k0": "v0", "k1": "v1"}, skipFeatures: "networking", skipAssessments: "volume test"},
 		},
 	}
@@ -75,6 +75,10 @@ func TestParseFlags(t *testing.T) {
 
 			if !testFlags.DryRun() {
 				t.Errorf("unmatched flag parsed. Expected dryRun to be true.")
+			}
+
+			if !testFlags.DisableGracefulTeardown() {
+				t.Errorf("unmatched flag parsed. Expected disableGracefulTeardown to be true")
 			}
 		})
 	}
