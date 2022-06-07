@@ -81,7 +81,7 @@ func TestKubernetes(t *testing.T) {
     f2 := features.New("count namespaces").
         WithLabel("type", "ns-count").
         Assess("namespace exist", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-            var nspaces corev1.Namespace
+            var nspaces corev1.NamespaceList
             err := cfg.Client().Resources().List(context.TODO(), &nspaces)
             if err != nil {
                 t.Fatal(err)
@@ -93,7 +93,7 @@ func TestKubernetes(t *testing.T) {
         }).Feature()
         
     // test feature
-    testenv.Test(f1, f2)
+    testenv.Test(t, f1, f2)
 }
 ```
 #### Running the test
