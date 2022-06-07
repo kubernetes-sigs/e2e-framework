@@ -65,7 +65,7 @@ Use a Go test function to define features to be tested as shown below:
 ```go
 func TestKubernetes(t *testing.T) {
     f1 := features.New("count pod").
-        WithLabel("type", "pod-count")
+        WithLabel("type", "pod-count").
         Assess("pods from kube-system", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
             var pods corev1.PodList
             err := cfg.Client().Resources("kube-system").List(context.TODO(), &pods)
@@ -79,7 +79,7 @@ func TestKubernetes(t *testing.T) {
         }).Feature()
 
     f2 := features.New("count namespaces").
-        WithLabel("type", "ns-count")
+        WithLabel("type", "ns-count").
         Assess("namespace exist", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
             var nspaces corev1.Namespace
             err := cfg.Client().Resources().List(context.TODO(), &nspaces)
