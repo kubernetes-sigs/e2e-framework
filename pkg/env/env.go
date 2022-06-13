@@ -336,6 +336,29 @@ func (e *testEnv) Run(m *testing.M) int {
 	setups := e.getSetupActions()
 	// fail fast on setup, upon err exit
 	var err error
+
+	defer func() {
+		// Recover and see if the panic handler is disabled. If it is disabled, panic and stop the workflow.
+		// Otherwise, log and continue with running the Finish steps of the Test suite
+		rErr := recover()
+		if rErr != nil {
+			if e.cfg.DisableGracefulTeardown() {
+				panic(rErr)
+			}
+			klog.Error("Recovering from panic and running finish actions", rErr)
+		}
+
+		finishes := e.getFinishActions()
+		// attempt to gracefully clean up.
+		// Upon error, log and continue.
+		for _, fin := range finishes {
+			// context passed down to each finish step
+			if e.ctx, err = fin.run(e.ctx, e.cfg); err != nil {
+				klog.V(2).ErrorS(err, "Finish action handlers")
+			}
+		}
+	}()
+
 	for _, setup := range setups {
 		// context passed down to each setup
 		if e.ctx, err = setup.run(e.ctx, e.cfg); err != nil {
@@ -343,19 +366,8 @@ func (e *testEnv) Run(m *testing.M) int {
 		}
 	}
 
-	exitCode := m.Run() // exec test suite
-
-	finishes := e.getFinishActions()
-	// attempt to gracefully clean up.
-	// Upon error, log and continue.
-	for _, fin := range finishes {
-		// context passed down to each finish step
-		if e.ctx, err = fin.run(e.ctx, e.cfg); err != nil {
-			klog.V(2).ErrorS(err, "Finish action handlers")
-		}
-	}
-
-	return exitCode
+	// Execute the test suite
+	return m.Run()
 }
 
 func (e *testEnv) getActionsByRole(r actionRole) []action {

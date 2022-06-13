@@ -73,3 +73,15 @@ func TestConfig_New_WithFailFastAndIgnoreFinalize(t *testing.T) {
 		t.Error("expected fail-fast mode to be enabled when -fail-fast argument is passed")
 	}
 }
+
+func TestConfig_New_WithIgnorePanicRecovery(t *testing.T) {
+	flag.CommandLine = &flag.FlagSet{}
+	os.Args = []string{"test-binary", "-disable-graceful-teardown"}
+	cfg, err := NewFromFlags()
+	if err != nil {
+		t.Error("failed to parse args", err)
+	}
+	if !cfg.DisableGracefulTeardown() {
+		t.Error("expected ignore-panic-recovery mode to be enabled when -disable-graceful-teardown argument is passed")
+	}
+}
