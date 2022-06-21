@@ -15,7 +15,6 @@ Another reason for this proposal is because it is part of a larger effort to cre
 * Provide a uniform API to work with typed and untyped Kubernetes API objects
 * Surface types that make it easy to create, update, and delete API objects
 * Provide types to easily control Kubernetes clusters
-* Provide ]
 
 ## Non-Goals
 A replacement for `client-go`
@@ -40,7 +39,7 @@ The overall design of klient will be to provide functionalities in following cat
 * ***Infrastructure***
   * Local process execution
   * Remote process execution
-    * Pod-hosted processes
+  * Pod-hosted processes
 
 ### Resource representation
 Users of this framework will be spared the burden of figuring out which Kubernetes object representation to use, mainly, typed or unstructured. To do this, klient uses the following types to wrap API objects and object lists. This is based on a model found in the runtime-controller project.
@@ -335,7 +334,7 @@ func main() {
 ```
 
 #### Possible convenience functions
-Note in the above example, the `List` method uses function `resources.WithLabelSelector` to cleanly specify a label selctor for the call. This could be done with pre-defined convenience functions as listed below:
+Note in the above example, the `List` method uses function `resources.WithLabelSelector` to cleanly specify a label selector for the call. This could be done with pre-defined convenience functions as listed below:
 ```go
 package "resources"
 func WithLabelSelector(sel string) ListOption{}
@@ -353,7 +352,7 @@ import (
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// CreateOtion used to specify optional parameters for Create call
+// CreateOption used to specify optional parameters for Create call
 type CreateOption func(*metav1.CreateOptions)
 
 // Create sends API object of type specified by `obj`
@@ -399,7 +398,7 @@ func main() {
     cfg, _ := conf.New(conf.ResolveKubeConfigFile())
     res, _ := resources.New(cfg)
     
-    pod := reources.Pod(name, resources.PodSpec(resources.Container("nginx", "nginx:latest")))
+    pod := resources.Pod(name, resources.PodSpec(resources.Container("nginx", "nginx:latest")))
     if err := res.Create(context.TODO(), &pod); err != nil {
         log.Fatal("unable to create pod: ", err)   
     }
@@ -570,7 +569,6 @@ func (r *Resources) BuildFromJSON(ctx context.Context, obj kclient.Object, json 
 #### Example
 
 ```go
-func main() {
 import (
     "sigs.k8s.io/e2e-framework/klient/conf"
     "sigs.k8s.io/e2e-framework/klient/k8s/resources"
