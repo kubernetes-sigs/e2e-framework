@@ -33,15 +33,31 @@ var testenv env.Environment
 
 func TestMain(m *testing.M) {
 	testenv = env.New()
-	path := conf.ResolveKubeConfigFile()
-	cfg := envconf.NewWithKubeConfig(path)
-	testenv = env.NewWithConfig(cfg)
 	namespace := envconf.RandomName("sample-ns", 16)
-	testenv.Setup(
-		envfuncs.CreateNamespace(namespace),
-	)
-	testenv.Finish(
-		envfuncs.DeleteNamespace(namespace),
-	)
+	if os.Getenv("REAL_CLUSTER") == "true" {
+		path := conf.ResolveKubeConfigFile()
+		cfg := envconf.NewWithKubeConfig(path)
+		testenv = env.NewWithConfig(cfg)
+
+		testenv.Setup(
+			envfuncs.CreateNamespace(namespace),
+		)
+		testenv.Finish(
+			envfuncs.DeleteNamespace(namespace),
+		)
+	} else {
+		kindClusterName := envconf.RandomName("kind-with-config", 16)
+
+		testenv.Setup(
+			envfuncs.CreateKindCluster(kindClusterName),
+			envfuncs.CreateNamespace(namespace),
+		)
+
+		testenv.Finish(
+			envfuncs.DeleteNamespace(namespace),
+			envfuncs.DestroyKindCluster(kindClusterName),
+		)
+	}
+
 	os.Exit(testenv.Run(m))
 }
