@@ -93,7 +93,7 @@ env.New() Environment
 
 // env.NewWithConfig creates env.Environment with a specified 
 // environment config and a default context.Context
-env.NewWithConfig(enviconf.Config) Environment
+env.NewWithConfig(envconf.Config) Environment
 
 // env.NewWithContext creates an environment with a specified
 // environment Config and context.Context
@@ -103,7 +103,7 @@ env.NewWithContext(context.Context, envconf.Config) (Environment, error)
 ### `env.Environment` and context.Context
 Before an `Environment` can be used to run tests, it goes through several stages including configurations, feature definitions, and feature testing. During the entire lifetime of these cycles, a context can be used to inject control, signaling, or pass data into each phase.
 
-> The context propagation strategy used in this design is simlar to how it is done in package [net/http](https://pkg.go.dev/net/http).
+> The context propagation strategy used in this design is similar to how it is done in package [net/http](https://pkg.go.dev/net/http).
 
 
 #### Propagating environment context
@@ -120,7 +120,7 @@ newEnv := origEnv.WithContext(context.TODO())
 ```
 
 #### Accessing an `Environment`'s context
-After an enviroment has been initialized, its context can be accessed at any time using the `Environment.Context` method.
+After an environment has been initialized, its context can be accessed at any time using the `Environment.Context` method.
 
 ```go
 ctx := env.New().Context()
@@ -171,7 +171,7 @@ A feature can receive an arbitrary label as a hint about the nature of the featu
 A feature state shall be encoded using the following type and constant values:
 
 ```go
-type Labels map[string]sring
+type Labels map[string]string
 ```
 
 ### Execution steps
@@ -200,7 +200,7 @@ The operation performed during an execution step is defined as the following Go 
 type StepFunc func (context.Context, *testing.T, envconf.Config) context.Context
 ```
 
-When a step is executed, it will receive the last updated `context.Context`, `*testing.T` for test signaling, and the `envconf.Config` that is associated with the environment. Note a step function can update the content of the context and return it so that its value will be passed to subequent steps.
+When a step is executed, it will receive the last updated `context.Context`, `*testing.T` for test signaling, and the `envconf.Config` that is associated with the environment. Note a step function can update the content of the context and return it so that its value will be passed to subsequent steps.
 
 #### Step levels
 A step level identifies the type of a step.  It shall be encoded as the following type, shown below.
@@ -228,14 +228,14 @@ import (
 )
 
 var (
-    var global env.Environment
+    global env.Environment
 )
 
 func TestMain(m *testing.M) {
     // creates a test env with default
     // configuration (i.e. default k8s config)
     global = env.New()
-   ...
+    ...
 }
 ```
 
@@ -251,7 +251,7 @@ import (
 )
 
 var (
-    var global env.Environment
+    global env.Environment
 )
 
 func TestMain(m *testing.M) {
@@ -274,7 +274,7 @@ import (
 )
 
 var (
-    var global env.Environment
+    global env.Environment
 )
 
 func TestMain(m *testing.M) {
@@ -336,7 +336,7 @@ func TestSomething(t *testing.T) {
 }
 ```
 
-The environment component will run the feature test passing each execution step function a context, a `*testing.T` and`envconf.Config`.
+The environment component will run the feature test passing each execution step function a context, a `*testing.T` and `envconf.Config`.
 
 ### Finishing and clean up
 After all tests in the package (or suite) are executed, the test framework will automatically trigger any teardown operation specified as `Environment.Finish` method, as shown below.
@@ -434,7 +434,7 @@ If a feature test is part of a larger code base with many different types of tes
 // +build app1-e2e
 
 var (
-    var envCfg environment.EnvConfig
+    global env.Environment
 )
 
 func TestMain(m *testing.M) {
@@ -461,7 +461,7 @@ go test -tags=e2e ./test/... --feature="special"
 The framework shall provide predefined flagsets that will be automatically applied during test execution. Possible filters that could be supported by the framework implementation:
 
 * `--feature` - a regular expression that target features to run
-* `--assess` - a regular expression that targets the name of an assesment steps
+* `--assess` - a regular expression that targets the name of an assessment steps
 * `--labels` - a comma-separated list of key/value pairs  used to filter features by their assigned labels
 
 The framework should automatically inject these filter values into the environment component when it is created.
@@ -471,12 +471,12 @@ The test framework should provide the ability to explicitly exclude features dur
 
 * `--skip-features` - a regular expression that skips features with matching names
 * `--skip-assessment` - a regular expression that skips assessment with matching name
-* `--skip-lables` - a comma-separated list of key/value pairs used to skip features with matching lables
+* `--skip-labels` - a comma-separated list of key/value pairs used to skip features with matching labels
 
 ## Test support
 Another important aspect of the test framework is to make available a collection of support packages to help definition of environment and step functions.
 
-For instance, assuming a `support` package is part of the framework, the following shows examples of pre-defined enviroment and step functions that could come with the framework:
+For instance, assuming a `support` package is part of the framework, the following shows examples of pre-defined environment and step functions that could come with the framework:
 
 * `support/kind.CreateCluster("name")`
 * `support/kind.DestroyCluster("name")`

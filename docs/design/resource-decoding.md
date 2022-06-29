@@ -114,7 +114,7 @@ The following are proposed function signatures for decoding input that contain a
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: my-serivce-account
+  name: my-service-account
   namespace: myappns
 ```
 
@@ -193,7 +193,7 @@ data:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: my-serivce-account
+  name: my-service-account
   namespace: myappns
 ```
 
