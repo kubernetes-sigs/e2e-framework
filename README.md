@@ -1,5 +1,7 @@
 # E2E Framework
 
+[![godoc](https://pkg.go.dev/badge/github.com/sigs.k8s.io/e2e-framework)](https://pkg.go.dev/sigs.k8s.io/e2e-framework)
+
 A Go framework for end-to-end testing of components running in Kubernetes clusters.
 
 The primary goal of this project is to provide a `go test`(able)
