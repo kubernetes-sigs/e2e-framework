@@ -104,3 +104,59 @@ func TestAction_Run(t *testing.T) {
 		})
 	}
 }
+
+func TestActionRole_String(t *testing.T) {
+	tests := []struct {
+		name string
+		r    actionRole
+		want string
+	}{
+		{
+			name: "RoleSetup",
+			r:    roleSetup,
+			want: "Setup",
+		},
+		{
+			name: "RoleBeforeTest",
+			r:    roleBeforeTest,
+			want: "BeforeEachTest",
+		},
+		{
+			name: "RoleBeforeFeature",
+			r:    roleBeforeFeature,
+			want: "BeforeEachFeature",
+		},
+		{
+			name: "RoleAfterEachFeature",
+			r:    roleAfterFeature,
+			want: "AfterEachFeature",
+		},
+		{
+			name: "RoleAfterTest",
+			r:    roleAfterTest,
+			want: "AfterEachTest",
+		},
+		{
+			name: "RoleFinish",
+			r:    roleFinish,
+			want: "Finish",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := test.r.String(); got != test.want {
+				t.Errorf("String() = %v, want %v", got, test.want)
+			}
+		})
+	}
+}
+
+func TestActionRole_String_Unknown(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("Unknown ActionRole should panic")
+		}
+	}()
+
+	actionRole(100).String()
+}
