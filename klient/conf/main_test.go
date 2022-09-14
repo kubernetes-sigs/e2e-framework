@@ -18,7 +18,6 @@ package conf
 
 import (
 	"flag"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -77,7 +76,7 @@ func setup() {
 }
 
 func createFile(path, data string) error {
-	return ioutil.WriteFile(path, []byte(data), 0o644)
+	return os.WriteFile(path, []byte(data), 0o644)
 }
 
 // genKubeconfig used to genearte kube config file
