@@ -158,5 +158,5 @@ func TestActionRole_String_Unknown(t *testing.T) {
 		}
 	}()
 
-	actionRole(100).String()
+	_ = actionRole(100).String()
 }
