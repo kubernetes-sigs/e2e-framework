@@ -54,8 +54,9 @@ func (k *Cluster) getKubeconfig() (string, error) {
 	if p.Err() != nil {
 		return "", fmt.Errorf("kind get kubeconfig: %w", p.Err())
 	}
+
 	var stdout bytes.Buffer
-	if _, err := stdout.ReadFrom(p.StdOut()); err != nil {
+	if _, err := stdout.ReadFrom(p.GetOutputPipe()); err != nil {
 		return "", fmt.Errorf("kind kubeconfig stdout bytes: %w", err)
 	}
 	if p.Wait().Err() != nil {
