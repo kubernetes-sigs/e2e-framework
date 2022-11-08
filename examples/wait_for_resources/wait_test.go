@@ -37,7 +37,7 @@ func TestWaitForResources(t *testing.T) {
 	depFeature := features.New("appsv1/deployment").WithLabel("env", "dev").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			// create a deployment
-			deployment := newDeployment(cfg.Namespace(), "test-deployment", 10)
+			deployment := newDeployment(cfg.Namespace(), "test-deployment", 8)
 			client, err := cfg.NewClient()
 			if err != nil {
 				t.Fatal(err)
@@ -59,7 +59,7 @@ func TestWaitForResources(t *testing.T) {
 			err = wait.For(conditions.New(client.Resources()).ResourceMatch(&dep, func(object k8s.Object) bool {
 				d := object.(*appsv1.Deployment)
 				return float64(d.Status.ReadyReplicas)/float64(*d.Spec.Replicas) >= 0.50
-			}), wait.WithTimeout(time.Minute*1))
+			}), wait.WithTimeout(time.Minute*2))
 			if err != nil {
 				t.Fatal(err)
 			}
