@@ -17,12 +17,15 @@ limitations under the License.
 package resources
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/vladimirvivien/gexe"
+	"k8s.io/apimachinery/pkg/labels"
 	log "k8s.io/klog/v2"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources/testdata/projectExample"
 
@@ -278,5 +281,71 @@ func TestGetCRDs(t *testing.T) {
 	err = res.List(context.TODO(), ps)
 	if err != nil {
 		t.Error("error while listing custom resources", err)
+	}
+}
+
+func TestExecInPod(t *testing.T) {
+	res, err := New(cfg)
+	containerName := "nginx"
+	if err != nil {
+		t.Fatalf("Error initiating runtime controller: %v", err)
+	}
+	namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test-exec-ns"}}
+	err = res.Create(context.TODO(), namespace)
+	if err != nil {
+		t.Fatalf("Error while creating namespace resource: %v", err)
+	}
+
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-exec", Namespace: namespace.Name},
+		Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: containerName, Image: "nginx"}}},
+	}
+
+	err = res.Create(context.TODO(), pod)
+	if err != nil {
+		t.Error("Error while creating pod resource", err)
+	}
+
+	pods := &corev1.PodList{}
+	err = res.List(context.TODO(), pods)
+	if err != nil {
+		t.Error("error while getting pods", err)
+	}
+	if pods.Items == nil {
+		t.Error("error while getting the list of pods", err)
+	}
+	var stdout, stderr bytes.Buffer
+
+	addWait := make(chan struct{})
+	onAddfunc := func(obj interface{}) {
+		addWait <- struct{}{}
+	}
+	w := res.Watch(&corev1.PodList{}, WithFieldSelector(labels.FormatLabels(
+		map[string]string{
+			"metadata.name":      pod.Name,
+			"metadata.namespace": namespace.Name,
+			"status.phase":       "Running",
+		}))).
+		WithAddFunc(onAddfunc)
+
+	if err = w.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	select {
+	case <-time.After(300 * time.Second):
+		t.Error("Add callback not called")
+	case <-addWait:
+		close(addWait)
+	}
+
+	if err := res.ExecInPod(namespace.Name, pod.Name, containerName, []string{"printenv"}, &stdout, &stderr); err != nil {
+		t.Log(stderr.String())
+		t.Fatal(err)
+	}
+
+	hostName := "HOSTNAME=" + pod.Name
+	if !strings.Contains(stdout.String(), hostName) {
+		t.Fatal("Couldn't find proper env")
 	}
 }
