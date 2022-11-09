@@ -194,6 +194,11 @@ func (r *Resources) GetScheme() *runtime.Scheme {
 	return r.scheme
 }
 
+// GetClient return the controller-runtime client instance
+func (r *Resources) GetControllerRuntimeClient() cr.Client {
+	return r.client
+}
+
 func (r *Resources) Watch(object k8s.ObjectList, opts ...ListOption) *watcher.EventHandlerFuncs {
 	listOptions := &metav1.ListOptions{}
 
