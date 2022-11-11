@@ -63,6 +63,15 @@ func NewWithConfig(cfg *envconf.Config) types.Environment {
 	return env
 }
 
+// NewFromFlags creates a test environment using configuration values from CLI flags
+func NewFromFlags() (types.Environment, error) {
+	cfg, err := envconf.NewFromFlags()
+	if err != nil {
+		return nil, err
+	}
+	return NewWithConfig(cfg), nil
+}
+
 // NewWithKubeConfig creates an environment using an Environment Configuration value
 // and the given kubeconfig.
 func NewWithKubeConfig(kubeconfigfile string) types.Environment {
