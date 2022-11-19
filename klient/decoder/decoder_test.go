@@ -20,6 +20,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"testing"
 
 	v1 "k8s.io/api/core/v1"
@@ -255,7 +256,8 @@ func TestDecodersWithMutateFunc(t *testing.T) {
 }
 
 func TestHandlerFuncs(t *testing.T) {
-	handlerNS := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "handler-test"}}
+	namespace := envconf.RandomName("handler-test", 20)
+	handlerNS := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}}
 	res, err := resources.New(cfg)
 	if err != nil {
 		t.Fatalf("Error creating new resources object: %v", err)
@@ -333,5 +335,12 @@ func TestHandlerFuncs(t *testing.T) {
 				t.Fatalf("%d test objects were not deleted", count)
 			}
 		})
+	})
+
+	t.Run("DecodeEach_DeleteIgnoreNotFound", func(t *testing.T) {
+		err := DecodeEachFile(context.TODO(), testdata, "*", DeleteIgnoreNotFound(res), patches...)
+		if err != nil {
+			t.Fatalf("DeleteIgnoreNotFound should not return an error if object is not found. Error: %s", err)
+		}
 	})
 }

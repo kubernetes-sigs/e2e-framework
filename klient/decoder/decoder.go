@@ -344,6 +344,6 @@ func CreateIgnoreAlreadyExists(r *resources.Resources, opts ...resources.CreateO
 }
 
 // DeleteIgnoreNotFound returns a HandlerFunc that will delete objects if they do not already exist
-func DeleteIgnoreNotFound(r *resources.Resources, opts ...resources.CreateOption) HandlerFunc {
-	return IgnoreErrorHandler(CreateHandler(r, opts...), apierrors.IsNotFound)
+func DeleteIgnoreNotFound(r *resources.Resources, opts ...resources.DeleteOption) HandlerFunc {
+	return IgnoreErrorHandler(DeleteHandler(r, opts...), apierrors.IsNotFound)
 }
