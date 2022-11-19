@@ -334,4 +334,11 @@ func TestHandlerFuncs(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("DecodeEach_DeleteIgnoreNotFound", func(t *testing.T) {
+		err := DecodeEachFile(context.TODO(), testdata, "*", DeleteIgnoreNotFound(res), patches...)
+		if err != nil {
+			t.Fatalf("DeleteIgnoreNotFound should not return an error if object is not found. Error: %s", err)
+		}
+	})
 }
