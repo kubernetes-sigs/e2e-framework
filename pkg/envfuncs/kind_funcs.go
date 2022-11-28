@@ -50,7 +50,6 @@ func GetKindClusterFromContext(ctx context.Context, clusterName string) (*kind.C
 //
 // NOTE: the returned function will update its env config with the
 // kubeconfig file for the config client.
-//
 func CreateKindCluster(clusterName string) env.Func {
 	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 		k := kind.NewCluster(clusterName)
@@ -78,7 +77,6 @@ func CreateKindCluster(clusterName string) env.Func {
 //
 // NOTE: the returned function will update its env config with the
 // kubeconfig file for the config client.
-//
 func CreateKindClusterWithConfig(clusterName, image, configFilePath string) env.Func {
 	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 		k := kind.NewCluster(clusterName)
@@ -142,7 +140,6 @@ func waitForControlPlane(client klient.Client) error {
 // retrieves a previously saved kind Cluster in the context (using the name), then deletes it.
 //
 // NOTE: this should be used in a Environment.Finish step.
-//
 func DestroyKindCluster(name string) env.Func {
 	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 		clusterVal := ctx.Value(kindContextKey(name))
@@ -166,7 +163,6 @@ func DestroyKindCluster(name string) env.Func {
 // LoadDockerImageToCluster returns an EnvFunc that
 // retrieves a previously saved kind Cluster in the context (using the name), and then loads a docker image
 // from the host into the cluster.
-//
 func LoadDockerImageToCluster(name, image string) env.Func {
 	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 		clusterVal := ctx.Value(kindContextKey(name))
@@ -190,7 +186,6 @@ func LoadDockerImageToCluster(name, image string) env.Func {
 // LoadImageArchiveToCluster returns an EnvFunc that
 // retrieves a previously saved kind Cluster in the context (using the name), and then loads a docker image TAR archive
 // from the host into the cluster.
-//
 func LoadImageArchiveToCluster(name, imageArchive string) env.Func {
 	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 		clusterVal := ctx.Value(kindContextKey(name))
