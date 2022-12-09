@@ -28,7 +28,7 @@ import (
 	"github.com/vladimirvivien/gexe"
 )
 
-var kindVersion = "v0.12.0"
+var kindVersion = "v0.17.0"
 
 type Cluster struct {
 	name        string
