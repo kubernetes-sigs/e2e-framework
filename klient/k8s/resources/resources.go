@@ -99,6 +99,10 @@ func (r *Resources) Create(ctx context.Context, obj k8s.Object, opts ...CreateOp
 	return r.client.Create(ctx, obj, o)
 }
 
+func WithDryRun() CreateOption {
+	return func(co *metav1.CreateOptions) { co.DryRun = []string{metav1.DryRunAll} }
+}
+
 type UpdateOption func(*metav1.UpdateOptions)
 
 func (r *Resources) Update(ctx context.Context, obj k8s.Object, opts ...UpdateOption) error {
