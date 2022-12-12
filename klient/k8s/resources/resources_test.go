@@ -339,7 +339,7 @@ func TestExecInPod(t *testing.T) {
 		close(addWait)
 	}
 
-	if err := res.ExecInPod(namespace.Name, pod.Name, containerName, []string{"printenv"}, &stdout, &stderr); err != nil {
+	if err := res.ExecInPod(context.TODO(), namespace.Name, pod.Name, containerName, []string{"printenv"}, &stdout, &stderr); err != nil {
 		t.Log(stderr.String())
 		t.Fatal(err)
 	}

@@ -215,7 +215,7 @@ func (r *Resources) Watch(object k8s.ObjectList, opts ...ListOption) *watcher.Ev
 	}
 }
 
-func (r *Resources) ExecInPod(namespaceName, podName, containerName string, command []string, stdout, stderr *bytes.Buffer) error {
+func (r *Resources) ExecInPod(ctx context.Context, namespaceName, podName, containerName string, command []string, stdout, stderr *bytes.Buffer) error {
 	clientset, err := kubernetes.NewForConfig(r.config)
 	if err != nil {
 		return err
@@ -243,7 +243,7 @@ func (r *Resources) ExecInPod(namespaceName, podName, containerName string, comm
 		panic(err)
 	}
 
-	err = exec.Stream(remotecommand.StreamOptions{
+	err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
 		Stdout: stdout,
 		Stderr: stderr,
 	})
