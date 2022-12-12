@@ -19,15 +19,16 @@ package execpod
 import (
 	"bytes"
 	"context"
+	"strings"
+	"testing"
+	"time"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
-	"strings"
-	"testing"
-	"time"
 
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -69,7 +70,7 @@ func TestExecPod(t *testing.T) {
 			podName := pods.Items[0].Name
 			command := []string{"curl", "-I", "https://en.wikipedia.org/wiki/Main_Page"}
 
-			if err := client.Resources().ExecInPod(c.Namespace(), podName, containerName, command, &stdout, &stderr); err != nil {
+			if err := client.Resources().ExecInPod(context.TODO(), c.Namespace(), podName, containerName, command, &stdout, &stderr); err != nil {
 				t.Log(stderr.String())
 				t.Fatal(err)
 			}
