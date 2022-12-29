@@ -1,18 +1,19 @@
 # See the OWNERS docs at https://go.k8s.io/owners
 
 approvers:
-- andrewsykim
 - spiffxp
 - vladimirvivien
 - ShwethaKumbla
+- harshanarayana
 reviewers:
-- andrewsykim
 - cpanato
 - spiffxp
 - vladimirvivien
 - ShwethaKumbla
+- harshanarayana
 
 emeritus_approvers:
+- andrewsykim
 - BenTheElder
 - alejandrox1
 
