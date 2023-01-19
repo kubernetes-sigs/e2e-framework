@@ -4,8 +4,8 @@ go 1.18
 
 require (
 	github.com/vladimirvivien/gexe v0.2.0
-	k8s.io/api v0.26.0
-	k8s.io/apimachinery v0.26.0
+	k8s.io/api v0.26.1
+	k8s.io/apimachinery v0.26.1
 	k8s.io/client-go v0.26.0
 	k8s.io/klog/v2 v2.80.1
 	sigs.k8s.io/controller-runtime v0.14.1
