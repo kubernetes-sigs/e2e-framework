@@ -450,12 +450,12 @@ func TestEnv_Test(t *testing.T) {
 
 					// Ensure changes aren't persisted to the afterEachFeature hook
 					labelMap := info.Labels()
-					labelMap["foo"] = "bar"
+					labelMap["foo"] = []string{"bar"}
 					return ctx, nil
 				}).AfterEachFeature(func(ctx context.Context, _ *envconf.Config, _ *testing.T, info features.Feature) (context.Context, error) {
 					val = append(val, "after-each-feature")
 					t.Logf("%#v, len(steps)=%v\n", info, len(info.Steps()))
-					if info.Labels()["foo"] == "bar" {
+					if info.Labels().Contains("foo", "bar") {
 						t.Errorf("Expected label from previous feature hook to not include foo:bar")
 					}
 					if len(info.Steps()) == 0 {

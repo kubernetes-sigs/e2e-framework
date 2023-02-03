@@ -36,9 +36,9 @@ type Config struct {
 	namespace               string
 	assessmentRegex         *regexp.Regexp
 	featureRegex            *regexp.Regexp
-	labels                  map[string]string
+	labels                  flags.LabelsMap
 	skipFeatureRegex        *regexp.Regexp
-	skipLabels              map[string]string
+	skipLabels              flags.LabelsMap
 	skipAssessmentRegex     *regexp.Regexp
 	parallelTests           bool
 	dryRun                  bool
@@ -203,24 +203,24 @@ func (c *Config) SkipFeatureRegex() *regexp.Regexp {
 }
 
 // WithLabels sets the environment label filters
-func (c *Config) WithLabels(lbls map[string]string) *Config {
+func (c *Config) WithLabels(lbls map[string][]string) *Config {
 	c.labels = lbls
 	return c
 }
 
 // Labels returns the environment's label filters
-func (c *Config) Labels() map[string]string {
+func (c *Config) Labels() map[string][]string {
 	return c.labels
 }
 
 // WithSkipLabels sets the environment label filters
-func (c *Config) WithSkipLabels(lbls map[string]string) *Config {
+func (c *Config) WithSkipLabels(lbls map[string][]string) *Config {
 	c.skipLabels = lbls
 	return c
 }
 
 // SkipLabels returns the environment's label filters
-func (c *Config) SkipLabels() map[string]string {
+func (c *Config) SkipLabels() map[string][]string {
 	return c.skipLabels
 }
 

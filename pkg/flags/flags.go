@@ -280,10 +280,10 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 	}, nil
 }
 
-type LabelsMap map[string]string
+type LabelsMap map[string][]string
 
 func (m LabelsMap) String() string {
-	i := map[string]string(m)
+	i := map[string][]string(m)
 	return fmt.Sprint(i)
 }
 
@@ -295,8 +295,19 @@ func (m LabelsMap) Set(val string) error {
 		if len(kv) != 2 {
 			return fmt.Errorf("label format error: %s", label)
 		}
-		m[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
+		k := strings.TrimSpace(kv[0])
+		v := strings.TrimSpace(kv[1])
+		m[k] = append(m[k], v)
 	}
 
 	return nil
+}
+
+func (m LabelsMap) Contains(key, val string) bool {
+	for _, v := range m[key] {
+		if val == v {
+			return true
+		}
+	}
+	return false
 }

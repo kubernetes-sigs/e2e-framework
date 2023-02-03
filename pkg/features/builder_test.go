@@ -58,12 +58,22 @@ func TestFeatureBuilder(t *testing.T) {
 		{
 			name: "with labels",
 			setup: func(t *testing.T) types.Feature {
-				return New("test").WithLabel("a", "b").WithLabel("c", "d").Feature()
+				return New("test").
+					WithLabel("a", "a").
+					WithLabel("a", "aa").
+					WithLabel("b", "b").
+					Feature()
 			},
 			eval: func(t *testing.T, f types.Feature) {
 				ft := f.(*defaultFeature) // nolint
 				if len(ft.labels) != 2 {
 					t.Error("unexpected labels len:", len(ft.labels))
+				}
+				if len(ft.labels["a"]) != 2 {
+					t.Errorf("unexpected label values for %q: %q", "a", ft.labels["a"])
+				}
+				if len(ft.labels["b"]) != 1 {
+					t.Errorf("unexpected label values for %q: %q", "b", ft.labels["b"])
 				}
 			},
 		},
@@ -116,7 +126,7 @@ func TestFeatureBuilder(t *testing.T) {
 				}).Feature()
 			},
 			eval: func(t *testing.T, f types.Feature) {
-				ft := f.(*defaultFeature) //nolint
+				ft := f.(*defaultFeature) // nolint
 				setups := GetStepsByLevel(ft.Steps(), types.LevelSetup)
 				if setups[0].Name() != "setup-test" {
 					t.Errorf("unexpected setup name: %s", setups[0].Name())
@@ -172,7 +182,7 @@ func TestFeatureBuilder(t *testing.T) {
 				}).Feature()
 			},
 			eval: func(t *testing.T, f types.Feature) {
-				ft := f.(*defaultFeature) //nolint
+				ft := f.(*defaultFeature) // nolint
 				setups := GetStepsByLevel(ft.Steps(), types.LevelTeardown)
 				if setups[0].Name() != "teardown-test" {
 					t.Errorf("unexpected teardown name: %s", setups[0].Name())

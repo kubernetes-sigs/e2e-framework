@@ -18,6 +18,7 @@ package flags
 
 import (
 	"flag"
+	"reflect"
 	"testing"
 )
 
@@ -29,8 +30,8 @@ func TestParseFlags(t *testing.T) {
 	}{
 		{
 			name:  "with all",
-			args:  []string{"-assess", "volume test", "--feature", "beta", "--labels", "k0=v0, k1=v1, k2=v2", "--skip-labels", "k0=v0, k1=v1", "-skip-features", "networking", "-skip-assessment", "volume test", "-parallel", "--dry-run", "--disable-graceful-teardown"},
-			flags: &EnvFlags{assess: "volume test", feature: "beta", labels: LabelsMap{"k0": "v0", "k1": "v1", "k2": "v2"}, skiplabels: LabelsMap{"k0": "v0", "k1": "v1"}, skipFeatures: "networking", skipAssessments: "volume test"},
+			args:  []string{"-assess", "volume test", "--feature", "beta", "--labels", "k0=v0, k0=v01, k1=v1, k1=v11, k2=v2", "--skip-labels", "k0=v0, k1=v1", "-skip-features", "networking", "-skip-assessment", "volume test", "-parallel", "--dry-run", "--disable-graceful-teardown"},
+			flags: &EnvFlags{assess: "volume test", feature: "beta", labels: LabelsMap{"k0": {"v0", "v01"}, "k1": {"v1", "v11"}, "k2": {"v2"}}, skiplabels: LabelsMap{"k0": {"v0"}, "k1": {"v1"}}, skipFeatures: "networking", skipAssessments: "volume test"},
 		},
 	}
 
@@ -50,14 +51,14 @@ func TestParseFlags(t *testing.T) {
 			}
 
 			for k, v := range testFlags.Labels() {
-				if test.flags.Labels()[k] != v {
-					t.Errorf("unmatched label %s=%s", k, test.flags.Labels()[k])
+				if !reflect.DeepEqual(test.flags.Labels()[k], v) {
+					t.Errorf("unmatched labels %s=%v", k, test.flags.Labels()[k])
 				}
 			}
 
 			for k, v := range testFlags.SkipLabels() {
-				if test.flags.SkipLabels()[k] != v {
-					t.Errorf("unmatched skip label %s=%s", k, test.flags.SkipLabels()[k])
+				if !reflect.DeepEqual(test.flags.SkipLabels()[k], v) {
+					t.Errorf("unmatched skip labels %s=%v", k, test.flags.Labels()[k])
 				}
 			}
 
@@ -79,6 +80,91 @@ func TestParseFlags(t *testing.T) {
 
 			if !testFlags.DisableGracefulTeardown() {
 				t.Errorf("unmatched flag parsed. Expected disableGracefulTeardown to be true")
+			}
+		})
+	}
+}
+
+func TestLabelsMap_Contains(t *testing.T) {
+	type args struct {
+		key string
+		val string
+	}
+	tests := []struct {
+		name string
+		m    LabelsMap
+		args args
+		want bool
+	}{
+		{
+			name: "empty map",
+			m:    LabelsMap{},
+			args: args{
+				key: "somekey",
+				val: "someval",
+			},
+			want: false,
+		},
+		{
+			name: "key does not exist",
+			m:    LabelsMap{"key0": {"val0"}},
+			args: args{
+				key: "key1",
+				val: "val1",
+			},
+			want: false,
+		},
+		{
+			// TODO (@embano1): #https://github.com/kubernetes-sigs/e2e-framework/issues/198
+			name: "lower-case key for upper case key does not exist",
+			m:    LabelsMap{"Key0": {"val0"}},
+			args: args{
+				key: "key1",
+				val: "val1",
+			},
+			want: false,
+		},
+		{
+			name: "value for existing key does not exist",
+			m:    LabelsMap{"key0": {"val0"}},
+			args: args{
+				key: "key0",
+				val: "val1",
+			},
+			want: false,
+		},
+		{
+			name: "value for map with one key with one value exists",
+			m:    LabelsMap{"key0": {"val0"}},
+			args: args{
+				key: "key0",
+				val: "val0",
+			},
+			want: true,
+		},
+		{
+			name: "value for map with one key with multiple values exists",
+			m:    LabelsMap{"key0": {"val0", "val1"}},
+			args: args{
+				key: "key0",
+				val: "val1",
+			},
+			want: true,
+		},
+		{
+			name: "value for map with multiple keys and values exists",
+			m:    LabelsMap{"key0": {"val0", "val1"}, "key1": {"val1"}},
+			args: args{
+				key: "key1",
+				val: "val1",
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.m.Contains(tt.args.key, tt.args.val); got != tt.want {
+				t.Errorf("Contains() = %v, want %v", got, tt.want)
 			}
 		})
 	}
