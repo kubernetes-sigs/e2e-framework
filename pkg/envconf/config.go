@@ -44,6 +44,7 @@ type Config struct {
 	dryRun                  bool
 	failFast                bool
 	disableGracefulTeardown bool
+	kubeContext             string
 }
 
 // New creates and initializes an empty environment configuration
@@ -85,6 +86,7 @@ func NewFromFlags() (*Config, error) {
 	e.dryRun = envFlags.DryRun()
 	e.failFast = envFlags.FailFast()
 	e.disableGracefulTeardown = envFlags.DisableGracefulTeardown()
+	e.kubeContext = envFlags.KubeContext()
 
 	return e, nil
 }
@@ -272,6 +274,17 @@ func (c *Config) WithDisableGracefulTeardown() *Config {
 // DisableGracefulTeardown is used to check the panic recovery handler should be enabled
 func (c *Config) DisableGracefulTeardown() bool {
 	return c.disableGracefulTeardown
+}
+
+// WithKubeContext is used to set the kubeconfig context
+func (c *Config) WithKubeContext(kubeContext string) *Config {
+	c.kubeContext = kubeContext
+	return c
+}
+
+// WithKubeContext is used to get the kubeconfig context
+func (c *Config) KubeContext() string {
+	return c.kubeContext
 }
 
 func randNS() string {
