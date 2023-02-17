@@ -68,3 +68,9 @@ To get additional verbose logs
 ```shell
 ./flags.test --assess es --v 2
 ```
+
+To run a test against a particular Kubeconfig context
+
+```shell
+./flags.test --kubeconfig ~/path/to/kubeconfig --context my-context
+```

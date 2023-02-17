@@ -38,6 +38,7 @@ const (
 	flagDryRunName              = "dry-run"
 	flagFailFast                = "fail-fast"
 	flagDisableGracefulTeardown = "disable-graceful-teardown"
+	flagContext                 = "context"
 )
 
 // Supported flag definitions
@@ -90,6 +91,10 @@ var (
 		Name:  flagDisableGracefulTeardown,
 		Usage: "Ignore panic recovery while running tests. This will prevent test finish steps from getting executed on panic",
 	}
+	contextFlag = flag.Flag{
+		Name:  flagContext,
+		Usage: "The name of the kubeconfig context to use",
+	}
 )
 
 // EnvFlags surfaces all resolved flag values for the testing framework
@@ -106,6 +111,7 @@ type EnvFlags struct {
 	dryRun                  bool
 	failFast                bool
 	disableGracefulTeardown bool
+	kubeContext             string
 }
 
 // Feature returns value for `-feature` flag
@@ -180,6 +186,11 @@ func Parse() (*EnvFlags, error) {
 	return ParseArgs(os.Args[1:])
 }
 
+// Context returns an optional kubeconfig context to use
+func (f *EnvFlags) KubeContext() string {
+	return f.kubeContext
+}
+
 // ParseArgs parses the specified args from global flag.CommandLine
 // and returns a set of environment flag values.
 func ParseArgs(args []string) (*EnvFlags, error) {
@@ -194,6 +205,7 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 		dryRun                  bool
 		failFast                bool
 		disableGracefulTeardown bool
+		kubeContext             string
 	)
 
 	labels := make(LabelsMap)
@@ -247,6 +259,10 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 		flag.BoolVar(&disableGracefulTeardown, disableGracefulTeardownFlag.Name, false, disableGracefulTeardownFlag.Usage)
 	}
 
+	if flag.Lookup(contextFlag.Name) == nil {
+		flag.StringVar(&kubeContext, contextFlag.Name, contextFlag.DefValue, contextFlag.Usage)
+	}
+
 	// Enable klog/v2 flag integration
 	klog.InitFlags(nil)
 
@@ -277,6 +293,7 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 		dryRun:                  dryRun,
 		failFast:                failFast,
 		disableGracefulTeardown: disableGracefulTeardown,
+		kubeContext:             kubeContext,
 	}, nil
 }
 

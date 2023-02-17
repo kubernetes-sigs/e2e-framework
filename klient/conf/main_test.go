@@ -40,6 +40,7 @@ func setup() {
 
 	kubeconfigdir := filepath.Join(home, "test", ".kube")
 	kubeconfigpath := filepath.Join(kubeconfigdir, "config")
+	kubeContext := "test-context"
 
 	// check if file exists
 	_, err := os.Stat(kubeconfigpath)
@@ -52,7 +53,7 @@ func setup() {
 		}
 
 		// generate kube config data
-		data := genKubeconfig("test-context")
+		data := genKubeconfig(kubeContext)
 
 		err = createFile(kubeconfigpath, data)
 		if err != nil {
@@ -64,11 +65,19 @@ func setup() {
 	log.Info("file created successfully", kubeconfigpath)
 
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Paths to a kubeconfig. Only required if out-of-cluster.")
+	flag.StringVar(&kubeContext, "context", "", "The name of the kubeconfig context to use. Only required if out-of-cluster.")
 
 	// set --kubeconfig flag
 	err = flag.Set("kubeconfig", kubeconfigpath)
 	if err != nil {
-		log.ErrorS(err, "unexpected error while setting flag value")
+		log.ErrorS(err, "unexpected error while setting kubeconfig flag value")
+		return
+	}
+
+	// set --context flag
+	err = flag.Set("context", kubeContext)
+	if err != nil {
+		log.ErrorS(err, "unexpected error while setting context flag value")
 		return
 	}
 
