@@ -64,7 +64,8 @@ To skip a particular labeled feature , do the following
 Go 1.20 introduces the ```-skip``` flag for ```go test``` command to skip tests. 
 
 
-This flag allows us to skip tests by test function name, feature name and assesment name
+Tests can also be skipped based on test function name, feature name and assesment name with ```-skip``` flag
+
 ```shell
 go test -v . --skip <test_function_name>/<feature_name>/<assesment_name>
 ```
