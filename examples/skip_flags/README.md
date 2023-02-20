@@ -58,3 +58,30 @@ To skip a particular labeled feature , do the following
 ```shell
 ./skipflags.test --skip-labels "env=prod"
 ```
+
+### Skip tests using built in --skip flag in go test 
+
+Go 1.20 introduces the ```-skip``` flag for ```go test``` command to skip tests. 
+
+
+This flag allows us to skip tests by test function name, feature name and assesment name
+```shell
+go test -v . --skip <test_function_name>/<feature_name>/<assesment_name>
+```
+
+To skip a test by test function name `TestSkipFlags`, do the following
+```shell
+go test -v . --skip TestSkipFlags
+```
+
+To skip a feature with name `pod list` within test function `TestSkipFlags`
+
+```shell
+go test -v . --skip TestSkipFlags/pod list
+```
+
+To skip a assesment with name `pods from kube-system` within feature `pod list` within test function `TestSkipFlags`
+```shell
+go test -v . --skip TestSkipFlags/pod list/pods from kube-system
+```
+It is not possible to skip features by label name with this option
