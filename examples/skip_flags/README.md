@@ -75,13 +75,13 @@ To skip a test by test function name `TestSkipFlags`, do the following
 go test -v . --skip TestSkipFlags
 ```
 
-To skip a feature with name `pod list` within test function `TestSkipFlags`
+To skip a feature with name `pod list` within test function `TestSkipFlags`, do the following
 
 ```shell
 go test -v . --skip TestSkipFlags/pod list
 ```
 
-To skip a assesment with name `pods from kube-system` within feature `pod list` within test function `TestSkipFlags`
+To skip a assesment with name `pods from kube-system` within feature `pod list` within test function `TestSkipFlags`,  do the following
 ```shell
 go test -v . --skip TestSkipFlags/pod list/pods from kube-system
 ```
