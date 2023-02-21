@@ -88,6 +88,24 @@ To skip a assesment with name `pods from kube-system` within feature `pod list` 
 
 ```shell
 go test -v . -skip TestSkipFlags/pod list/pods from kube-system
-```
+``` 
 
 It is not possible to skip features by label name with this option
+
+
+### Skip tests using both -skip flag and --skip-xxx flags
+
+We can also use the combination of `-skip` flag built in `go test` and `-skip-xxx` flags provided by the e2e-framework to skip multiple tests
+
+
+To skip a feature `pod list` within test function `TestSkipFlags` and feature `appsv1/deployment` within test function `TestSkipFlags`, do the following
+
+```shell
+go test -v . -skip TestSkipFlags/appsv1/deployment -args --skip-features "pod list"
+```
+
+To skip a particular labeled feature with label `env=prod` and assesment `deployment creation` within feature `appsv1/deployment` within test function `TestSkipFlags`, do the following
+
+```shell
+go test -v . -skip TestSkipFlags/appsv1/deployment/deployment_creation -args --skip-labels "env=prod"
+```
