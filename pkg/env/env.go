@@ -38,6 +38,7 @@ type (
 	Environment = types.Environment
 	Func        = types.EnvFunc
 	FeatureFunc = types.FeatureEnvFunc
+	TestFunc    = types.TestEnvFunc
 )
 
 type testEnv struct {
