@@ -4,8 +4,8 @@ go 1.18
 
 require (
 	github.com/vladimirvivien/gexe v0.2.0
-	k8s.io/api v0.26.1
-	k8s.io/apimachinery v0.26.1
+	k8s.io/api v0.26.2
+	k8s.io/apimachinery v0.26.2
 	k8s.io/client-go v0.26.1
 	k8s.io/klog/v2 v2.90.0
 	sigs.k8s.io/controller-runtime v0.14.4
@@ -34,11 +34,11 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	golang.org/x/net v0.3.1-0.20221206200815-1e63c2f08a10 // indirect
+	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b // indirect
-	golang.org/x/sys v0.3.0 // indirect
-	golang.org/x/term v0.3.0 // indirect
-	golang.org/x/text v0.5.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/term v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
