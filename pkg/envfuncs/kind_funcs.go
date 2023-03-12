@@ -205,3 +205,26 @@ func LoadImageArchiveToCluster(name, imageArchive string) env.Func {
 		return ctx, nil
 	}
 }
+
+// ExportKindClusterLogs returns an EnvFunc that
+// retrieves a previously saved kind Cluster in the context (using the name), and then export cluster logs
+// in the provided destination.
+func ExportKindClusterLogs(name, dest string) env.Func {
+	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
+		clusterVal := ctx.Value(kindContextKey(name))
+		if clusterVal == nil {
+			return ctx, fmt.Errorf("export kind cluster logs: context cluster is nil")
+		}
+
+		cluster, ok := clusterVal.(*kind.Cluster)
+		if !ok {
+			return ctx, fmt.Errorf("export kind cluster logs: unexpected type for cluster value")
+		}
+
+		if err := cluster.ExportLogs(dest); err != nil {
+			return ctx, fmt.Errorf("load image archive: %w", err)
+		}
+
+		return ctx, nil
+	}
+}
