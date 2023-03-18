@@ -37,6 +37,7 @@ type Config struct {
 	assessmentRegex         *regexp.Regexp
 	featureRegex            *regexp.Regexp
 	labels                  flags.LabelsMap
+	selectLabels            flags.LabelsMap
 	skipFeatureRegex        *regexp.Regexp
 	skipLabels              flags.LabelsMap
 	skipAssessmentRegex     *regexp.Regexp
@@ -73,6 +74,7 @@ func NewFromFlags() (*Config, error) {
 		e.featureRegex = regexp.MustCompile(envFlags.Feature())
 	}
 	e.labels = envFlags.Labels()
+	e.selectLabels = envFlags.SelectLabels()
 	e.namespace = envFlags.Namespace()
 	e.kubeconfig = envFlags.Kubeconfig()
 	if envFlags.SkipFeatures() != "" {
@@ -213,6 +215,17 @@ func (c *Config) WithLabels(lbls map[string][]string) *Config {
 // Labels returns the environment's label filters
 func (c *Config) Labels() map[string][]string {
 	return c.labels
+}
+
+// SelectLabels returns the environment's selectLabels filters
+func (c *Config) SelectLabels() map[string][]string {
+	return c.selectLabels
+}
+
+// WithSelectLabels sets the environment select labels filters
+func (c *Config) WithSelectLabels(lbls map[string][]string) *Config {
+	c.selectLabels = lbls
+	return c
 }
 
 // WithSkipLabels sets the environment label filters

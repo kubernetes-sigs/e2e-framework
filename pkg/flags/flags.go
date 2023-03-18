@@ -31,6 +31,7 @@ const (
 	flagFeatureName             = "feature"
 	flagAssessName              = "assess"
 	flagLabelsName              = "labels"
+	flagSelectLabelsName        = "select-labels"
 	flagSkipLabelName           = "skip-labels"
 	flagSkipFeatureName         = "skip-features"
 	flagSkipAssessmentName      = "skip-assessment"
@@ -53,8 +54,11 @@ var (
 	}
 	labelsFlag = flag.Flag{
 		Name:  flagLabelsName,
-		Usage: "Comma-separated key=value to filter features by labels",
+		Usage: "Comma-separated key=value to filter features by labels, checks for presence of any of the given labels",
 	}
+	selectLabelsFlag = flag.Flag{
+		Name:  flagSelectLabelsName,
+		Usage: "Comma-separated key=value to select features by labels, checks for presence of all the given labels"}
 	kubecfgFlag = flag.Flag{
 		Name:  flagKubecofigName,
 		Usage: "Path to a cluster kubeconfig file (optional)",
@@ -102,6 +106,7 @@ type EnvFlags struct {
 	feature                 string
 	assess                  string
 	labels                  LabelsMap
+	selectLabels            LabelsMap
 	kubeconfig              string
 	namespace               string
 	skiplabels              LabelsMap
@@ -127,6 +132,11 @@ func (f *EnvFlags) Assessment() string {
 // Labels returns a map of parsed key/value from `-labels` flag
 func (f *EnvFlags) Labels() LabelsMap {
 	return f.labels
+}
+
+// Labels returns a map of parsed key/value from `-select-labels` flag
+func (f *EnvFlags) SelectLabels() LabelsMap {
+	return f.selectLabels
 }
 
 // Namespace returns an optional namespace flag value
@@ -209,6 +219,7 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 	)
 
 	labels := make(LabelsMap)
+	selectLabels := make(LabelsMap)
 	skipLabels := make(LabelsMap)
 
 	if flag.Lookup(featureFlag.Name) == nil {
@@ -229,6 +240,10 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 
 	if flag.Lookup(labelsFlag.Name) == nil {
 		flag.Var(&labels, labelsFlag.Name, labelsFlag.Usage)
+	}
+
+	if flag.Lookup(selectLabelsFlag.Name) == nil {
+		flag.Var(&selectLabels, selectLabelsFlag.Name, selectLabelsFlag.Usage)
 	}
 
 	if flag.Lookup(skipLabelsFlag.Name) == nil {
@@ -284,6 +299,7 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 		feature:                 feature,
 		assess:                  assess,
 		labels:                  labels,
+		selectLabels:            selectLabels,
 		namespace:               namespace,
 		kubeconfig:              kubeconfig,
 		skiplabels:              skipLabels,

@@ -513,7 +513,23 @@ func (e *testEnv) requireProcessing(kind, testName string, requiredRegexp, skipR
 	}
 
 	if labels != nil {
+		skip = true
+	checkLabels:
 		for key, vals := range e.cfg.Labels() {
+			for _, v := range vals {
+				if labels.Contains(key, v) {
+					skip = false
+					break checkLabels
+				}
+			}
+		}
+
+		if skip {
+			message = fmt.Sprintf(`Skipping feature "%s": no matched labels`, testName)
+			return skip, message
+		}
+
+		for key, vals := range e.cfg.SelectLabels() {
 			for _, v := range vals {
 				if !labels.Contains(key, v) {
 					skip = true
