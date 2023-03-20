@@ -1,6 +1,6 @@
 module sigs.k8s.io/e2e-framework
 
-go 1.18
+go 1.19
 
 require (
 	github.com/vladimirvivien/gexe v0.2.0
