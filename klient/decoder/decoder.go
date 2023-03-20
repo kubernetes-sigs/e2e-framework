@@ -332,7 +332,7 @@ func IgnoreErrorHandler(handler HandlerFunc, errorMatcher func(err error) bool) 
 }
 
 // NoopHandler returns a Handler func that only returns nil
-func NoopHandler(_ *resources.Resources, opts ...resources.DeleteOption) HandlerFunc {
+func NoopHandler(_ *resources.Resources, _ ...resources.DeleteOption) HandlerFunc {
 	return func(ctx context.Context, obj k8s.Object) error {
 		return nil
 	}
