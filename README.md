@@ -54,7 +54,7 @@ func TestMain(m *testing.M) {
     testenv.Finish(
         envfuncs.DeleteNamespace(namespace),
     )
-    
+
     // launch package tests
     os.Exit(testenv.Run(m))
 }
@@ -93,12 +93,14 @@ func TestKubernetes(t *testing.T) {
             }
             return ctx
         }).Feature()
-        
+
     // test feature
     testenv.Test(t, f1, f2)
 }
 ```
+
 #### Running the test
+
 Use the Go testing tooling to run the tests in the package as shown below. The following would run all tests except those with label `type=ns-count`:
 
 ```
@@ -106,6 +108,7 @@ go test ./package -args --skip-labels="type=ns-count"
 ```
 
 ## Examples
+
 See the [./examples](./examples) directory for additional examples showing how to use the framework.
 
 ## Community, discussion, contribution, and support

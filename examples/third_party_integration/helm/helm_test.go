@@ -56,7 +56,7 @@ func TestHelmChartRepoWorkflow(t *testing.T) {
 		Assess("Deployment is running successfully", func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
 			deployment := &appsv1.Deployment{
 				ObjectMeta: v1.ObjectMeta{
-					Name:      "nginx-nginx-ingress",
+					Name:      "nginx-nginx-ingress-controller",
 					Namespace: namespace,
 				},
 				Spec: appsv1.DeploymentSpec{},
