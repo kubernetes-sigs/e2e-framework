@@ -39,6 +39,7 @@ func TestMain(m *testing.M) {
 
 	testenv.Finish(
 		envfuncs.DeleteNamespace(namespace),
+		envfuncs.ExportKindClusterLogs(kindClusterName, "./logs"),
 		envfuncs.DestroyKindCluster(kindClusterName),
 	)
 	os.Exit(testenv.Run(m))

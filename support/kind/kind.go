@@ -130,6 +130,21 @@ func (k *Cluster) GetKubeCtlContext() string {
 	return fmt.Sprintf("kind-%s", k.name)
 }
 
+// ExportLogs export all cluster logs to the provided path.
+func (k *Cluster) ExportLogs(dest string) error {
+	log.V(4).Info("Exporting kind cluster logs to ", dest)
+	if err := k.findOrInstallKind(k.e); err != nil {
+		return err
+	}
+
+	p := k.e.RunProc(fmt.Sprintf(`kind export logs %s --name %s`, dest, k.name))
+	if p.Err() != nil {
+		return fmt.Errorf("kind: export cluster logs failed: %s: %s", p.Err(), p.Result())
+	}
+
+	return nil
+}
+
 func (k *Cluster) Destroy() error {
 	log.V(4).Info("Destroying kind cluster ", k.name)
 	if err := k.findOrInstallKind(k.e); err != nil {
