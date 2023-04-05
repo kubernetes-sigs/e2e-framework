@@ -47,7 +47,11 @@ func TestHelmChartRepoWorkflow(t *testing.T) {
 			if err != nil {
 				t.Fatal("failed to upgrade helm repo")
 			}
-			err = manager.RunInstall(helm.WithName("nginx"), helm.WithNamespace(namespace), helm.WithReleaseName("nginx-stable/nginx-ingress"))
+			err = manager.RunInstall(helm.WithName("nginx"), helm.WithNamespace(namespace),
+				helm.WithReleaseName("nginx-stable/nginx-ingress"),
+				// pinning to a specific verision to make sure we will have reproducible executions
+				helm.WithVersion("0.17.0"),
+			)
 			if err != nil {
 				t.Fatal("failed to install nginx Helm chart")
 			}
