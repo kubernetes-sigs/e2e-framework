@@ -524,7 +524,8 @@ func (e *testEnv) requireProcessing(kind, testName string, requiredRegexp, skipR
 			}
 		}
 
-		skip = true
+		// if there are no labels passed through --labels then we can directly set skip to false and continue, the loop wont run anyway
+		skip = len(e.cfg.Labels()) != 0
 	checkLabels:
 		for key, vals := range e.cfg.Labels() {
 			for _, v := range vals {
