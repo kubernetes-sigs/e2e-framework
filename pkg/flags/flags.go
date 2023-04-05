@@ -58,7 +58,8 @@ var (
 	}
 	selectLabelsFlag = flag.Flag{
 		Name:  flagSelectLabelsName,
-		Usage: "Comma-separated key=value to select features by labels, checks for presence of all the given labels"}
+		Usage: "Comma-separated key=value to select features by labels, checks for presence of all the given labels",
+	}
 	kubecfgFlag = flag.Flag{
 		Name:  flagKubecofigName,
 		Usage: "Path to a cluster kubeconfig file (optional)",

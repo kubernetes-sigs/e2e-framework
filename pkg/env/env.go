@@ -513,7 +513,6 @@ func (e *testEnv) requireProcessing(kind, testName string, requiredRegexp, skipR
 	}
 
 	if labels != nil {
-
 		for key, vals := range e.cfg.SelectLabels() {
 			for _, v := range vals {
 				if !labels.Contains(key, v) {
