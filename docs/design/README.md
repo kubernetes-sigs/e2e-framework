@@ -51,7 +51,7 @@ The following shows a proposed type for the environment:
 
 ```go
 // EnvFunc is an operation applied during/after environment setup
-type EnvFunc func(context.Context, envconf.Config) (context.Context, error)
+type EnvFunc func(context.Context, *envconf.Config) (context.Context, error)
 
 type Environment interface {
     // Config returns the associated environment configuration
@@ -93,11 +93,11 @@ env.New() Environment
 
 // env.NewWithConfig creates env.Environment with a specified 
 // environment config and a default context.Context
-env.NewWithConfig(envconf.Config) Environment
+env.NewWithConfig(*envconf.Config) Environment
 
 // env.NewWithContext creates an environment with a specified
 // environment Config and context.Context
-env.NewWithContext(context.Context, envconf.Config) (Environment, error)
+env.NewWithContext(context.Context, *envconf.Config) (Environment, error)
 ```
 
 ### `env.Environment` and context.Context
@@ -130,14 +130,14 @@ ctx := env.New().Context()
 Test writers can specify an environment operation using type `EnvFunc`.
 
 ```go
-type EnvFunc func(context.Context, envconf.Config) (context.Context, error)
+type EnvFunc func(context.Context, *envconf.Config) (context.Context, error)
 ```
 
 An environment operation can be applied at different stages during the life cycle of the environment including environment setup, before a test, after a test, and to tear down the environment. At runtime, the environment operation will receive the environment context that was injected at construction time (or the default context). The context's content (key/value) can be mutated during the operation and returned.
 
 ```go 
 e := env.New()
-e.Setup(func(ctx context.Context, client conf envconf.Config){
+e.Setup(func(ctx context.Context, client conf *envconf.Config){
   // define environment operation here
 })
 ```
@@ -200,7 +200,7 @@ The operation performed during an execution step is defined as the following Go 
 type StepFunc func (context.Context, *testing.T, envconf.Config) context.Context
 ```
 
-When a step is executed, it will receive the last updated `context.Context`, `*testing.T` for test signaling, and the `envconf.Config` that is associated with the environment. Note a step function can update the content of the context and return it so that its value will be passed to subsequent steps.
+When a step is executed, it will receive the last updated `context.Context`, `*testing.T` for test signaling, and the `*envconf.Config` that is associated with the environment. Note a step function can update the content of the context and return it so that its value will be passed to subsequent steps.
 
 #### Step levels
 A step level identifies the type of a step.  It shall be encoded as the following type, shown below.
@@ -279,7 +279,7 @@ var (
 
 func TestMain(m *testing.M) {
     global = env.New()    
-    global.Setup(func(context.Context, *cfg envconf.Config) (context.Context, error){
+    global.Setup(func(context.Context, cfg *envconf.Config) (context.Context, error){
         // code to setup environment
         return nil, nil
     })
