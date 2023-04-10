@@ -256,7 +256,7 @@ var (
 
 func TestMain(m *testing.M) {
     global = env.New()    
-    global.Setup(func(context.Context, cfg envconf.Config) (context.Context, error){
+    global.Setup(func(context.Context, cfg *envconf.Config) (context.Context, error){
         // code to setup environment
         return nil, nil
     })
@@ -279,7 +279,7 @@ var (
 
 func TestMain(m *testing.M) {
     global = env.New()    
-    global.Setup(func(context.Context, cfg envconf.Config) (context.Context, error){
+    global.Setup(func(context.Context, *cfg envconf.Config) (context.Context, error){
         // code to setup environment
         return nil, nil
     })
@@ -305,7 +305,7 @@ Before a feature can be tested, it must be defined.  Assuming that the framework
 ```go
 func TestSomething(t *testing.T) {       
     feat := features.New("Hello Feature").
-        Assess("Simple test", func(ctx context.Context, t *testing.T, cfg envconf.Config) context.Context {
+        Assess("Simple test", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
             result := "foo"
             if result != "Hello foo" {
                 t.Error("unexpected message")
@@ -324,7 +324,7 @@ Next the feature can be tested.  This is done by invoking the `Test` method on t
 ```go
 func TestSomething(t *testing.T) {
     feat := features.New("Hello Feature").
-        Assess("Simple test", func(ctx context.Context, t *testing.T, cfg envconf.Config) context.Context {
+        Assess("Simple test", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
             result := "foo"
             if result != "Hello foo" {
                 t.Error("unexpected message")
@@ -344,12 +344,12 @@ After all tests in the package (or suite) are executed, the test framework will 
 ```go
 func TestMain(m *testing.M) {
     ...
-    env.Setup(func(ctx context.Context, cfg envconf.Config) (context.Context, error){
+    env.Setup(func(ctx context.Context, cfg *envconf.Config) (context.Context, error){
         // setup environment
         return ctx, nil
     })
 
-    env.Finish(func(ctx context.Context, cfg envconf.Config) (context.Context, error){
+    env.Finish(func(ctx context.Context, cfg *envconf.Config) (context.Context, error){
         // teardown environment
         return ctx, nil
     })
