@@ -16,7 +16,7 @@ include:
 * Rely on built-in Go test features to easily select/filter tests to run during execution
 * And more
 
-For more detail, see the [design document](./docs/design/test-harness-framework.md).
+For more detail, see the [design document](./docs/design/README.md).
 
 ## Getting started
 
