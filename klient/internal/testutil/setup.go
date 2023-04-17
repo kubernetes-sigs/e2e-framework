@@ -95,21 +95,20 @@ func waitForControlPlane(c kubernetes.Interface) error {
 	}
 	options := metav1.ListOptions{LabelSelector: selector.String()}
 	log.Info("Waiting for kind control-plane pods to be initialized...")
-	err = wait.Poll(5*time.Second, time.Minute*2,
-		func() (bool, error) {
-			pods, err := c.CoreV1().Pods("kube-system").List(context.TODO(), options)
-			if err != nil {
-				return false, err
+	err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 2*time.Minute, false, func(ctx context.Context) (done bool, err error) {
+		pods, err := c.CoreV1().Pods("kube-system").List(ctx, options)
+		if err != nil {
+			return false, err
+		}
+		running := 0
+		for i := range pods.Items {
+			if pods.Items[i].Status.Phase == v1.PodRunning {
+				running++
 			}
-			running := 0
-			for i := range pods.Items {
-				if pods.Items[i].Status.Phase == v1.PodRunning {
-					running++
-				}
-			}
-			// a kind cluster with one control-plane node will have 4 pods running the core apiserver components
-			return running >= 4, nil
-		})
+		}
+		// a kind cluster with one control-plane node will have 4 pods running the core apiserver components
+		return running >= 4, nil
+	})
 	if err != nil {
 		return err
 	}
@@ -126,20 +125,19 @@ func waitForControlPlane(c kubernetes.Interface) error {
 	}
 	options = metav1.ListOptions{LabelSelector: selector.String()}
 	log.Info("Waiting for kind networking pods to be initialized...")
-	err = wait.Poll(5*time.Second, time.Minute*2,
-		func() (bool, error) {
-			pods, err := c.CoreV1().Pods("kube-system").List(context.TODO(), options)
-			if err != nil {
-				return false, err
+	err = wait.PollUntilContextTimeout(context.Background(), 5*time.Second, 2*time.Minute, false, func(ctx context.Context) (done bool, err error) {
+		pods, err := c.CoreV1().Pods("kube-system").List(ctx, options)
+		if err != nil {
+			return false, err
+		}
+		running := 0
+		for i := range pods.Items {
+			if pods.Items[i].Status.Phase == v1.PodRunning {
+				running++
 			}
-			running := 0
-			for i := range pods.Items {
-				if pods.Items[i].Status.Phase == v1.PodRunning {
-					running++
-				}
-			}
-			// a kind cluster with one control-plane node will have 4 k8s-app pods running networking components
-			return running >= 4, nil
-		})
+		}
+		// a kind cluster with one control-plane node will have 4 k8s-app pods running networking components
+		return running >= 4, nil
+	})
 	return err
 }
