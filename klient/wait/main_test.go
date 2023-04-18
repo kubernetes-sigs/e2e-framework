@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package wait
+package wait_test
 
 import (
 	"context"
@@ -29,14 +29,16 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"sigs.k8s.io/e2e-framework/klient/internal/testutil"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
+	"sigs.k8s.io/e2e-framework/pkg/env"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
+	"sigs.k8s.io/e2e-framework/support/kind"
 
 	"k8s.io/client-go/rest"
 )
 
 var (
-	tc                  *testutil.TestCluster
 	cfg                 *rest.Config
 	resourceManager     *resources.Resources
 	namespace           = "wait-test"
@@ -44,12 +46,24 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	tc = testutil.SetupTestCluster("")
-	cfg = tc.RESTConfig
-	setup()
-	exitCode := m.Run()
-	tearDown()
-	os.Exit(exitCode)
+	testenv := env.New()
+	kindClusterName := envconf.RandomName("wait-test-", 16)
+	testenv.Setup(
+		envfuncs.CreateCluster(kind.NewProvider(), kindClusterName),
+		func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+			cfg = c.Client().RESTConfig()
+			setup()
+			return ctx, nil
+		},
+	)
+	testenv.Finish(
+		func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+			return ctx, deleteNamespace()
+		},
+		envfuncs.DestroyCluster(kindClusterName),
+	)
+
+	os.Exit(testenv.Run(m))
 }
 
 func setup() {
@@ -65,14 +79,6 @@ func getResourceManager() *resources.Resources {
 		resourceManager = resourceMgr.WithNamespace(namespace)
 	})
 	return resourceManager
-}
-
-func tearDown() {
-	err := deleteNamespace()
-	if err != nil {
-		log.ErrorS(err, "ran into an error trying to delete the namespace as part of the cleanup")
-	}
-	tc.DestroyTestCluster()
 }
 
 func deleteNamespace() error {

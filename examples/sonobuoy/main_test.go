@@ -40,7 +40,7 @@ func TestMain(m *testing.M) {
 			func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 				name := envconf.RandomName("my-cluster", 16)
 				cluster := kind.NewCluster(name)
-				kubeconfig, err := cluster.Create()
+				kubeconfig, err := cluster.Create(ctx)
 				if err != nil {
 					return ctx, err
 				}
@@ -56,7 +56,7 @@ func TestMain(m *testing.M) {
 			// Teardown func: delete kind cluster
 			func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 				cluster := ctx.Value("cluster").(*kind.Cluster) // nil should be tested
-				if err := cluster.Destroy(); err != nil {
+				if err := cluster.Destroy(ctx); err != nil {
 					return ctx, err
 				}
 				return ctx, nil

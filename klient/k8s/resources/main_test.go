@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package resources
+package resources_test
 
 import (
 	"context"
@@ -30,11 +30,13 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
-	"sigs.k8s.io/e2e-framework/klient/internal/testutil"
+	"sigs.k8s.io/e2e-framework/pkg/env"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
+	"sigs.k8s.io/e2e-framework/support/kind"
 )
 
 var (
-	tc           *testutil.TestCluster
 	dep          *appsv1.Deployment
 	clientset    kubernetes.Interface
 	count        uint64
@@ -45,20 +47,31 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	tc = testutil.SetupTestCluster("")
-	clientset = tc.Clientset
-	cfg = tc.RESTConfig
-	initializeResObjects()
-	code := m.Run()
-	teardown()
-	os.Exit(code)
-}
+	testenv := env.New()
+	kindClusterName := envconf.RandomName("resources-test-", 16)
+	testenv.Setup(
+		envfuncs.CreateCluster(kind.NewProvider(), kindClusterName),
+		func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+			cfg = c.Client().RESTConfig()
+			var err error
+			clientset, err = kubernetes.NewForConfig(cfg)
+			if err != nil {
+				return ctx, err
+			}
+			initializeResObjects()
+			return ctx, nil
+		},
+	)
+	testenv.Finish(
+		func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+			deleteDeployment(ctx, dep, namespace.Name)
+			deleteNamespace(ctx, namespace)
+			return ctx, nil
+		},
+		envfuncs.DestroyCluster(kindClusterName),
+	)
 
-func teardown() {
-	deleteDeployment(ctx, dep, namespace.Name)
-	deleteNamespace(ctx, namespace)
-
-	tc.DestroyTestCluster()
+	os.Exit(testenv.Run(m))
 }
 
 func deleteDeployment(ctx context.Context, dep *appsv1.Deployment, ns string) {

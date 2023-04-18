@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
+	"sigs.k8s.io/e2e-framework/support/kind"
 )
 
 var (
@@ -40,7 +41,7 @@ func TestMain(m *testing.M) {
 	namespace = envconf.RandomName("my-ns", 10)
 
 	testEnv.Setup(
-		envfuncs.CreateKindCluster(kindClusterName),
+		envfuncs.CreateCluster(kind.NewProvider(), kindClusterName),
 		envfuncs.SetupCRDs("./testdata/crds", "*"),
 		envfuncs.CreateNamespace(namespace),
 		func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
@@ -59,7 +60,7 @@ func TestMain(m *testing.M) {
 	testEnv.Finish(
 		envfuncs.DeleteNamespace(namespace),
 		envfuncs.TeardownCRDs("./testdata/crds", "*"),
-		envfuncs.DestroyKindCluster(kindClusterName),
+		envfuncs.DestroyCluster(kindClusterName),
 	)
 
 	os.Exit(testEnv.Run(m))

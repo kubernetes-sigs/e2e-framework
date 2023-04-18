@@ -45,7 +45,7 @@ func checkPodStatus(t *testing.T, kubeConfig string, clusterName string) {
 	}
 	deployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      "example",
+			Name:      clusterName,
 			Namespace: "default",
 		},
 		Spec: appsv1.DeploymentSpec{},
@@ -62,12 +62,12 @@ func TestScenarioOne(t *testing.T) {
 	feature := features.New("Scenario One").
 		Setup(func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
 			for _, clusterName := range clusterNames {
-				cluster, ok := envfuncs.GetKindClusterFromContext(ctx, clusterName)
+				cluster, ok := envfuncs.GetClusterFromContext(ctx, clusterName)
 				if !ok {
 					t.Fatalf("Failed to extract kind cluster %s from context", clusterName)
 				}
 				manager := helm.New(cluster.GetKubeconfig())
-				err := manager.RunInstall(helm.WithName("example"), helm.WithNamespace("default"), helm.WithChart(filepath.Join(curDir, "testdata", "example_chart")), helm.WithWait(), helm.WithTimeout("10m"))
+				err := manager.RunInstall(helm.WithName(clusterName), helm.WithNamespace("default"), helm.WithChart(filepath.Join(curDir, "testdata", "example_chart")), helm.WithWait(), helm.WithTimeout("10m"))
 				if err != nil {
 					t.Fatal("failed to invoke helm install operation due to an error", err)
 				}
@@ -75,7 +75,7 @@ func TestScenarioOne(t *testing.T) {
 			return ctx
 		}).
 		Assess(fmt.Sprintf("Deployment is running successfully - %s", clusterNames[0]), func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
-			cluster, ok := envfuncs.GetKindClusterFromContext(ctx, clusterNames[0])
+			cluster, ok := envfuncs.GetClusterFromContext(ctx, clusterNames[0])
 			if !ok {
 				t.Fatalf("Failed to extract kind cluster %s from context", clusterNames[0])
 			}
@@ -83,7 +83,7 @@ func TestScenarioOne(t *testing.T) {
 			return ctx
 		}).
 		Assess(fmt.Sprintf("Deployment is running successfully - %s", clusterNames[1]), func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
-			cluster, ok := envfuncs.GetKindClusterFromContext(ctx, clusterNames[1])
+			cluster, ok := envfuncs.GetClusterFromContext(ctx, clusterNames[1])
 			if !ok {
 				t.Fatalf("Failed to extract kind cluster %s from context", clusterNames[1])
 			}

@@ -14,35 +14,39 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package decoder
+package decoder_test
 
 import (
 	"context"
 	"os"
 	"testing"
 
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
-	"sigs.k8s.io/e2e-framework/klient/internal/testutil"
+	"sigs.k8s.io/e2e-framework/pkg/env"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
+	"sigs.k8s.io/e2e-framework/support/kind"
 )
 
 var (
-	tc        *testutil.TestCluster
-	clientset kubernetes.Interface
-	ctx       = context.TODO()
-	cfg       *rest.Config
+	ctx = context.TODO()
+	cfg *rest.Config
 )
 
 func TestMain(m *testing.M) {
-	tc = testutil.SetupTestCluster("")
-	clientset = tc.Clientset
-	cfg = tc.RESTConfig
-	code := m.Run()
-	teardown()
-	os.Exit(code)
-}
+	testenv := env.New()
+	kindClusterName := envconf.RandomName("decoder-test-", 16)
+	testenv.Setup(
+		envfuncs.CreateCluster(kind.NewProvider(), kindClusterName),
+		func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+			cfg = c.Client().RESTConfig()
+			return ctx, nil
+		},
+	)
+	testenv.Finish(
+		envfuncs.DestroyCluster(kindClusterName),
+	)
 
-func teardown() {
-	tc.DestroyTestCluster()
+	os.Exit(testenv.Run(m))
 }

@@ -151,7 +151,7 @@ func (m *Manager) processOpts(opts ...Option) *Opts {
 
 // getCommand is used to convert the Opts into a helm suitable command to be run
 func (m *Manager) getCommand(opt *Opts) (string, error) {
-	commandParts := []string{"helm", opt.mode}
+	commandParts := []string{m.path, opt.mode}
 	if opt.mode == "" {
 		return "", fmt.Errorf("missing helm operation mode. Please use the WithMode option while invoking the run")
 	}
@@ -232,12 +232,11 @@ func (m *Manager) RunTest(opts ...Option) error {
 // run method is used to invoke a helm command to perform a suitable operation.
 // Please make sure to configure the right Opts using the Option helpers
 func (m *Manager) run(opts *Opts) (err error) {
-	executable := "helm"
-	if m.path != "" {
-		executable = m.path
+	if m.path == "" {
+		m.path = "helm"
 	}
-	log.V(4).InfoS("Determining if helm binary is available or not", "executable", executable)
-	if m.e.Prog().Avail(executable) == "" {
+	log.V(4).InfoS("Determining if helm binary is available or not", "executable", m.path)
+	if m.e.Prog().Avail(m.path) == "" {
 		err = fmt.Errorf(missingHelm)
 		return
 	}

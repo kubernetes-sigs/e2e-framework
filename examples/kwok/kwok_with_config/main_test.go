@@ -23,6 +23,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
+	"sigs.k8s.io/e2e-framework/support/kwok"
 )
 
 var testenv env.Environment
@@ -33,13 +34,14 @@ func TestMain(m *testing.M) {
 	namespace := envconf.RandomName("kwok-ns", 16)
 
 	testenv.Setup(
-		envfuncs.CreateKwokClusterWithConfig(kwokClusterName, "kwok-config.yaml"),
+		envfuncs.CreateClusterWithConfig(kwok.NewProvider(), kwokClusterName, "kwok-config.yaml"),
 		envfuncs.CreateNamespace(namespace),
 	)
 
 	testenv.Finish(
+		envfuncs.ExportClusterLogs(kwokClusterName, "./logs"),
 		envfuncs.DeleteNamespace(namespace),
-		envfuncs.DestroyKwokCluster(kwokClusterName),
+		envfuncs.DestroyCluster(kwokClusterName),
 	)
 	os.Exit(testenv.Run(m))
 }

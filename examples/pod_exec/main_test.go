@@ -23,6 +23,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
+	"sigs.k8s.io/e2e-framework/support/kind"
 )
 
 var (
@@ -38,13 +39,13 @@ func TestMain(m *testing.M) {
 	namespace = envconf.RandomName("my-ns", 10)
 
 	testEnv.Setup(
-		envfuncs.CreateKindCluster(kindClusterName),
+		envfuncs.CreateCluster(kind.NewProvider(), kindClusterName),
 		envfuncs.CreateNamespace(namespace),
 	)
 
 	testEnv.Finish(
 		envfuncs.DeleteNamespace(namespace),
-		envfuncs.DestroyKindCluster(kindClusterName),
+		envfuncs.DestroyCluster(kindClusterName),
 	)
 
 	os.Exit(testEnv.Run(m))
