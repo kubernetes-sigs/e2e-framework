@@ -29,7 +29,9 @@ import (
 )
 
 func TestSkipFlags(t *testing.T) {
-	podFeature := features.New("pod list").WithLabel("env", "prod").
+	podFeature := features.New("pod list").
+		WithLabel("type", "k8score").
+		WithLabel("env", "prod").
 		Assess("pods from kube-system", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			var pods corev1.PodList
 			client, err := cfg.NewClient()
@@ -48,7 +50,9 @@ func TestSkipFlags(t *testing.T) {
 		}).Feature()
 
 	// feature uses pre-generated namespace (see TestMain)
-	depFeature := features.New("appsv1/deployment").WithLabel("env", "dev").
+	depFeature := features.New("appsv1/deployment").
+		WithLabel("type", "k8score").
+		WithLabel("env", "dev").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			// insert a deployment
 			deployment := newDeployment(cfg.Namespace(), "test-deployment", 1)
