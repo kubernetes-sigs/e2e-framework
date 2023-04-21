@@ -109,10 +109,11 @@ func TestResourceDeleted(t *testing.T) {
 func TestResourceScaled(t *testing.T) {
 	var err error
 	deployment := createDeployment("d1", 2, t)
-	stopChan := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	err = For(conditions.New(getResourceManager()).ResourceScaled(deployment, func(object k8s.Object) int32 {
 		return object.(*appsv1.Deployment).Status.ReadyReplicas
-	}, 2), WithStopChannel(stopChan))
+	}, 2), WithContext(ctx))
 	if err != nil {
 		t.Error("failed waiting for resource to be scaled", err)
 	}
