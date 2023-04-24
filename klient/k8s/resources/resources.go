@@ -23,14 +23,14 @@ import (
 	"time"
 
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/remotecommand"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/remotecommand"
 	cr "sigs.k8s.io/controller-runtime/pkg/client"
+
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/k8s/watcher"
 )
@@ -111,6 +111,23 @@ func (r *Resources) Update(ctx context.Context, obj k8s.Object, opts ...UpdateOp
 	return r.client.Update(ctx, obj, o)
 }
 
+// UpdateSubresource updates the subresource of the object
+func (r *Resources) UpdateSubresource(ctx context.Context, obj k8s.Object, subresource string, opts ...UpdateOption) error {
+	updateOptions := &metav1.UpdateOptions{}
+	for _, fn := range opts {
+		fn(updateOptions)
+	}
+
+	uo := cr.UpdateOptions{Raw: updateOptions}
+	o := &cr.SubResourceUpdateOptions{UpdateOptions: uo}
+	return r.client.SubResource(subresource).Update(ctx, obj, o)
+}
+
+// UpdateStatus updates the status of the object
+func (r *Resources) UpdateStatus(ctx context.Context, obj k8s.Object, opts ...UpdateOption) error {
+	return r.UpdateSubresource(ctx, obj, "status", opts...)
+}
+
 type DeleteOption func(*metav1.DeleteOptions)
 
 func (r *Resources) Delete(ctx context.Context, obj k8s.Object, opts ...DeleteOption) error {
@@ -166,8 +183,8 @@ func WithTimeout(to time.Duration) ListOption {
 // PatchOption is used to provide additional arguments to the Patch call.
 type PatchOption func(*metav1.PatchOptions)
 
-// Patch patches portion of object `orig` with data from object `patch`
-func (r *Resources) Patch(ctx context.Context, objs k8s.Object, patch k8s.Patch, opts ...PatchOption) error {
+// Patch patches portion of object `obj` with data from object `patch`
+func (r *Resources) Patch(ctx context.Context, obj k8s.Object, patch k8s.Patch, opts ...PatchOption) error {
 	patchOptions := &metav1.PatchOptions{}
 
 	for _, fn := range opts {
@@ -177,7 +194,27 @@ func (r *Resources) Patch(ctx context.Context, objs k8s.Object, patch k8s.Patch,
 	p := cr.RawPatch(patch.PatchType, patch.Data)
 
 	o := &cr.PatchOptions{Raw: patchOptions}
-	return r.client.Patch(ctx, objs, p, o)
+	return r.client.Patch(ctx, obj, p, o)
+}
+
+// PatchSubresource patches portion of object `obj` with data from object `patch`
+func (r *Resources) PatchSubresource(ctx context.Context, obj k8s.Object, subresource string, patch k8s.Patch, opts ...PatchOption) error {
+	patchOptions := &metav1.PatchOptions{}
+
+	for _, fn := range opts {
+		fn(patchOptions)
+	}
+
+	p := cr.RawPatch(patch.PatchType, patch.Data)
+
+	po := cr.PatchOptions{Raw: patchOptions}
+	o := &cr.SubResourcePatchOptions{PatchOptions: po}
+	return r.client.SubResource(subresource).Patch(ctx, obj, p, o)
+}
+
+// PatchStatus patches portion of object `obj` with data from object `patch`
+func (r *Resources) PatchStatus(ctx context.Context, objs k8s.Object, patch k8s.Patch, opts ...PatchOption) error {
+	return r.PatchSubresource(ctx, objs, "status", patch, opts...)
 }
 
 // Annotate attach annotations to an existing resource objec
