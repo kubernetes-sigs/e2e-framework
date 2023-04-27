@@ -76,7 +76,7 @@ func CreateKwokCluster(clusterName string) env.Func {
 //
 // NOTE: the returned function will update its env config with the
 // kubeconfig file for the config client.
-func CreateKwokClusterWithConfig(clusterName, image, configFilePath string) env.Func {
+func CreateKwokClusterWithConfig(clusterName, configFilePath string) env.Func {
 	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 		k := kwok.NewCluster(clusterName)
 		kubecfg, err := k.CreateWithConfig(configFilePath)

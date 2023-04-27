@@ -149,7 +149,6 @@ func (k *Cluster) Destroy() error {
 }
 
 func (k *Cluster) findOrInstallKwok(e *gexe.Echo) error {
-
 	if k.version != "" {
 		kwokVersion = k.version
 	}
@@ -188,7 +187,6 @@ func (k *Cluster) findOrInstallKwok(e *gexe.Echo) error {
 }
 
 func (k *Cluster) installKwokCtl(e *gexe.Echo) error {
-
 	log.V(4).Infof("Installing: go install sigs.k8s.io/kwok/cmd/kwokctl@%s", kwokVersion)
 	installKwokCtlCmd := fmt.Sprintf("go install sigs.k8s.io/kwok/cmd/kwokctl@%s", kwokVersion)
 	log.V(4).Infof("%s", installKwokCtlCmd)
