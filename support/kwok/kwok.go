@@ -41,7 +41,7 @@ func NewCluster(name string) *Cluster {
 	return &Cluster{name: name, e: gexe.New()}
 }
 
-// WithVersion set kind version
+// WithVersion set kwok version
 func (k *Cluster) WithVersion(ver string) *Cluster {
 	k.version = ver
 	return k
