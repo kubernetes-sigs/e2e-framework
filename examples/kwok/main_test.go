@@ -38,8 +38,8 @@ func TestMain(m *testing.M) {
 	)
 
 	testenv.Finish(
-	//envfuncs.DeleteNamespace(namespace),
-	//envfuncs.DestroyKwokCluster(kwokClusterName),
+		envfuncs.DeleteNamespace(namespace),
+		envfuncs.DestroyKwokCluster(kwokClusterName),
 	)
 	os.Exit(testenv.Run(m))
 }
