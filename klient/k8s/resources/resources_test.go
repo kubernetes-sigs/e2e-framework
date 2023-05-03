@@ -25,16 +25,16 @@ import (
 	"time"
 
 	"github.com/vladimirvivien/gexe"
-	"k8s.io/apimachinery/pkg/labels"
-	log "k8s.io/klog/v2"
-	"sigs.k8s.io/e2e-framework/klient/k8s/resources/testdata/projectExample"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
+	log "k8s.io/klog/v2"
+
 	"sigs.k8s.io/e2e-framework/klient/k8s"
+	"sigs.k8s.io/e2e-framework/klient/k8s/resources/testdata/projectExample"
 )
 
 func TestCreate(t *testing.T) {
@@ -144,6 +144,55 @@ func TestUpdate(t *testing.T) {
 	}
 }
 
+func TestUpdateStatus(t *testing.T) {
+	res, err := New(cfg)
+	if err != nil {
+		t.Fatalf("Error creating new resources object: %v", err)
+	}
+
+	depActual := getDeployment("update-status-test-dep-name")
+
+	err = res.Create(context.TODO(), depActual)
+	if err != nil {
+		t.Error("error while creating deployment", err)
+	}
+
+	depUpdated := depActual
+	depUpdated.Status.Conditions = append(depUpdated.Status.Conditions,
+		appsv1.DeploymentCondition{
+			Type:               "UpdateStatusTest",
+			Status:             corev1.ConditionTrue,
+			LastUpdateTime:     metav1.NewTime(time.Now()),
+			LastTransitionTime: metav1.NewTime(time.Now()),
+		},
+	)
+
+	err = res.UpdateStatus(context.TODO(), depUpdated)
+	if err != nil {
+		t.Error("error while updating deployment status", err)
+	}
+
+	var depObj appsv1.Deployment
+	err = res.Get(context.TODO(), depUpdated.Name, namespace.Name, &depObj)
+	if err != nil {
+		t.Error("error while getting the deployment", err)
+	}
+
+	var cond *appsv1.DeploymentCondition
+	for i := range depObj.Status.Conditions {
+		if depObj.Status.Conditions[i].Type == "UpdateStatusTest" {
+			cond = &depObj.Status.Conditions[i]
+			break
+		}
+	}
+
+	if cond == nil {
+		t.Error("deployment status not updated")
+	} else if cond.Status != corev1.ConditionTrue {
+		t.Error("deployment status value mismatch, expected : ", corev1.ConditionTrue, "obtained :", cond.Status)
+	}
+}
+
 func TestDelete(t *testing.T) {
 	res, err := New(cfg)
 	if err != nil {
@@ -222,6 +271,54 @@ func TestPatch(t *testing.T) {
 
 	if obj.Annotations["ping"] != "pong" {
 		t.Error("resource patch not applied correctly.")
+	}
+}
+
+func TestPatchStatus(t *testing.T) {
+	res, err := New(cfg)
+	if err != nil {
+		t.Fatalf("Error creating new resources object: %v", err)
+	}
+
+	mergePatch, err := json.Marshal(map[string]interface{}{
+		"status": map[string]interface{}{
+			"conditions": []interface{}{
+				map[string]interface{}{
+					"type":               "UpdateStatusTest",
+					"status":             "True",
+					"lastUpdateTime":     metav1.NewTime(time.Now()),
+					"lastTransitionTime": metav1.NewTime(time.Now()),
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Error("error while json marshalling", err)
+	}
+
+	err = res.PatchStatus(context.Background(), dep, k8s.Patch{PatchType: types.StrategicMergePatchType, Data: mergePatch})
+	if err != nil {
+		t.Error("error while patching the deployment", err)
+	}
+
+	obj := &appsv1.Deployment{}
+	err = res.Get(context.Background(), dep.Name, dep.Namespace, obj)
+	if err != nil {
+		t.Error("error while getting patched deployment", err)
+	}
+
+	var cond *appsv1.DeploymentCondition
+	for i := range obj.Status.Conditions {
+		if obj.Status.Conditions[i].Type == "UpdateStatusTest" {
+			cond = &obj.Status.Conditions[i]
+			break
+		}
+	}
+
+	if cond == nil {
+		t.Error("deployment status not updated")
+	} else if cond.Status != corev1.ConditionTrue {
+		t.Error("deployment status value mismatch, expected : ", corev1.ConditionTrue, "obtained :", cond.Status)
 	}
 }
 
