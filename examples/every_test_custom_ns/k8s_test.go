@@ -27,16 +27,14 @@ import (
 
 func TestListPods(t *testing.T) {
 	f := features.New("pod list").
-		Assess("pods from kube-system", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+		Assess("pods from namespace", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			var pods corev1.PodList
-			err := cfg.Client().Resources("kube-system").List(context.TODO(), &pods)
+			namespace := ctx.Value(GetNamespaceKey(t)).(string)
+			err := cfg.Client().Resources(namespace).List(context.TODO(), &pods)
 			if err != nil {
 				t.Fatal(err)
 			}
-			t.Logf("found %d pods", len(pods.Items))
-			if len(pods.Items) == 0 {
-				t.Fatal("no pods in namespace kube-system")
-			}
+			t.Logf("found %d pods in namespace %s", len(pods.Items), namespace)
 			return ctx
 		})
 
