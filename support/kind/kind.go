@@ -139,7 +139,7 @@ func (k *Cluster) ExportLogs(dest string) error {
 
 	p := k.e.RunProc(fmt.Sprintf(`kind export logs %s --name %s`, dest, k.name))
 	if p.Err() != nil {
-		return fmt.Errorf("kind: export cluster logs failed: %s: %s", p.Err(), p.Result())
+		return fmt.Errorf("kind: export cluster %v logs failed: %s: %s", k.name, p.Err(), p.Result())
 	}
 
 	return nil
@@ -153,12 +153,12 @@ func (k *Cluster) Destroy() error {
 
 	p := k.e.RunProc(fmt.Sprintf(`kind delete cluster --name %s`, k.name))
 	if p.Err() != nil {
-		return fmt.Errorf("kind: delete cluster failed: %s: %s", p.Err(), p.Result())
+		return fmt.Errorf("kind: delete cluster %v failed: %s: %s", k.name, p.Err(), p.Result())
 	}
 
 	log.V(4).Info("Removing kubeconfig file ", k.kubecfgFile)
 	if err := os.RemoveAll(k.kubecfgFile); err != nil {
-		return fmt.Errorf("kind: remove kubefconfig failed: %w", err)
+		return fmt.Errorf("kind: remove kubefconfig %v failed: %w", k.kubecfgFile, err)
 	}
 
 	return nil
@@ -219,7 +219,7 @@ func (k *Cluster) installKind(e *gexe.Echo) error {
 func (k *Cluster) LoadDockerImage(image string) error {
 	p := k.e.RunProc(fmt.Sprintf(`kind load docker-image --name %s %s`, k.name, image))
 	if p.Err() != nil {
-		return fmt.Errorf("kind: load docker-image failed: %s: %s", p.Err(), p.Result())
+		return fmt.Errorf("kind: load docker-image %v failed: %s: %s", image, p.Err(), p.Result())
 	}
 	return nil
 }
@@ -228,7 +228,7 @@ func (k *Cluster) LoadDockerImage(image string) error {
 func (k *Cluster) LoadImageArchive(imageArchive string) error {
 	p := k.e.RunProc(fmt.Sprintf(`kind load image-archive --name %s %s`, k.name, imageArchive))
 	if p.Err() != nil {
-		return fmt.Errorf("kind: load image-archive failed: %s: %s", p.Err(), p.Result())
+		return fmt.Errorf("kind: load image-archive %v failed: %s: %s", imageArchive, p.Err(), p.Result())
 	}
 	return nil
 }
