@@ -17,6 +17,7 @@ limitations under the License.
 package helm
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 
@@ -239,14 +240,17 @@ func (m *Manager) run(opts *Opts) (err error) {
 		return
 	}
 	log.V(4).InfoS("Running Helm Operation", "command", command)
-	proc := m.e.RunProc(command)
-	result := proc.Result()
+	proc := m.e.NewProc(command)
+
+	var stderr bytes.Buffer
+	proc.SetStderr(&stderr)
+
+	result := proc.Run().Result()
 	log.V(4).Info("Helm Command output \n", result)
-	if proc.IsSuccess() {
-		return nil
-	} else {
-		return proc.Err()
+	if !proc.IsSuccess() {
+		return fmt.Errorf("%s: %w", strings.TrimSuffix(stderr.String(), "\n"), proc.Err())
 	}
+	return nil
 }
 
 func New(kubeConfig string) *Manager {
