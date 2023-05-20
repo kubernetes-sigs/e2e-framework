@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/vladimirvivien/gexe v0.2.0
-	k8s.io/api v0.27.1
+	k8s.io/api v0.27.2
 	k8s.io/apimachinery v0.27.2
 	k8s.io/client-go v0.27.1
 	k8s.io/klog/v2 v2.100.1
