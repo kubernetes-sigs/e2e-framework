@@ -161,7 +161,6 @@ func DestroyKindCluster(name string) env.Func {
 	}
 }
 
-
 // ExportKindClusterLogs returns an EnvFunc that
 // retrieves a previously saved kind Cluster in the context (using the name), and then export cluster logs
 // in the provided destination.
