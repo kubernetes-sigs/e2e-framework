@@ -6,3 +6,10 @@
 .vscode
 /dist/*
 vendor/
+*.log
+docker-info.txt
+kubernetes-version.txt
+kind-version.txt
+inspect.json
+go.work
+go.work.sum
