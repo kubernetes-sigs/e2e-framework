@@ -18,6 +18,7 @@ package env
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -535,28 +536,37 @@ func TestEnv_Context_Propagation(t *testing.T) {
 
 func TestTestEnv_TestInParallel(t *testing.T) {
 	env := NewParallel()
+	mutex := sync.Mutex{}
 	beforeEachCallCount := 0
 	afterEachCallCount := 0
 	beforeFeatureCount := 0
 	afterFeatureCount := 0
 	env.BeforeEachTest(func(ctx context.Context, config *envconf.Config, t *testing.T) (context.Context, error) {
+		mutex.Lock()
+		defer mutex.Unlock()
 		beforeEachCallCount++
 		return ctx, nil
 	})
 
 	env.AfterEachTest(func(ctx context.Context, config *envconf.Config, t *testing.T) (context.Context, error) {
+		mutex.Lock()
+		defer mutex.Unlock()
 		afterEachCallCount++
 		return ctx, nil
 	})
 
 	env.BeforeEachFeature(func(ctx context.Context, config *envconf.Config, _ *testing.T, feature types.Feature) (context.Context, error) {
 		t.Logf("Running before each feature for feature %s", feature.Name())
+		mutex.Lock()
+		defer mutex.Unlock()
 		beforeFeatureCount++
 		return ctx, nil
 	})
 
 	env.AfterEachFeature(func(ctx context.Context, config *envconf.Config, _ *testing.T, feature types.Feature) (context.Context, error) {
 		t.Logf("Running after each feature for feature %s", feature.Name())
+		mutex.Lock()
+		defer mutex.Unlock()
 		afterFeatureCount++
 		return ctx, nil
 	})
