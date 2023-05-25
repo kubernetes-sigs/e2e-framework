@@ -203,23 +203,23 @@ func (e *testEnv) processTestActions(t *testing.T, actions []action) {
 // processTestFeature is used to trigger the execution of the actual feature. This function wraps the entire
 // workflow of orchestrating the feature execution be running the action configured by BeforeEachFeature /
 // AfterEachFeature.
-func (e *testEnv) processTestFeature(t *testing.T, featureName string, feature types.Feature) {
+func (e *testEnv) processTestFeature(ctx context.Context, t *testing.T, featureName string, feature types.Feature) {
 	// execute beforeEachFeature actions
-	e.processFeatureActions(t, feature, e.getBeforeFeatureActions())
+	e.processFeatureActions(ctx, t, feature, e.getBeforeFeatureActions())
 
 	// execute feature test
-	e.ctx = e.execFeature(e.ctx, t, featureName, feature)
+	ctx = e.execFeature(ctx, t, featureName, feature)
 
 	// execute afterEachFeature actions
-	e.processFeatureActions(t, feature, e.getAfterFeatureActions())
+	e.processFeatureActions(ctx, t, feature, e.getAfterFeatureActions())
 }
 
 // processFeatureActions is used to run a series of feature action that were configured as
 // BeforeEachFeature or AfterEachFeature
-func (e *testEnv) processFeatureActions(t *testing.T, feature types.Feature, actions []action) {
+func (e *testEnv) processFeatureActions(ctx context.Context, t *testing.T, feature types.Feature, actions []action) {
 	var err error
 	for _, action := range actions {
-		if e.ctx, err = action.runWithFeature(e.ctx, e.cfg, t, deepCopyFeature(feature)); err != nil {
+		if ctx, err = action.runWithFeature(ctx, e.cfg, t, deepCopyFeature(feature)); err != nil {
 			t.Fatalf("%s failure: %s", action.role, err)
 		}
 	}
@@ -254,6 +254,7 @@ func (e *testEnv) processTests(t *testing.T, enableParallelRun bool, testFeature
 	var wg sync.WaitGroup
 	for i, feature := range testFeatures {
 		featureCopy := feature
+		ctxCopy := e.ctx
 		featName := feature.Name()
 		if featName == "" {
 			featName = fmt.Sprintf("Feature-%d", i+1)
@@ -262,10 +263,10 @@ func (e *testEnv) processTests(t *testing.T, enableParallelRun bool, testFeature
 			wg.Add(1)
 			go func(w *sync.WaitGroup, featName string, f types.Feature) {
 				defer w.Done()
-				e.processTestFeature(t, featName, f)
+				e.processTestFeature(ctxCopy, t, featName, f)
 			}(&wg, featName, featureCopy)
 		} else {
-			e.processTestFeature(t, featName, featureCopy)
+			e.processTestFeature(ctxCopy, t, featName, featureCopy)
 			// In case if the feature under test has failed, skip reset of the features
 			// that are part of the same test
 			if e.cfg.FailFast() && t.Failed() {
