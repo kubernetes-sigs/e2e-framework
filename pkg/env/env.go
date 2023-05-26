@@ -203,26 +203,29 @@ func (e *testEnv) processTestActions(t *testing.T, actions []action) {
 // processTestFeature is used to trigger the execution of the actual feature. This function wraps the entire
 // workflow of orchestrating the feature execution be running the action configured by BeforeEachFeature /
 // AfterEachFeature.
-func (e *testEnv) processTestFeature(ctx context.Context, t *testing.T, featureName string, feature types.Feature) {
+func (e *testEnv) processTestFeature(ctx context.Context, t *testing.T, featureName string, feature types.Feature) context.Context {
 	// execute beforeEachFeature actions
-	e.processFeatureActions(ctx, t, feature, e.getBeforeFeatureActions())
+	ctx = e.processFeatureActions(ctx, t, feature, e.getBeforeFeatureActions())
 
 	// execute feature test
 	ctx = e.execFeature(ctx, t, featureName, feature)
 
 	// execute afterEachFeature actions
-	e.processFeatureActions(ctx, t, feature, e.getAfterFeatureActions())
+	ctx = e.processFeatureActions(ctx, t, feature, e.getAfterFeatureActions())
+
+	return ctx
 }
 
 // processFeatureActions is used to run a series of feature action that were configured as
 // BeforeEachFeature or AfterEachFeature
-func (e *testEnv) processFeatureActions(ctx context.Context, t *testing.T, feature types.Feature, actions []action) {
+func (e *testEnv) processFeatureActions(ctx context.Context, t *testing.T, feature types.Feature, actions []action) context.Context {
 	var err error
 	for _, action := range actions {
 		if ctx, err = action.runWithFeature(ctx, e.cfg, t, deepCopyFeature(feature)); err != nil {
 			t.Fatalf("%s failure: %s", action.role, err)
 		}
 	}
+	return ctx
 }
 
 // processTests is a wrapper function that can be invoked by either Test or TestInParallel methods.
@@ -263,10 +266,10 @@ func (e *testEnv) processTests(t *testing.T, enableParallelRun bool, testFeature
 			wg.Add(1)
 			go func(w *sync.WaitGroup, featName string, f types.Feature) {
 				defer w.Done()
-				e.processTestFeature(ctxCopy, t, featName, f)
+				_ = e.processTestFeature(ctxCopy, t, featName, f)
 			}(&wg, featName, featureCopy)
 		} else {
-			e.processTestFeature(ctxCopy, t, featName, featureCopy)
+			e.ctx = e.processTestFeature(ctxCopy, t, featName, featureCopy)
 			// In case if the feature under test has failed, skip reset of the features
 			// that are part of the same test
 			if e.cfg.FailFast() && t.Failed() {
