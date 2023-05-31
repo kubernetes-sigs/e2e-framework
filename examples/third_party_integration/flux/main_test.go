@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2023 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package flux
 
 import (
 	"os"
+	"sigs.k8s.io/e2e-framework/third_party/flux"
 	"testing"
 
 	"sigs.k8s.io/e2e-framework/pkg/env"
@@ -36,16 +37,21 @@ func TestMain(m *testing.M) {
 	testEnv = env.NewWithConfig(cfg)
 	kindClusterName = envconf.RandomName("flux", 10)
 	namespace = envconf.RandomName("flux", 10)
-
+	gitRepoName := "hello-world"
+	ksName := "hello-world"
 	testEnv.Setup(
 		envfuncs.CreateKindCluster(kindClusterName),
-		envfuncs.InstallFlux(),
 		envfuncs.CreateNamespace(namespace),
+		flux.InstallFlux(),
+		flux.CreateGitRepo(gitRepoName, "https://github.com/matrus2/go-hello-world", flux.WithBranch("main")),
+		flux.CreateKustomization(ksName, "GitRepository/"+gitRepoName+".flux-system", flux.WithPath("template"), flux.WithArgs("--target-namespace", namespace, "--prune")),
 	)
 
 	testEnv.Finish(
+		flux.DeleteKustomization(ksName),
+		flux.DeleteGitRepo(gitRepoName),
+		flux.UninstallFlux(),
 		envfuncs.DeleteNamespace(namespace),
-		envfuncs.UninstallFlux(),
 		envfuncs.DestroyKindCluster(kindClusterName),
 	)
 	os.Exit(testEnv.Run(m))

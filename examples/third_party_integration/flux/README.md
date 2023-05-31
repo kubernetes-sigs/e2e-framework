@@ -7,6 +7,13 @@ into the `e2e-framework` while writing your tests.
 
 1. `Flux` Installed on your system where the tests are being run for details visit flux official [website](https://fluxcd.io/).
 
+## Flux supported commands
+
+For the time being the framework supports following functionality: 
+- Flux installation and uninstallation.
+- Handling [Kustomization](https://fluxcd.io/flux/components/kustomize/kustomization/) objects.
+- Handling [GitRepository](https://fluxcd.io/flux/components/source/gitrepositories/) objects.
+
 ## How does the example work?
 
 1. It creates a kind cluster with `flux` prefix.

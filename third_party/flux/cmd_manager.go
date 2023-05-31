@@ -1,3 +1,19 @@
+/*
+Copyright 2023 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package flux
 
 import (
@@ -20,6 +36,29 @@ type Opts struct {
 	args      []string
 }
 
+type Source int64
+
+const (
+	Git Source = iota
+	Bucket
+	Helm
+	Oci
+)
+
+func (s Source) String() string {
+	switch s {
+	case Git:
+		return "git"
+	case Bucket:
+		return "bucket"
+	case Helm:
+		return "helm"
+	case Oci:
+		return "oci"
+	}
+	return "unknown"
+}
+
 type Manager struct {
 	e          *gexe.Echo
 	kubeConfig string
@@ -33,18 +72,6 @@ func (m *Manager) processOpts(opts ...Option) *Opts {
 		op(option)
 	}
 	return option
-}
-
-func (m *Manager) InstallFlux(opts ...Option) error {
-	o := m.processOpts(opts...)
-	o.mode = "install"
-	return m.run(o)
-}
-
-func (m *Manager) UninstallFlux(opts ...Option) error {
-	o := m.processOpts(opts...)
-	o.mode = "uninstall -s"
-	return m.run(o)
 }
 
 func WithNamespace(namespace string) Option {
@@ -140,22 +167,33 @@ func (m *Manager) getCommand(opt *Opts) (string, error) {
 	return strings.Join(commandParts, " "), nil
 }
 
-func (m *Manager) CreateGitRepo(name string, url string, opts ...Option) error {
+func (m *Manager) installFlux(opts ...Option) error {
 	o := m.processOpts(opts...)
-	o.mode = "create source git"
+	o.mode = "install"
+	return m.run(o)
+}
+
+func (m *Manager) uninstallFlux(opts ...Option) error {
+	o := m.processOpts(opts...)
+	o.mode = "uninstall -s"
+	return m.run(o)
+}
+func (m *Manager) createSource(sourceType Source, name string, url string, opts ...Option) error {
+	o := m.processOpts(opts...)
+	o.mode = "create source " + sourceType.String()
 	o.name = name
 	o.url = url
 	return m.run(o)
 }
 
-func (m *Manager) DeleteGitRepo(name string, opts ...Option) error {
+func (m *Manager) deleteSource(sourceType Source, name string, opts ...Option) error {
 	o := m.processOpts(opts...)
-	o.mode = "delete source git -s"
+	o.mode = "delete source " + sourceType.String() + " -s"
 	o.name = name
 	return m.run(o)
 }
 
-func (m *Manager) CreateKustomization(name string, source string, opts ...Option) error {
+func (m *Manager) createKustomization(name string, source string, opts ...Option) error {
 	o := m.processOpts(opts...)
 	o.mode = "create ks"
 	o.name = name
@@ -163,7 +201,7 @@ func (m *Manager) CreateKustomization(name string, source string, opts ...Option
 	return m.run(o)
 }
 
-func (m *Manager) DeleteKustomization(name string, opts ...Option) error {
+func (m *Manager) deleteKustomization(name string, opts ...Option) error {
 	o := m.processOpts(opts...)
 	o.mode = "delete ks -s"
 	o.name = name
