@@ -594,3 +594,26 @@ func TestTestEnv_TestInParallel(t *testing.T) {
 		t.Fatal("BeforeEachTest handler should be invoked only once")
 	}
 }
+
+func TestParallelOne(t *testing.T) {
+	t.Parallel()
+	f := features.New("one").
+		Assess("log a message", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			ns := envconf.RandomName("ns", 20)
+			t.Logf("RandomName: %s", ns)
+			return ctx
+		})
+	envForTesting.Test(t, f.Feature())
+}
+
+func TestParallelTwo(t *testing.T) {
+	t.Parallel()
+	f := features.New("two").
+		Assess("log a message", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			ns := envconf.RandomName("ns", 20)
+			t.Logf("RandomName: %s", ns)
+			return ctx
+		})
+
+	envForTesting.Test(t, f.Feature())
+}
