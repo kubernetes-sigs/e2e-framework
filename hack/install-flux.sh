@@ -20,5 +20,5 @@ FLUX_URL=https://fluxcd.io/install.sh
 
 if ! command -v flux; then
     # Running the piped command with sudo disabled to avoid any security concerns that might arise
-    curl -s FLUX_URL | USE_SUDO=false bash
+    curl -s $FLUX_URL | USE_SUDO=false bash
 fi
