@@ -33,7 +33,7 @@ func TestKwokCluster(t *testing.T) {
 	deploymentFeature := features.New("appsv1/deployment").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			// setup node
-			node := newNode("kwok-node1")
+			node := newNode("kwok-node")
 			if err := cfg.Client().Resources().Create(ctx, node); err != nil {
 				t.Fatal(err)
 			}

@@ -33,6 +33,7 @@ func TestMain(m *testing.M) {
 	namespace := envconf.RandomName("kwok-ns", 16)
 
 	testenv.Setup(
+		//envfuncs.CreateKwokClusterWithConfig(kwokClusterName, "kwok-config.yaml"),
 		envfuncs.CreateKwokCluster(kwokClusterName),
 		envfuncs.CreateNamespace(namespace),
 	)
