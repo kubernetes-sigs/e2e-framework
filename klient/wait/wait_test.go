@@ -237,3 +237,12 @@ func TestResourceMatch(t *testing.T) {
 	}
 	log.Info("Done")
 }
+
+func TestDeploymentAvailable(t *testing.T) {
+	var err error
+	deployment := createDeployment("d7", 2, t)
+	err = For(conditions.New(getResourceManager()).DeploymentAvailable(deployment.Name, deployment.Namespace))
+	if err != nil {
+		t.Error("failed waiting for deployment to become available")
+	}
+}

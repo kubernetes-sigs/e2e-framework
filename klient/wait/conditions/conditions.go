@@ -27,6 +27,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimachinerywait "k8s.io/apimachinery/pkg/util/wait"
 
 	"sigs.k8s.io/e2e-framework/klient/k8s"
@@ -291,4 +292,14 @@ func (c *Condition) JobCompleted(job k8s.Object) apimachinerywait.ConditionWithC
 // v1.ConditionTrue state
 func (c *Condition) JobFailed(job k8s.Object) apimachinerywait.ConditionWithContextFunc {
 	return c.JobConditionMatch(job, batchv1.JobFailed, v1.ConditionTrue)
+}
+
+// DeploymentAvailable is a helper function used to check if the deployment condition appsv1.DeploymentAvailable
+// has reached v1.ConditionTrue state
+func (c *Condition) DeploymentAvailable(name, namespace string) apimachinerywait.ConditionWithContextFunc {
+	return c.DeploymentConditionMatch(
+		&appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}},
+		appsv1.DeploymentAvailable,
+		v1.ConditionTrue,
+	)
 }
