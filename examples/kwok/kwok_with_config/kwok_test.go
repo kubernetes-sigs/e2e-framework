@@ -68,7 +68,7 @@ func TestKwokCluster(t *testing.T) {
 			pod := pods.Items[0]
 			for _, condition := range pod.Status.Conditions {
 				if condition.Type == corev1.PodReady && condition.Status != corev1.ConditionTrue {
-					t.Fatal("pod not ready")
+					t.Fatal("pod is not ready")
 				}
 			}
 			return ctx
@@ -80,7 +80,6 @@ func TestKwokCluster(t *testing.T) {
 			}
 			return ctx
 		}).Feature()
-
 	testenv.Test(t, deploymentFeature)
 }
 

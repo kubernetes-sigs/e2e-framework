@@ -22,6 +22,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	log "k8s.io/klog/v2"
 
@@ -29,21 +30,30 @@ import (
 )
 
 var kwokVersion = "v0.2.0"
+var clusterWaitDuration = "2m"
 
 type Cluster struct {
-	name        string
-	e           *gexe.Echo
-	kubecfgFile string
-	version     string
+	name         string
+	e            *gexe.Echo
+	kubecfgFile  string
+	version      string
+	waitDuration time.Duration
 }
 
 func NewCluster(name string) *Cluster {
-	return &Cluster{name: name, e: gexe.New()}
+	duration, _ := time.ParseDuration(clusterWaitDuration)
+	return &Cluster{name: name, e: gexe.New(), waitDuration: duration}
 }
 
 // WithVersion set kwok version
 func (k *Cluster) WithVersion(ver string) *Cluster {
 	k.version = ver
+	return k
+}
+
+// WithWaitDuration set duration to wait for kwok cluster to be ready
+func (k *Cluster) WithWaitDuration(d time.Duration) *Cluster {
+	k.waitDuration = d
 	return k
 }
 
@@ -100,7 +110,7 @@ func (k *Cluster) Create(args ...string) (string, error) {
 		return k.getKubeconfig()
 	}
 
-	command := fmt.Sprintf(`kwokctl create cluster --name %s`, k.name)
+	command := fmt.Sprintf(`kwokctl create cluster --name %s --wait %s`, k.name, k.waitDuration.String())
 	if len(args) > 0 {
 		command = fmt.Sprintf("%s %s", command, strings.Join(args, " "))
 	}
@@ -155,7 +165,7 @@ func (k *Cluster) findOrInstallKwok(e *gexe.Echo) error {
 	// installing kwok means installing kwokctl binary
 
 	if e.Prog().Avail("kwokctl") == "" {
-		log.V(4).Infof(`kwokctl not found, installing version @%s`, kwokVersion)
+		log.V(4).Info(`kwokctl not found, installing version @%s`, kwokVersion)
 		if err := k.installKwokCtl(e); err != nil {
 			return err
 		}
@@ -187,9 +197,9 @@ func (k *Cluster) findOrInstallKwok(e *gexe.Echo) error {
 }
 
 func (k *Cluster) installKwokCtl(e *gexe.Echo) error {
-	log.V(4).Infof("Installing: go install sigs.k8s.io/kwok/cmd/kwokctl@%s", kwokVersion)
+	log.V(4).Info("Installing: go install sigs.k8s.io/kwok/cmd/kwokctl@%s", kwokVersion)
 	installKwokCtlCmd := fmt.Sprintf("go install sigs.k8s.io/kwok/cmd/kwokctl@%s", kwokVersion)
-	log.V(4).Infof("%s", installKwokCtlCmd)
+	log.V(4).Info("%s", installKwokCtlCmd)
 	p := e.RunProc(installKwokCtlCmd)
 	if p.Err() != nil {
 		return fmt.Errorf("failed to install kwokctl: %s %s", installKwokCtlCmd, p.Err())

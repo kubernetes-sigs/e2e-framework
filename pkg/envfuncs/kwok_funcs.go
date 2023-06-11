@@ -20,12 +20,6 @@ import (
 	"context"
 	"fmt"
 
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/e2e-framework/klient"
-	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
-	"sigs.k8s.io/e2e-framework/klient/wait"
-	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/support/kwok"
@@ -60,11 +54,6 @@ func CreateKwokCluster(clusterName string) env.Func {
 		// update envconfig  with kubeconfig
 		cfg.WithKubeconfigFile(kubecfg)
 
-		// stall, wait for pods initializations
-		if err := waitForKubeNamespaces(cfg.Client()); err != nil {
-			return ctx, err
-		}
-
 		// store entire cluster value in ctx for future access using the cluster name
 		return context.WithValue(ctx, kwokContextKey(clusterName), k), nil
 	}
@@ -90,29 +79,6 @@ func CreateKwokClusterWithConfig(clusterName, configFilePath string) env.Func {
 		// store entire cluster value in ctx for future access using the cluster name
 		return context.WithValue(ctx, kwokContextKey(clusterName), k), nil
 	}
-}
-
-func waitForKubeNamespaces(client klient.Client) error {
-	r, err := resources.New(client.RESTConfig())
-	if err != nil {
-		return err
-	}
-	selector, err := metav1.LabelSelectorAsSelector(
-		&metav1.LabelSelector{
-			MatchExpressions: []metav1.LabelSelectorRequirement{
-				{Key: "kubernetes.io/metadata.name", Operator: metav1.LabelSelectorOpIn, Values: []string{"default", "kube-node-lease", "kube-public", "kube-system"}},
-			},
-		},
-	)
-	if err != nil {
-		return err
-	}
-	// a kwok cluster will have 4 namespaces created
-	err = wait.For(conditions.New(r).ResourceListN(&v1.NamespaceList{}, 4, resources.WithLabelSelector(selector.String())))
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // DestroyKwokCluster returns an EnvFunc that
