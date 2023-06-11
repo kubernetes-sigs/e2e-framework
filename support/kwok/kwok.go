@@ -30,7 +30,6 @@ import (
 )
 
 var kwokVersion = "v0.2.0"
-var clusterWaitDuration = "2m"
 
 type Cluster struct {
 	name         string
@@ -41,8 +40,7 @@ type Cluster struct {
 }
 
 func NewCluster(name string) *Cluster {
-	duration, _ := time.ParseDuration(clusterWaitDuration)
-	return &Cluster{name: name, e: gexe.New(), waitDuration: duration}
+	return &Cluster{name: name, e: gexe.New(), waitDuration: 1 * time.Minute}
 }
 
 // WithVersion set kwok version
