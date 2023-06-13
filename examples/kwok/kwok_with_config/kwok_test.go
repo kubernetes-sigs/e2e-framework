@@ -25,6 +25,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/e2e-framework/klient/wait"
+	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -42,7 +44,6 @@ func TestKwokCluster(t *testing.T) {
 			if err := cfg.Client().Resources().Create(ctx, deployment); err != nil {
 				t.Fatal(err)
 			}
-			time.Sleep(2 * time.Second)
 			return ctx
 		}).
 		Assess("deployment creation", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -53,7 +54,11 @@ func TestKwokCluster(t *testing.T) {
 			if &dep != nil {
 				t.Logf("deployment found: %s %s", dep.Name, cfg.Namespace())
 			}
-
+			// wait for the deployment to finish becoming available
+			err := wait.For(conditions.New(cfg.Client().Resources()).DeploymentConditionMatch(&dep, appsv1.DeploymentAvailable, v1.ConditionTrue), wait.WithTimeout(time.Minute*1))
+			if err != nil {
+				t.Fatal(err)
+			}
 			return context.WithValue(ctx, "test-deployment", &dep)
 		}).
 		Assess("pod ready", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -66,10 +71,10 @@ func TestKwokCluster(t *testing.T) {
 				t.Fatal("could not find any pod in the namespace")
 			}
 			pod := pods.Items[0]
-			for _, condition := range pod.Status.Conditions {
-				if condition.Type == corev1.PodReady && condition.Status != corev1.ConditionTrue {
-					t.Fatal("pod is not ready")
-				}
+			// wait for the pod to be ready
+			err = wait.For(conditions.New(cfg.Client().Resources()).PodConditionMatch(&pod, v1.PodReady, v1.ConditionTrue), wait.WithTimeout(time.Minute*1))
+			if err != nil {
+				t.Fatal(err)
 			}
 			return ctx
 		}).
