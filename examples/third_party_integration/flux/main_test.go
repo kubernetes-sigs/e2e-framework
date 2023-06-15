@@ -43,7 +43,8 @@ func TestMain(m *testing.M) {
 		envfuncs.CreateKindCluster(kindClusterName),
 		envfuncs.CreateNamespace(namespace),
 		flux.InstallFlux(),
-		flux.CreateGitRepo(gitRepoName, "https://github.com/matrus2/go-hello-world", flux.WithBranch("main")),
+		// Point to a specific commit instead of branch as it reference an external repository
+		flux.CreateGitRepo(gitRepoName, "https://github.com/matrus2/go-hello-world", flux.WithCommit("605e55d1f6518a27ce2b1fa96162b6483a0cfd49")),
 		flux.CreateKustomization(ksName, "GitRepository/"+gitRepoName+".flux-system", flux.WithPath("template"), flux.WithArgs("--target-namespace", namespace, "--prune")),
 	)
 

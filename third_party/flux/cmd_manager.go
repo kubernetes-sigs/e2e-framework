@@ -31,33 +31,20 @@ type Opts struct {
 	url       string
 	branch    string
 	tag       string
+	commit    string
 	path      string
 	interval  string
 	args      []string
 }
 
-type Source int64
+type Source string
 
 const (
-	Git Source = iota
-	Bucket
-	Helm
-	Oci
+	Git    Source = "git"
+	Bucket Source = "bucket"
+	Helm   Source = "helm"
+	Oci    Source = "oci"
 )
-
-func (s Source) String() string {
-	switch s {
-	case Git:
-		return "git"
-	case Bucket:
-		return "bucket"
-	case Helm:
-		return "helm"
-	case Oci:
-		return "oci"
-	}
-	return "unknown"
-}
 
 type Manager struct {
 	e          *gexe.Echo
@@ -74,36 +61,49 @@ func (m *Manager) processOpts(opts ...Option) *Opts {
 	return option
 }
 
+// WithNamespace is used to specify the namespace of flux installation
 func WithNamespace(namespace string) Option {
 	return func(opts *Opts) {
 		opts.namespace = namespace
 	}
 }
 
+// WithCommit is used to target a source with a specific commit SHA
+func WithCommit(commit string) Option {
+	return func(opts *Opts) {
+		opts.commit = commit
+	}
+}
+
+// WithTag is used to target a source with a specific tag
 func WithTag(tag string) Option {
 	return func(opts *Opts) {
 		opts.tag = tag
 	}
 }
 
+// WithBranch is used to target a source with a specific branch
 func WithBranch(branch string) Option {
 	return func(opts *Opts) {
 		opts.branch = branch
 	}
 }
 
+// WithPath is used to specify a path for reconciliation
 func WithPath(path string) Option {
 	return func(opts *Opts) {
 		opts.path = path
 	}
 }
 
+// WithInterval is used to specify how often flux should check for changes in a source
 func WithInterval(interval string) Option {
 	return func(opts *Opts) {
 		opts.interval = interval
 	}
 }
 
+// WithArgs is used to pass any additional parameter to Flux command
 func WithArgs(args ...string) Option {
 	return func(opts *Opts) {
 		opts.args = args
@@ -155,6 +155,9 @@ func (m *Manager) getCommand(opt *Opts) (string, error) {
 	if opt.tag != "" {
 		commandParts = append(commandParts, "--tag", opt.tag)
 	}
+	if opt.commit != "" {
+		commandParts = append(commandParts, "--commit", opt.commit)
+	}
 	if opt.path != "" {
 		commandParts = append(commandParts, "--path", opt.path)
 	}
@@ -180,7 +183,7 @@ func (m *Manager) uninstallFlux(opts ...Option) error {
 }
 func (m *Manager) createSource(sourceType Source, name string, url string, opts ...Option) error {
 	o := m.processOpts(opts...)
-	o.mode = "create source " + sourceType.String()
+	o.mode = string("create source " + sourceType)
 	o.name = name
 	o.url = url
 	return m.run(o)
@@ -188,7 +191,7 @@ func (m *Manager) createSource(sourceType Source, name string, url string, opts 
 
 func (m *Manager) deleteSource(sourceType Source, name string, opts ...Option) error {
 	o := m.processOpts(opts...)
-	o.mode = "delete source " + sourceType.String() + " -s"
+	o.mode = string("delete source " + sourceType + " -s")
 	o.name = name
 	return m.run(o)
 }
