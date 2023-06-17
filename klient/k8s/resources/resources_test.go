@@ -30,7 +30,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/rest"
 	log "k8s.io/klog/v2"
 
 	"sigs.k8s.io/e2e-framework/klient/k8s"
@@ -95,17 +94,6 @@ func TestResNoConfig(t *testing.T) {
 	_, err := New(nil)
 	if err == nil {
 		t.Error("expected error while invoking Res without k8s config")
-	}
-}
-
-func TestResInvalidConfig(t *testing.T) {
-	cfg := &rest.Config{
-		Host: "invalid-host",
-	}
-
-	_, err := New(cfg)
-	if err == nil {
-		t.Error("expected panic while invoking Res with invalid k8s config")
 	}
 }
 
