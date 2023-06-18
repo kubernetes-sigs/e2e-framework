@@ -38,11 +38,14 @@ func TestCRDSetup(t *testing.T) {
 			}
 			crontabs.AddToScheme(r.GetScheme())
 			r.WithNamespace(namespace)
-			decoder.DecodeEachFile(
+			err = decoder.DecodeEachFile(
 				ctx, os.DirFS("./testdata/crs"), "*",
 				decoder.CreateHandler(r),
 				decoder.MutateNamespace(namespace),
 			)
+			if err != nil {
+				t.Fatalf("Failed due to error: %s", err)
+			}
 			return ctx
 		}).
 		Assess("Check If Resource created", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
