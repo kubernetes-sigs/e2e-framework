@@ -24,6 +24,8 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -96,7 +98,11 @@ func (r *Resources) Create(ctx context.Context, obj k8s.Object, opts ...CreateOp
 		fn(createOptions)
 	}
 
-	o := &cr.CreateOptions{Raw: createOptions}
+	o := &cr.CreateOptions{
+		Raw:          createOptions,
+		DryRun:       createOptions.DryRun,
+		FieldManager: createOptions.FieldManager,
+	}
 
 	return r.client.Create(ctx, obj, o)
 }
@@ -109,7 +115,11 @@ func (r *Resources) Update(ctx context.Context, obj k8s.Object, opts ...UpdateOp
 		fn(updateOptions)
 	}
 
-	o := &cr.UpdateOptions{Raw: updateOptions}
+	o := &cr.UpdateOptions{
+		Raw:          updateOptions,
+		DryRun:       updateOptions.DryRun,
+		FieldManager: updateOptions.FieldManager,
+	}
 	return r.client.Update(ctx, obj, o)
 }
 
@@ -138,7 +148,13 @@ func (r *Resources) Delete(ctx context.Context, obj k8s.Object, opts ...DeleteOp
 		fn(deleteOptions)
 	}
 
-	o := &cr.DeleteOptions{Raw: deleteOptions}
+	o := &cr.DeleteOptions{
+		Raw:                deleteOptions,
+		GracePeriodSeconds: deleteOptions.GracePeriodSeconds,
+		Preconditions:      deleteOptions.Preconditions,
+		PropagationPolicy:  deleteOptions.PropagationPolicy,
+		DryRun:             deleteOptions.DryRun,
+	}
 	return r.client.Delete(ctx, obj, o)
 }
 
@@ -161,7 +177,22 @@ func (r *Resources) List(ctx context.Context, objs k8s.ObjectList, opts ...ListO
 		fn(listOptions)
 	}
 
-	o := &cr.ListOptions{Raw: listOptions}
+	ls, err := labels.Parse(listOptions.LabelSelector)
+	if err != nil {
+		return err
+	}
+	fs, err := fields.ParseSelector(listOptions.FieldSelector)
+	if err != nil {
+		return err
+	}
+
+	o := &cr.ListOptions{
+		Raw:           listOptions,
+		FieldSelector: fs,
+		LabelSelector: ls,
+		Continue:      listOptions.Continue,
+		Limit:         listOptions.Limit,
+	}
 	if r.namespace != "" {
 		o.Namespace = r.namespace
 	}
@@ -195,7 +226,12 @@ func (r *Resources) Patch(ctx context.Context, obj k8s.Object, patch k8s.Patch, 
 
 	p := cr.RawPatch(patch.PatchType, patch.Data)
 
-	o := &cr.PatchOptions{Raw: patchOptions}
+	o := &cr.PatchOptions{
+		Raw:          patchOptions,
+		DryRun:       patchOptions.DryRun,
+		Force:        patchOptions.Force,
+		FieldManager: patchOptions.FieldManager,
+	}
 	return r.client.Patch(ctx, obj, p, o)
 }
 
