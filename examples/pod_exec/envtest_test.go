@@ -25,7 +25,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
@@ -47,7 +46,7 @@ func TestExecPod(t *testing.T) {
 			if err := client.Resources().Create(ctx, deployment); err != nil {
 				t.Fatal(err)
 			}
-			err = wait.For(conditions.New(client.Resources()).DeploymentConditionMatch(deployment, appsv1.DeploymentAvailable, v1.ConditionTrue), wait.WithTimeout(time.Minute*5))
+			err = wait.For(conditions.New(client.Resources()).DeploymentConditionMatch(deployment, appsv1.DeploymentAvailable, corev1.ConditionTrue), wait.WithTimeout(time.Minute*5))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -92,9 +91,9 @@ func newDeployment(namespace string, name string, replicas int32, containerName 
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
-			Template: v1.PodTemplateSpec{
+			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{Labels: labels},
-				Spec:       v1.PodSpec{Containers: []v1.Container{{Name: containerName, Image: "nginx"}}},
+				Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: containerName, Image: "nginx"}}},
 			},
 		},
 	}
