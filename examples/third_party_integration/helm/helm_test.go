@@ -18,7 +18,6 @@ package helm
 
 import (
 	"context"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -32,8 +31,6 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 	"sigs.k8s.io/e2e-framework/third_party/helm"
 )
-
-var curDir, _ = os.Getwd()
 
 func TestHelmChartRepoWorkflow(t *testing.T) {
 	feature := features.New("Repo based helm chart workflow").

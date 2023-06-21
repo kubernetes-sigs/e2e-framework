@@ -44,7 +44,7 @@ func TestWatchForResources(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "watch-dep", Namespace: cfg.Namespace()},
 			}
 
-			// watch for the deployment and triger action based on the event recieved.
+			// watch for the deployment and triger action based on the event received.
 			cl.Resources().Watch(&appsv1.DeploymentList{}, resources.WithFieldSelector(labels.FormatLabels(map[string]string{"metadata.name": dep.Name}))).
 				WithAddFunc(onAdd).WithDeleteFunc(onDelete).Start(ctx)
 
@@ -75,10 +75,9 @@ func TestWatchForResources(t *testing.T) {
 		}).Feature()
 
 	testenv.Test(t, watchFeature)
-
 }
 
-// TestWatchForResourcesWithStop() demonstartes how to start and stop the watcher
+// TestWatchForResourcesWithStop() demonstrates how to start and stop the watcher
 var w *watcher.EventHandlerFuncs
 
 func TestWatchForResourcesWithStop(t *testing.T) {
@@ -93,7 +92,7 @@ func TestWatchForResourcesWithStop(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "watchnstop-dep", Namespace: cfg.Namespace()},
 			}
 
-			// watch for the deployment and triger action based on the event recieved.
+			// watch for the deployment and triger action based on the event received.
 			w = cl.Resources().Watch(&appsv1.DeploymentList{}, resources.WithFieldSelector(labels.FormatLabels(map[string]string{"metadata.name": dep.Name}))).
 				WithAddFunc(onAdd).WithDeleteFunc(onDelete)
 
@@ -132,7 +131,6 @@ func TestWatchForResourcesWithStop(t *testing.T) {
 		}).Feature()
 
 	testenv.Test(t, watchFeature)
-
 }
 
 func TestWatchForResources1(t *testing.T) {
@@ -165,7 +163,7 @@ func TestWatchForResources1(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "demo-app", Namespace: cfg.Namespace()},
 			}
 
-			// watch for the deployment and triger action based on the event recieved.
+			// watch for the deployment and triger action based on the event received.
 			w = cl.Resources().Watch(&appsv1.DeploymentList{}, resources.WithFieldSelector(labels.FormatLabels(map[string]string{"metadata.name": dep.Name}))).
 				WithAddFunc(onAddfunc).WithDeleteFunc(onDelfunc)
 
@@ -192,7 +190,7 @@ func TestWatchForResources1(t *testing.T) {
 			case <-time.After(3 * time.Second):
 				t.Error("Add callback not called")
 			case <-addWait:
-				klog.InfoS("recieved signal, closing add channel")
+				klog.InfoS("received signal, closing add channel")
 				close(addWait)
 			}
 
@@ -213,7 +211,7 @@ func TestWatchForResources1(t *testing.T) {
 			case <-time.After(3 * time.Second):
 				t.Error("Delete callback not called")
 			case <-delWait:
-				klog.InfoS("recieved signal, closing delete channel")
+				klog.InfoS("received signal, closing delete channel")
 				close(delWait)
 			}
 

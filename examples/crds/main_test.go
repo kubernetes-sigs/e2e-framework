@@ -43,8 +43,8 @@ func TestMain(m *testing.M) {
 		envfuncs.CreateKindCluster(kindClusterName),
 		envfuncs.SetupCRDs("./testdata/crds", "*"),
 		envfuncs.CreateNamespace(namespace),
-		func(ctx context.Context, c *envconf.Config) (context.Context, error) {
-			// I have notiecd a lot timing issue with this tests where the actual assessment fails becuase
+		func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+			// I have notiecd a lot timing issue with this tests where the actual assessment fails because
 			// unable to retrieve the complete list of server APIs: stable.example.com/v1: the server could not find the requested resource
 			// But when you manually check, the resource exists. Just that the tests are running a bit too quick and API server has not
 			// yet started serving the request it seems like. Since there is no clear way today for us to use wait condition directly to

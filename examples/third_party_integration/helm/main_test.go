@@ -29,9 +29,15 @@ var (
 	testEnv         env.Environment
 	namespace       string
 	kindClusterName string
+	curDir          string
 )
 
 func TestMain(m *testing.M) {
+	c, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	curDir = c
 	cfg, _ := envconf.NewFromFlags()
 	testEnv = env.NewWithConfig(cfg)
 	kindClusterName = envconf.RandomName("third-party", 16)

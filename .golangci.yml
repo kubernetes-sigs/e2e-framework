@@ -2,6 +2,12 @@
 run:
   concurrency: 6
   deadline: 5m
+  skip-dirs-use-default: false
+  skip-dirs:
+    - (^|/)vendor($|/)
+    - (^|/)testdata($|/)
+    - (^|/)Godeps($|/)
+    - (^|/)builtin($|/)
 issues:
   exclude-rules:
     # counterfeiter fakes are usually named 'fake_<something>.go'
@@ -10,6 +16,15 @@ issues:
         - gocritic
         - golint
         - dupl
+    - path: examples/*
+      linters:
+        - gocritic
+        - golint
+        - dupl
+        - staticcheck
+        - goconst
+        - errcheck
+        - stylecheck  #Since Example packages have _ in them this will break a bunch of tests unless we rename all of those packages
 linters:
   disable-all: true
   enable:
@@ -47,6 +62,32 @@ linters:
     - whitespace
 
 linters-settings:
+  # Addig the following section based on https://github.com/golangci/golangci-lint/issues/3877
+  depguard:
+    rules:
+      main:
+        files:
+          - $all
+          - "!$test"
+        allow:
+          - $gostd
+          - github.com/vladimirvivien
+          - k8s.io
+          - sigs.k8s.io
+      test:
+        files:
+          - "$test"
+        allow:
+          - $gostd
+          - github.com/vladimirvivien
+          - k8s.io
+          - sigs.k8s.io
+  revive:
+    confidence: 0.01
+    rules:
+      - name: duplicated-imports
+        severity: error
+        disabled: false
   godox:
     keywords:
       - BUG

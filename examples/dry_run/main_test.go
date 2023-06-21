@@ -24,9 +24,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
-var (
-	testEnv env.Environment
-)
+var testEnv env.Environment
 
 func TestMain(m *testing.M) {
 	cfg, _ := envconf.NewFromFlags()
