@@ -43,7 +43,7 @@ func TestExecPod(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := client.Resources().Create(ctx, deployment); err != nil {
+			if err = client.Resources().Create(ctx, deployment); err != nil {
 				t.Fatal(err)
 			}
 			err = wait.For(conditions.New(client.Resources()).DeploymentConditionMatch(deployment, appsv1.DeploymentAvailable, corev1.ConditionTrue), wait.WithTimeout(time.Minute*5))
@@ -54,7 +54,6 @@ func TestExecPod(t *testing.T) {
 			return ctx
 		}).
 		Assess("check connectivity to wikipedia.org main page", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
-
 			client, err := c.NewClient()
 			if err != nil {
 				t.Fatal(err)
@@ -82,6 +81,7 @@ func TestExecPod(t *testing.T) {
 		}).Feature()
 	testEnv.Test(t, feature)
 }
+
 func newDeployment(namespace string, name string, replicas int32, containerName string) *appsv1.Deployment {
 	labels := map[string]string{"app": "pod-exec"}
 	return &appsv1.Deployment{

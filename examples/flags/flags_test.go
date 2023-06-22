@@ -45,15 +45,15 @@ var test env.Environment
 //
 // Pass flags in couple of ways:
 //
-//   go test -v . -args --assess en
+//	go test -v . -args --assess en
 //
 // Or, build a test binary first:
 //
-//   go test -c -o flags.test .
+//	go test -c -o flags.test .
 //
 // Then, execute the test:
 //
-//  ./flags.test --assess en
+//	./flags.test --assess en
 func TestMain(m *testing.M) {
 	// create config from flags (always in TestMain because it calls flag.Parse())
 	cfg, err := envconf.NewFromFlags()

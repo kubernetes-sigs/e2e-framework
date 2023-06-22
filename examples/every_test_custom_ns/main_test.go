@@ -30,8 +30,10 @@ import (
 	"sigs.k8s.io/e2e-framework/support/kind"
 )
 
-type NamespaceCtxKey string
-type ClusterCtxKey string
+type (
+	NamespaceCtxKey string
+	ClusterCtxKey   string
+)
 
 var testenv env.Environment
 
@@ -60,7 +62,7 @@ func TestMain(m *testing.M) {
 			return context.WithValue(ctx, ClusterCtxKey("cluster"), cluster), nil
 		}).Finish(
 		// Teardown func: delete kind cluster
-		func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
+		func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
 			cluster := ctx.Value(ClusterCtxKey("cluster")).(*kind.Cluster) // nil should be tested
 			if cluster == nil {
 				return ctx, fmt.Errorf("error getting kind cluster from context")
@@ -95,7 +97,7 @@ func createNSForTest(ctx context.Context, cfg *envconf.Config, t *testing.T, run
 }
 
 // DeleteNSForTest looks up the namespace corresponding to the given test and deletes it.
-func deleteNSForTest(ctx context.Context, cfg *envconf.Config, t *testing.T, runID string) (context.Context, error) {
+func deleteNSForTest(ctx context.Context, cfg *envconf.Config, t *testing.T, _ string) (context.Context, error) {
 	ns := fmt.Sprint(ctx.Value(GetNamespaceKey(t)))
 	t.Logf("Deleting NS %v for test %v", ns, t.Name())
 

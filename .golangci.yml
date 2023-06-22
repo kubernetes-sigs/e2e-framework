@@ -2,6 +2,12 @@
 run:
   concurrency: 6
   deadline: 5m
+  skip-dirs-use-default: false
+  skip-dirs:
+    - (^|/)vendor($|/)
+    - (^|/)testdata($|/)
+    - (^|/)Godeps($|/)
+    - (^|/)builtin($|/)
 issues:
   exclude-rules:
     # counterfeiter fakes are usually named 'fake_<something>.go'
@@ -10,12 +16,20 @@ issues:
         - gocritic
         - golint
         - dupl
+    - path: examples/*
+      linters:
+        - gocritic
+        - golint
+        - dupl
+        - staticcheck
+        - goconst
+        - errcheck
+        - stylecheck  #Since Example packages have _ in them this will break a bunch of tests unless we rename all of those packages
 linters:
   disable-all: true
   enable:
     - asciicheck
     - bodyclose
-    - depguard
     - dogsled
     - dupl
     - errcheck
@@ -47,6 +61,12 @@ linters:
     - whitespace
 
 linters-settings:
+  revive:
+    confidence: 0.01
+    rules:
+      - name: duplicated-imports
+        severity: error
+        disabled: false
   godox:
     keywords:
       - BUG

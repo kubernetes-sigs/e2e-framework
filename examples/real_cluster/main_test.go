@@ -22,11 +22,12 @@ import (
 	//_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"   // auth for GKE clusters
 	//_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"  // auth for OIDC
 	"os"
+	"testing"
+
 	"sigs.k8s.io/e2e-framework/klient/conf"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
-	"testing"
 )
 
 var testenv env.Environment
