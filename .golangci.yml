@@ -30,7 +30,6 @@ linters:
   enable:
     - asciicheck
     - bodyclose
-    - depguard
     - dogsled
     - dupl
     - errcheck
@@ -62,26 +61,6 @@ linters:
     - whitespace
 
 linters-settings:
-  # Addig the following section based on https://github.com/golangci/golangci-lint/issues/3877
-  depguard:
-    rules:
-      main:
-        files:
-          - $all
-          - "!$test"
-        allow:
-          - $gostd
-          - github.com/vladimirvivien
-          - k8s.io
-          - sigs.k8s.io
-      test:
-        files:
-          - "$test"
-        allow:
-          - $gostd
-          - github.com/vladimirvivien
-          - k8s.io
-          - sigs.k8s.io
   revive:
     confidence: 0.01
     rules:
