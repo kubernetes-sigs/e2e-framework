@@ -34,7 +34,6 @@ func TestMain(m *testing.M) {
 
 	testenv.Setup(
 		envfuncs.CreateKwokClusterWithConfig(kwokClusterName, "kwok-config.yaml"),
-		//envfuncs.CreateKwokCluster(kwokClusterName),
 		envfuncs.CreateNamespace(namespace),
 	)
 
