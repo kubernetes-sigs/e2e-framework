@@ -51,9 +51,6 @@ func TestKwokCluster(t *testing.T) {
 			if err := cfg.Client().Resources().Get(ctx, "test-deployment", cfg.Namespace(), &dep); err != nil {
 				t.Fatal(err)
 			}
-			if &dep != nil {
-				t.Logf("deployment found: %s %s", dep.Name, cfg.Namespace())
-			}
 			// wait for the deployment to finish becoming available
 			err := wait.For(conditions.New(cfg.Client().Resources()).DeploymentConditionMatch(&dep, appsv1.DeploymentAvailable, v1.ConditionTrue), wait.WithTimeout(time.Minute*1))
 			if err != nil {
