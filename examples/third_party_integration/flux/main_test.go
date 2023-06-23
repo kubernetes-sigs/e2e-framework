@@ -37,15 +37,15 @@ func TestMain(m *testing.M) {
 	testEnv = env.NewWithConfig(cfg)
 	kindClusterName = envconf.RandomName("flux", 10)
 	namespace = envconf.RandomName("flux", 10)
-	gitRepoName := "hello-world"
+	gitRepoName := "e2e-framework"
 	ksName := "hello-world"
 	testEnv.Setup(
 		envfuncs.CreateKindCluster(kindClusterName),
 		envfuncs.CreateNamespace(namespace),
 		flux.InstallFlux(),
 		// Point to a specific commit instead of branch as it reference an external repository
-		flux.CreateGitRepo(gitRepoName, "https://github.com/matrus2/go-hello-world", flux.WithCommit("605e55d1f6518a27ce2b1fa96162b6483a0cfd49")),
-		flux.CreateKustomization(ksName, "GitRepository/"+gitRepoName+".flux-system", flux.WithPath("template"), flux.WithArgs("--target-namespace", namespace, "--prune")),
+		flux.CreateGitRepo(gitRepoName, "https://github.com/kubernetes-sigs/e2e-framework", flux.WithBranch("main")),
+		flux.CreateKustomization(ksName, "GitRepository/"+gitRepoName+".flux-system", flux.WithPath("examples/third_party_integration/flux/template"), flux.WithArgs("--target-namespace", namespace, "--prune")),
 	)
 
 	testEnv.Finish(
