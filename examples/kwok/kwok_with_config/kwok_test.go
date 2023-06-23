@@ -23,7 +23,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
@@ -52,7 +51,7 @@ func TestKwokCluster(t *testing.T) {
 				t.Fatal(err)
 			}
 			// wait for the deployment to finish becoming available
-			err := wait.For(conditions.New(cfg.Client().Resources()).DeploymentConditionMatch(&dep, appsv1.DeploymentAvailable, v1.ConditionTrue), wait.WithTimeout(time.Minute*1))
+			err := wait.For(conditions.New(cfg.Client().Resources()).DeploymentConditionMatch(&dep, appsv1.DeploymentAvailable, corev1.ConditionTrue), wait.WithTimeout(time.Minute*1))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -69,7 +68,7 @@ func TestKwokCluster(t *testing.T) {
 			}
 			pod := pods.Items[0]
 			// wait for the pod to be ready
-			err = wait.For(conditions.New(cfg.Client().Resources()).PodConditionMatch(&pod, v1.PodReady, v1.ConditionTrue), wait.WithTimeout(time.Minute*1))
+			err = wait.For(conditions.New(cfg.Client().Resources()).PodConditionMatch(&pod, corev1.PodReady, corev1.ConditionTrue), wait.WithTimeout(time.Minute*1))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -132,6 +131,6 @@ func newNode(nodeName string) *corev1.Node {
 			Name:   nodeName,
 			Labels: map[string]string{"beta.kubernetes.io/arch": "amd64", "beta.kubernetes.io/os": "linux", "type": "kwok"},
 		},
-		Spec: v1.NodeSpec{},
+		Spec: corev1.NodeSpec{},
 	}
 }
