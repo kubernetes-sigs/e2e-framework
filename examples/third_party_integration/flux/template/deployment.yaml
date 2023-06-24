@@ -15,6 +15,6 @@ spec:
     spec:
       containers:
         - name: hello-app
-          image: matrus2hub/go-hello-world@sha256:2c4bd6771dbb88db8d8294245d2937f797ff30708d0647aec564e8cd7851c2b5
+          image: nginx:1.25.1
           ports:
-            - containerPort: 8888
+            - containerPort: 80
