@@ -60,6 +60,7 @@ type Opts struct {
 type Manager struct {
 	e          *gexe.Echo
 	kubeConfig string
+	path       string
 }
 
 type Option func(*Opts)
@@ -231,7 +232,12 @@ func (m *Manager) RunTest(opts ...Option) error {
 // run method is used to invoke a helm command to perform a suitable operation.
 // Please make sure to configure the right Opts using the Option helpers
 func (m *Manager) run(opts *Opts) (err error) {
-	if m.e.Prog().Avail("helm") == "" {
+	executable := "helm"
+	if m.path != "" {
+		executable = m.path
+	}
+	log.V(4).InfoS("Determining if helm binary is available or not", "executable", executable)
+	if m.e.Prog().Avail(executable) == "" {
 		err = fmt.Errorf(missingHelm)
 		return
 	}
@@ -251,6 +257,14 @@ func (m *Manager) run(opts *Opts) (err error) {
 		return fmt.Errorf("%s: %w", strings.TrimSuffix(stderr.String(), "\n"), proc.Err())
 	}
 	return nil
+}
+
+// WithPath is used to provide a custom path where the `helm` executable command
+// can be found. This is useful in case if your binary is in a non standard location
+// and you want to framework to use that instead of retunring an error.
+func (m *Manager) WithPath(path string) *Manager {
+	m.path = path
+	return m
 }
 
 func New(kubeConfig string) *Manager {

@@ -31,6 +31,7 @@ import (
 var kindVersion = "v0.17.0"
 
 type Cluster struct {
+	path        string
 	name        string
 	e           *gexe.Echo
 	kubecfgFile string
@@ -44,6 +45,14 @@ func NewCluster(name string) *Cluster {
 // WithVersion set kind version
 func (k *Cluster) WithVersion(ver string) *Cluster {
 	k.version = ver
+	return k
+}
+
+// WithPath is used to provide a custom path where the `kind` executable command
+// can be found. This is useful in case if your binary is in a non standard location
+// and you want to framework to use that instead of installing on it's own.
+func (k *Cluster) WithPath(path string) *Cluster {
+	k.path = path
 	return k
 }
 
@@ -165,7 +174,12 @@ func (k *Cluster) Destroy() error {
 }
 
 func (k *Cluster) findOrInstallKind(e *gexe.Echo) error {
-	if e.Prog().Avail("kind") == "" {
+	executable := "kind"
+	if k.path != "" {
+		executable = k.path
+	}
+	log.V(4).InfoS("Determining if kind binary is available or need to be installed", "executable", executable)
+	if e.Prog().Avail(executable) == "" {
 		log.V(4).Infof(`kind not found, installing with go install sigs.k8s.io/kind@%s`, kindVersion)
 		if err := k.installKind(e); err != nil {
 			return err
