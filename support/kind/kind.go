@@ -59,7 +59,7 @@ func (k *Cluster) WithPath(path string) *Cluster {
 func (k *Cluster) getKubeconfig() (string, error) {
 	kubecfg := fmt.Sprintf("%s-kubecfg", k.name)
 
-	p := k.e.RunProc(fmt.Sprintf(`kind get kubeconfig --name %s`, k.name))
+	p := k.e.RunProc(fmt.Sprintf(`%s get kubeconfig --name %s`, k.path, k.name))
 	if p.Err() != nil {
 		return "", fmt.Errorf("kind get kubeconfig: %w", p.Err())
 	}
@@ -85,7 +85,7 @@ func (k *Cluster) getKubeconfig() (string, error) {
 }
 
 func (k *Cluster) clusterExists(name string) (string, bool) {
-	clusters := k.e.Run("kind get clusters")
+	clusters := k.e.Run(fmt.Sprintf("%s get clusters", k.path))
 	for _, c := range strings.Split(clusters, "\n") {
 		if c == name {
 			return clusters, true
@@ -109,7 +109,7 @@ func (k *Cluster) Create(args ...string) (string, error) {
 		return k.getKubeconfig()
 	}
 
-	command := fmt.Sprintf(`kind create cluster --name %s`, k.name)
+	command := fmt.Sprintf(`%s create cluster --name %s`, k.path, k.name)
 	if len(args) > 0 {
 		command = fmt.Sprintf("%s %s", command, strings.Join(args, " "))
 	}
@@ -146,7 +146,7 @@ func (k *Cluster) ExportLogs(dest string) error {
 		return err
 	}
 
-	p := k.e.RunProc(fmt.Sprintf(`kind export logs %s --name %s`, dest, k.name))
+	p := k.e.RunProc(fmt.Sprintf(`%s export logs %s --name %s`, k.path, dest, k.name))
 	if p.Err() != nil {
 		return fmt.Errorf("kind: export cluster %v logs failed: %s: %s", k.name, p.Err(), p.Result())
 	}
@@ -160,7 +160,7 @@ func (k *Cluster) Destroy() error {
 		return err
 	}
 
-	p := k.e.RunProc(fmt.Sprintf(`kind delete cluster --name %s`, k.name))
+	p := k.e.RunProc(fmt.Sprintf(`%s delete cluster --name %s`, k.path, k.name))
 	if p.Err() != nil {
 		return fmt.Errorf("kind: delete cluster %v failed: %s: %s", k.name, p.Err(), p.Result())
 	}
@@ -174,12 +174,11 @@ func (k *Cluster) Destroy() error {
 }
 
 func (k *Cluster) findOrInstallKind(e *gexe.Echo) error {
-	executable := "kind"
-	if k.path != "" {
-		executable = k.path
+	if k.path == "" {
+		k.path = "kind"
 	}
-	log.V(4).InfoS("Determining if kind binary is available or need to be installed", "executable", executable)
-	if e.Prog().Avail(executable) == "" {
+	log.V(4).InfoS("Determining if kind binary is available or need to be installed", "executable", k.path)
+	if e.Prog().Avail(k.path) == "" {
 		log.V(4).Infof(`kind not found, installing with go install sigs.k8s.io/kind@%s`, kindVersion)
 		if err := k.installKind(e); err != nil {
 			return err
@@ -193,6 +192,9 @@ func (k *Cluster) installKind(e *gexe.Echo) error {
 		kindVersion = k.version
 	}
 
+	// Force the kind binary to be pointing to the executable directly without path.
+	k.path = "kind"
+
 	log.V(4).Infof("Installing: go install sigs.k8s.io/kind@%s", kindVersion)
 	p := e.RunProc(fmt.Sprintf("go install sigs.k8s.io/kind@%s", kindVersion))
 	if p.Err() != nil {
@@ -204,7 +206,7 @@ func (k *Cluster) installKind(e *gexe.Echo) error {
 	}
 
 	// PATH may already be set to include $GOPATH/bin so we don't need to.
-	if kindPath := e.Prog().Avail("kind"); kindPath != "" {
+	if kindPath := e.Prog().Avail(k.path); kindPath != "" {
 		log.V(4).Info("Installed kind at", kindPath)
 		return nil
 	}
@@ -222,7 +224,7 @@ func (k *Cluster) installKind(e *gexe.Echo) error {
 	log.V(4).Info(`Setting path to include $GOPATH/bin:`, p.Result())
 	e.SetEnv("PATH", p.Result())
 
-	if kindPath := e.Prog().Avail("kind"); kindPath != "" {
+	if kindPath := e.Prog().Avail(k.path); kindPath != "" {
 		log.V(4).Info("Installed kind at", kindPath)
 		return nil
 	}
@@ -231,7 +233,7 @@ func (k *Cluster) installKind(e *gexe.Echo) error {
 
 // LoadDockerImage loads a docker image from the host into the kind cluster
 func (k *Cluster) LoadDockerImage(image string) error {
-	p := k.e.RunProc(fmt.Sprintf(`kind load docker-image --name %s %s`, k.name, image))
+	p := k.e.RunProc(fmt.Sprintf(`%s load docker-image --name %s %s`, k.path, k.name, image))
 	if p.Err() != nil {
 		return fmt.Errorf("kind: load docker-image %v failed: %s: %s", image, p.Err(), p.Result())
 	}
@@ -240,7 +242,7 @@ func (k *Cluster) LoadDockerImage(image string) error {
 
 // LoadImageArchive loads a docker image TAR archive from the host into the kind cluster
 func (k *Cluster) LoadImageArchive(imageArchive string) error {
-	p := k.e.RunProc(fmt.Sprintf(`kind load image-archive --name %s %s`, k.name, imageArchive))
+	p := k.e.RunProc(fmt.Sprintf(`%s load image-archive --name %s %s`, k.path, k.name, imageArchive))
 	if p.Err() != nil {
 		return fmt.Errorf("kind: load image-archive %v failed: %s: %s", imageArchive, p.Err(), p.Result())
 	}
