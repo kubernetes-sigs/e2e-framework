@@ -29,7 +29,7 @@ import (
 	"github.com/vladimirvivien/gexe"
 )
 
-var kwokVersion = "v0.2.0"
+var kwokVersion = "v0.3.0"
 
 type Cluster struct {
 	name         string
