@@ -30,9 +30,6 @@ import (
 
 func TestEnv_New(t *testing.T) {
 	e := newTestEnv()
-	if e.ctx == nil {
-		t.Error("missing default context")
-	}
 
 	if len(e.actions) != 0 {
 		t.Error("unexpected actions found")
@@ -153,7 +150,7 @@ func TestEnv_Test(t *testing.T) {
 					val = append(val, "test-feat")
 					return ctx
 				})
-				env.Test(t, f.Feature())
+				env.Test(ctx, t, f.Feature())
 				return
 			},
 		},
@@ -169,14 +166,14 @@ func TestEnv_Test(t *testing.T) {
 					val = append(val, "test-feat")
 					return ctx
 				})
-				env.Test(t, f.Feature())
+				env.Test(ctx, t, f.Feature())
 
 				env2 := NewWithConfig(envconf.New().WithFeatureRegex("skip-me"))
 				f2 := features.New("test-feat-2").Assess("assess", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 					val = append(val, "test-feat-2")
 					return ctx
 				})
-				env2.Test(t, f2.Feature())
+				env2.Test(ctx, t, f2.Feature())
 
 				return
 			},
@@ -198,7 +195,7 @@ func TestEnv_Test(t *testing.T) {
 					val = append(val, "test-feat")
 					return ctx
 				})
-				env.Test(t, f.Feature())
+				env.Test(ctx, t, f.Feature())
 				return
 			},
 		},
@@ -223,7 +220,7 @@ func TestEnv_Test(t *testing.T) {
 					val = append(val, "test-feat")
 					return ctx
 				})
-				env.Test(t, f.Feature())
+				env.Test(ctx, t, f.Feature())
 				return
 			},
 		},
@@ -244,7 +241,7 @@ func TestEnv_Test(t *testing.T) {
 					val = append(val, "test-feat")
 					return ctx
 				})
-				env.Test(t, f.Feature())
+				env.Test(ctx, t, f.Feature())
 				return
 			},
 		},
@@ -271,7 +268,7 @@ func TestEnv_Test(t *testing.T) {
 						val = append(val, "take-1")
 						return ctx
 					})
-				env.Test(t, f.Feature())
+				env.Test(ctx, t, f.Feature())
 				return
 			},
 		},
@@ -279,15 +276,12 @@ func TestEnv_Test(t *testing.T) {
 			name: "context value propagation with before, during, and after test",
 			ctx:  context.TODO(),
 			expected: []string{
-				"before-each-test",
-				"test-feat",
-				"after-each-test",
+				"non-mutated",
 			},
 			setup: func(t *testing.T, ctx context.Context) []string {
-				env, err := NewWithContext(context.WithValue(ctx, &ctxTestKeyString{}, []string{}), envconf.New())
-				if err != nil {
-					t.Fatal(err)
-				}
+				ctx = context.WithValue(ctx, &ctxTestKeyString{}, []string{"non-mutated"})
+				env := newTestEnv()
+
 				env.BeforeEachTest(func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
 					// update before test
 					val, ok := ctx.Value(&ctxTestKeyString{}).([]string)
@@ -316,8 +310,8 @@ func TestEnv_Test(t *testing.T) {
 					return context.WithValue(ctx, &ctxTestKeyString{}, val)
 				})
 
-				env.Test(t, f.Feature())
-				return env.(*testEnv).ctx.Value(&ctxTestKeyString{}).([]string)
+				env.Test(ctx, t, f.Feature())
+				return ctx.Value(&ctxTestKeyString{}).([]string)
 			},
 		},
 		{
@@ -326,7 +320,7 @@ func TestEnv_Test(t *testing.T) {
 			expected: []string{},
 			setup: func(t *testing.T, ctx context.Context) (val []string) {
 				env := newTestEnv()
-				env.Test(t)
+				env.Test(ctx, t)
 				return
 			},
 		},
@@ -351,7 +345,7 @@ func TestEnv_Test(t *testing.T) {
 						return ctx
 					})
 
-				env.Test(t, f1.Feature(), f2.Feature())
+				env.Test(ctx, t, f1.Feature(), f2.Feature())
 				return
 			},
 		},
@@ -383,7 +377,7 @@ func TestEnv_Test(t *testing.T) {
 					val = append(val, "test-feat-2")
 					return ctx
 				})
-				env.Test(t, f1.Feature(), f2.Feature())
+				env.Test(ctx, t, f1.Feature(), f2.Feature())
 				return
 			},
 		},
@@ -416,7 +410,7 @@ func TestEnv_Test(t *testing.T) {
 					val = append(val, "test-feat-2")
 					return ctx
 				})
-				env.Test(t, f1.Feature(), f2.Feature())
+				env.Test(ctx, t, f1.Feature(), f2.Feature())
 				return val
 			},
 		},
@@ -475,7 +469,7 @@ func TestEnv_Test(t *testing.T) {
 					val = append(val, "test-feat-2")
 					return ctx
 				})
-				env.Test(t, f1.Feature(), f2.Feature())
+				env.Test(ctx, t, f1.Feature(), f2.Feature())
 				return val
 			},
 		},
@@ -496,7 +490,7 @@ func TestEnv_Test(t *testing.T) {
 	}
 }
 
-// This test shows the full context propagation from
+// This test shows there is no context propagation from
 // environment setup functions (started in main_test.go) down to
 // feature step functions.
 func TestEnv_Context_Propagation(t *testing.T) {
@@ -510,19 +504,14 @@ func TestEnv_Context_Propagation(t *testing.T) {
 			return context.WithValue(ctx, &ctxTestKeyString{}, val)
 		})
 
-	envForTesting.Test(t, f.Feature())
+	envForTesting.Test(mainCtx, t, f.Feature())
 
-	env, ok := envForTesting.(*testEnv)
+	finalVal, ok := mainCtx.Value(&ctxTestKeyString{}).([]string)
 	if !ok {
 		t.Fatal("wrong type")
 	}
 
-	finalVal, ok := env.ctx.Value(&ctxTestKeyString{}).([]string)
-	if !ok {
-		t.Fatal("wrong type")
-	}
-
-	expected := []string{"setup-1", "setup-2", "before-each-test", "test-context-propagation", "after-each-test"}
+	expected := []string{"initial-val"}
 	if len(finalVal) != len(expected) {
 		t.Fatalf("Expected:\n%v but got result:\n%v", expected, finalVal)
 	}
@@ -535,6 +524,7 @@ func TestEnv_Context_Propagation(t *testing.T) {
 }
 
 func TestTestEnv_TestInParallel(t *testing.T) {
+	ctx := context.TODO()
 	env := NewParallel()
 	mutex := sync.Mutex{}
 	beforeEachCallCount := 0
@@ -589,31 +579,31 @@ func TestTestEnv_TestInParallel(t *testing.T) {
 			return ctx
 		})
 
-	env.TestInParallel(t, f1.Feature(), f2.Feature())
+	env.TestInParallel(ctx, t, f1.Feature(), f2.Feature())
 	if beforeEachCallCount > 1 {
 		t.Fatal("BeforeEachTest handler should be invoked only once")
 	}
 }
 
 func TestParallelOne(t *testing.T) {
+	ctx := context.TODO()
 	t.Parallel()
-	f := features.New("one").
+	f := features.New("parallel one").
 		Assess("log a message", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			ns := envconf.RandomName("ns", 20)
-			t.Logf("RandomName: %s", ns)
+			t.Log("Running in parallel")
 			return ctx
 		})
-	envForTesting.Test(t, f.Feature())
+	envForTesting.Test(ctx, t, f.Feature())
 }
 
 func TestParallelTwo(t *testing.T) {
+	ctx := context.TODO()
 	t.Parallel()
-	f := features.New("two").
+	f := features.New("parallel two").
 		Assess("log a message", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			ns := envconf.RandomName("ns", 20)
-			t.Logf("RandomName: %s", ns)
+			t.Log("Running in parallel")
 			return ctx
 		})
 
-	envForTesting.Test(t, f.Feature())
+	envForTesting.Test(ctx, t, f.Feature())
 }

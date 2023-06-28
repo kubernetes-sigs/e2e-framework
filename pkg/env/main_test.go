@@ -27,18 +27,18 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
 
-var envForTesting types.Environment
+var (
+	envForTesting types.Environment
+	mainCtx       context.Context
+)
 
 type ctxTestKeyString struct{}
 
 func TestMain(m *testing.M) {
 	// setup new environment test with injected context value
-	initialVal := []string{}
-	env, err := NewWithContext(context.WithValue(context.Background(), &ctxTestKeyString{}, initialVal), envconf.New())
-	if err != nil {
-		log.Fatalf("Test suite failed to start: %s", err)
-	}
-	envForTesting = env
+	initialVal := []string{"initial-val"}
+	envForTesting = New()
+	mainCtx = context.WithValue(context.TODO(), &ctxTestKeyString{}, initialVal)
 
 	// defined env setup funcs
 	// each func will update value inside context
@@ -59,23 +59,7 @@ func TestMain(m *testing.M) {
 			val = append(val, "setup-2")
 			return context.WithValue(ctx, &ctxTestKeyString{}, val), nil
 		},
-	).BeforeEachTest(func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
-		// update before each test
-		val, ok := ctx.Value(&ctxTestKeyString{}).([]string)
-		if !ok {
-			log.Fatal("context value was not of expected type []string or nil")
-		}
-		val = append(val, "before-each-test")
-		return context.WithValue(ctx, &ctxTestKeyString{}, val), nil
-	}).AfterEachTest(func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
-		// update after the test
-		val, ok := ctx.Value(&ctxTestKeyString{}).([]string)
-		if !ok {
-			log.Fatal("context value was not of expected type []string] or nil")
-		}
-		val = append(val, "after-each-test")
-		return context.WithValue(ctx, &ctxTestKeyString{}, val), nil
-	})
+	)
 
-	os.Exit(envForTesting.Run(m))
+	os.Exit(envForTesting.Run(mainCtx, m))
 }

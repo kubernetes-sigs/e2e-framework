@@ -47,9 +47,6 @@ type TestEnvFunc func(context.Context, *envconf.Config, *testing.T) (context.Con
 // Environment represents an environment where
 // features can be tested.
 type Environment interface {
-	// WithContext returns a new Environment with a new context
-	WithContext(context.Context) Environment
-
 	// Setup registers environment operations that are executed once
 	// prior to the environment being ready and prior to any test.
 	Setup(...EnvFunc) Environment
@@ -68,12 +65,12 @@ type Environment interface {
 
 	// Test executes a test feature defined in a TestXXX function
 	// This method surfaces context for further updates.
-	Test(*testing.T, ...Feature)
+	Test(context.Context, *testing.T, ...Feature)
 
 	// TestInParallel executes a series of test features defined in a
 	// TestXXX function in parallel. This works the same way Test method
 	// does with the caveat that the features will all be run in parallel
-	TestInParallel(*testing.T, ...Feature)
+	TestInParallel(context.Context, *testing.T, ...Feature)
 
 	// AfterEachTest registers environment funcs that are executed
 	// after each Env.Test(...).
@@ -84,7 +81,7 @@ type Environment interface {
 	Finish(...EnvFunc) Environment
 
 	// Run Launches the test suite from within a TestMain
-	Run(*testing.M) int
+	Run(context.Context, *testing.M) int
 }
 
 type Labels = flags.LabelsMap
