@@ -75,6 +75,15 @@ func TestMain(m *testing.M) {
 		}
 		val = append(val, "after-each-test")
 		return context.WithValue(ctx, &ctxTestKeyString{}, val), nil
+	}).Finish(func(ctx context.Context, _ *envconf.Config) (context.Context, error) {
+		// update after the test suite
+		val, ok := ctx.Value(&ctxTestKeyString{}).([]string)
+		if !ok {
+			log.Fatal("context value was not of expected type []string] or nil")
+		}
+		// this will only be accessible after the whole suite run
+		val = append(val, "finish")
+		return context.WithValue(ctx, &ctxTestKeyString{}, val), nil
 	})
 
 	os.Exit(envForTesting.Run(m))

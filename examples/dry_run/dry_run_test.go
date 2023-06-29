@@ -46,7 +46,7 @@ func TestDryRunOne(t *testing.T) {
 			return ctx
 		}).Feature()
 
-	testEnv.TestInParallel(t, f1, f2)
+	_ = testEnv.TestInParallel(t, f1, f2)
 }
 
 func TestDryRunTwo(t *testing.T) {
