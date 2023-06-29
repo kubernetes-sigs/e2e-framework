@@ -42,10 +42,34 @@ type (
 )
 
 type testEnv struct {
-	ctx     context.Context
+	*ctx
 	cfg     *envconf.Config
 	actions []action
 	rnd     rand.Source
+}
+
+type ctx struct {
+	in context.Context
+	mu sync.Mutex
+}
+
+func newCtx(c context.Context) *ctx {
+	return &ctx{
+		in: c,
+		mu: sync.Mutex{},
+	}
+}
+
+func (c *ctx) setContext(ctx context.Context) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.in = ctx
+}
+
+func (c *ctx) getContext() context.Context {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.in
 }
 
 // New creates a test environment with no config attached.
@@ -99,12 +123,12 @@ func NewWithContext(ctx context.Context, cfg *envconf.Config) (types.Environment
 	if cfg == nil {
 		return nil, fmt.Errorf("environment config is nil")
 	}
-	return &testEnv{ctx: ctx, cfg: cfg}, nil
+	return &testEnv{ctx: newCtx(ctx), cfg: cfg}, nil
 }
 
 func newTestEnv() *testEnv {
 	return &testEnv{
-		ctx: context.Background(),
+		ctx: newCtx(context.Background()),
 		cfg: envconf.New(),
 		rnd: rand.NewSource(time.Now().UnixNano()),
 	}
@@ -112,7 +136,7 @@ func newTestEnv() *testEnv {
 
 func newTestEnvWithParallel() *testEnv {
 	return &testEnv{
-		ctx: context.Background(),
+		ctx: newCtx(context.Background()),
 		cfg: envconf.New().WithParallelTestEnabled(),
 	}
 }
@@ -120,11 +144,15 @@ func newTestEnvWithParallel() *testEnv {
 // WithContext returns a new environment with the context set to ctx.
 // Argument ctx cannot be nil
 func (e *testEnv) WithContext(ctx context.Context) types.Environment {
+	return e.withContext(ctx)
+}
+
+func (e *testEnv) withContext(ctx context.Context) *testEnv {
 	if ctx == nil {
 		panic("nil context") // this should never happen
 	}
 	env := &testEnv{
-		ctx: ctx,
+		ctx: newCtx(ctx),
 		cfg: e.cfg,
 	}
 	env.actions = append(env.actions, e.actions...)
@@ -192,11 +220,12 @@ func (e *testEnv) panicOnMissingContext() {
 // processTestActions is used to run a series of test action that were configured as
 // BeforeEachTest or AfterEachTest
 func (e *testEnv) processTestActions(t *testing.T, actions []action) {
-	var err error
 	for _, action := range actions {
-		if e.ctx, err = action.runWithT(e.ctx, e.cfg, t); err != nil {
+		ctx, err := action.runWithT(e.getContext(), e.cfg, t)
+		if err != nil {
 			t.Fatalf("%s failure: %s", action.role, err)
 		}
+		e.setContext(ctx)
 	}
 }
 
@@ -208,7 +237,7 @@ func (e *testEnv) processTestFeature(t *testing.T, featureName string, feature t
 	e.processFeatureActions(t, feature, e.getBeforeFeatureActions())
 
 	// execute feature test
-	e.ctx = e.execFeature(e.ctx, t, featureName, feature)
+	e.setContext(e.execFeature(e.getContext(), t, featureName, feature))
 
 	// execute afterEachFeature actions
 	e.processFeatureActions(t, feature, e.getAfterFeatureActions())
@@ -217,11 +246,12 @@ func (e *testEnv) processTestFeature(t *testing.T, featureName string, feature t
 // processFeatureActions is used to run a series of feature action that were configured as
 // BeforeEachFeature or AfterEachFeature
 func (e *testEnv) processFeatureActions(t *testing.T, feature types.Feature, actions []action) {
-	var err error
 	for _, action := range actions {
-		if e.ctx, err = action.runWithFeature(e.ctx, e.cfg, t, deepCopyFeature(feature)); err != nil {
+		ctx, err := action.runWithFeature(e.getContext(), e.cfg, t, deepCopyFeature(feature))
+		if err != nil {
 			t.Fatalf("%s failure: %s", action.role, err)
 		}
+		e.setContext(ctx)
 	}
 }
 
@@ -243,13 +273,13 @@ func (e *testEnv) processTests(t *testing.T, enableParallelRun bool, testFeature
 	beforeTestActions := e.getBeforeTestActions()
 	afterTestActions := e.getAfterTestActions()
 
-	e.processTestActions(t, beforeTestActions)
-
 	runInParallel := e.cfg.ParallelTestEnabled() && enableParallelRun
 
 	if runInParallel {
 		klog.V(4).Info("Running test features in parallel")
 	}
+
+	e.processTestActions(t, beforeTestActions)
 
 	var wg sync.WaitGroup
 	for i, feature := range testFeatures {
@@ -262,7 +292,7 @@ func (e *testEnv) processTests(t *testing.T, enableParallelRun bool, testFeature
 			wg.Add(1)
 			go func(w *sync.WaitGroup, featName string, f types.Feature) {
 				defer w.Done()
-				e.processTestFeature(t, featName, f)
+				e.withContext(e.getContext()).processTestFeature(t, featName, f)
 			}(&wg, featName, featureCopy)
 		} else {
 			e.processTestFeature(t, featName, featureCopy)
@@ -298,7 +328,9 @@ func (e *testEnv) processTests(t *testing.T, enableParallelRun bool, testFeature
 // are executed in parallel to avoid duplication of action that might happen
 // in BeforeTest and AfterTest actions
 func (e *testEnv) TestInParallel(t *testing.T, testFeatures ...types.Feature) {
-	e.processTests(t, true, testFeatures...)
+	ie := e.withContext(e.getContext())
+	ie.processTests(t, true, testFeatures...)
+	e.setContext(ie.getContext())
 }
 
 // Test executes a feature test from within a TestXXX function.
@@ -314,7 +346,9 @@ func (e *testEnv) TestInParallel(t *testing.T, testFeatures ...types.Feature) {
 // BeforeTest and AfterTest operations are executed before and after
 // the feature is tested respectively.
 func (e *testEnv) Test(t *testing.T, testFeatures ...types.Feature) {
-	e.processTests(t, false, testFeatures...)
+	ie := e.withContext(e.getContext())
+	ie.processTests(t, false, testFeatures...)
+	e.setContext(ie.getContext())
 }
 
 // Finish registers funcs that are executed at the end of the
@@ -358,16 +392,21 @@ func (e *testEnv) Run(m *testing.M) int {
 		// Upon error, log and continue.
 		for _, fin := range finishes {
 			// context passed down to each finish step
-			if e.ctx, err = fin.run(e.ctx, e.cfg); err != nil {
+			if ctx, err := fin.run(e.getContext(), e.cfg); err != nil {
 				klog.V(2).ErrorS(err, "Cleanup failed", "action", fin.role)
+			} else {
+				e.setContext(ctx)
 			}
 		}
 	}()
 
 	for _, setup := range setups {
+		var ctx context.Context
 		// context passed down to each setup
-		if e.ctx, err = setup.run(e.ctx, e.cfg); err != nil {
+		if ctx, err = setup.run(e.getContext(), e.cfg); err != nil {
 			klog.Fatalf("%s failure: %s", setup.role, err)
+		} else {
+			e.setContext(ctx)
 		}
 	}
 
