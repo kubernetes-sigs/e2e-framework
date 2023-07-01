@@ -13,4 +13,4 @@ If you are using the `e2e-framework` to test your Kubernetes components, and you
 ### Crossplane
 [Crossplane](https://github.com/crossplane/crossplane) has ported all of their integration tests to use e2e-framework for their Crossplane project.
 See their work [here](https://github.com/crossplane/crossplane/pull/4187)
-
+[Datadog](https://github.com/DataDog/) has ported their e2e tests from the [Kubernetes e2e test framework](https://github.com/kubernetes/kubernetes/tree/master/test/e2e/framework) to the e2e-framework. The e2e-framework is also used to test different controllers.
