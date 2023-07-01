@@ -1,7 +1,7 @@
 # E2E-Framework Adopters
 
 This project is used and loved by many in the Kubernetes community. 
-While we are not aware of everyon using the project, below is a list of adopters (and/or contributors) who have
+While we are not aware of everyone using the project, below is a list of adopters (and/or contributors) who have
 agreed to share how they use the framework in their porjects.
 
 ### Adding your story
