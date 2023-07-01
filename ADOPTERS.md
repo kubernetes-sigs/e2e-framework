@@ -6,7 +6,7 @@ agreed to share how they use the framework in their porjects.
 
 ### Adding your story
 
-If you are using the e2e-framework to test your Kubernetes components, and you want to share your story, feel free to open a PR and update this document.
+If you are using the `e2e-framework` to test your Kubernetes components, and you want to share your story, feel free to open a PR and update this document.
 
 ## E2E-Framework adopters
 
