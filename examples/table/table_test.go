@@ -45,6 +45,16 @@ func TestTableDriven(t *testing.T) {
 	// feature 1
 	table0 := features.Table{
 		{
+			Name:        "testWithDescription",
+			Description: "This is an example of how to create a test with description",
+			Assessment: func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
+				if time.Now().Unix() < 0 {
+					t.Errorf("Looks like the current time could not be determined")
+				}
+				return ctx
+			},
+		},
+		{
 			Name: "less than equal 64",
 			Assessment: func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
 				rnd := ctx.Value("randsrc").(*rand.Rand) // in real test, check asserted type
@@ -76,7 +86,7 @@ func TestTableDriven(t *testing.T) {
 				return ctx
 			},
 		},
-	}.Build("Random numbers").Feature()
+	}.Build("Random numbers", "Test Features can have description too. Second Argument to the Build call is a description.").Feature()
 
 	// feature 2
 	table1 := features.Table{

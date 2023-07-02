@@ -432,6 +432,10 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, featName string
 			t.Skipf(message)
 		}
 
+		if fDescription, ok := f.(types.DescribableFeature); ok && fDescription.Description() != "" {
+			t.Logf("Processing Feature: %s", fDescription.Description())
+		}
+
 		// setups run at feature-level
 		setups := features.GetStepsByLevel(f.Steps(), types.LevelSetup)
 		ctx = e.executeSteps(ctx, t, setups)
@@ -442,6 +446,9 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, featName string
 		failed := false
 		for i, assess := range assessments {
 			assessName := assess.Name()
+			if dAssess, ok := assess.(types.DescribableStep); ok && dAssess.Description() != "" {
+				t.Logf("Processing Assessment: %s", dAssess.Description())
+			}
 			if assessName == "" {
 				assessName = fmt.Sprintf("Assessment-%d", i+1)
 			}

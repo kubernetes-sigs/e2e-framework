@@ -119,3 +119,19 @@ type Step interface {
 	// Func is the operation for the step
 	Func() StepFunc
 }
+
+type DescribableStep interface {
+	Step
+	// Description is the Readable test description indicating the purpose behind the test that
+	// can add more context to the test under question
+	Description() string
+}
+
+type DescribableFeature interface {
+	Feature
+
+	// Description is used to provide a readable context for the test feature. This can be used
+	// to provide more context for the test being performed and the assessment under each of the
+	// feature.
+	Description() string
+}
