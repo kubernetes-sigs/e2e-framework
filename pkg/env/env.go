@@ -21,11 +21,9 @@ package env
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"regexp"
 	"sync"
 	"testing"
-	"time"
 
 	"k8s.io/klog/v2"
 
@@ -45,7 +43,6 @@ type testEnv struct {
 	ctx     context.Context
 	cfg     *envconf.Config
 	actions []action
-	rnd     rand.Source
 }
 
 // New creates a test environment with no config attached.
@@ -106,7 +103,6 @@ func newTestEnv() *testEnv {
 	return &testEnv{
 		ctx: context.Background(),
 		cfg: envconf.New(),
-		rnd: rand.NewSource(time.Now().UnixNano()),
 	}
 }
 
