@@ -435,10 +435,10 @@ func (e *testEnv) executeSteps(ctx context.Context, t *testing.T, steps []types.
 
 func (e *testEnv) execFeature(ctx context.Context, t *testing.T, featName string, f types.Feature) context.Context {
 	// feature-level subtest
-	t.Run(featName, func(t *testing.T) {
+	t.Run(featName, func(newT *testing.T) {
 		skipped, message := e.requireFeatureProcessing(f)
 		if skipped {
-			t.Skipf(message)
+			newT.Skipf(message)
 		}
 
 		if fDescription, ok := f.(types.DescribableFeature); ok && fDescription.Description() != "" {
@@ -447,7 +447,7 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, featName string
 
 		// setups run at feature-level
 		setups := features.GetStepsByLevel(f.Steps(), types.LevelSetup)
-		ctx = e.executeSteps(ctx, t, setups)
+		ctx = e.executeSteps(ctx, newT, setups)
 
 		// assessments run as feature/assessment sub level
 		assessments := features.GetStepsByLevel(f.Steps(), types.LevelAssess)
@@ -461,17 +461,17 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, featName string
 			if assessName == "" {
 				assessName = fmt.Sprintf("Assessment-%d", i+1)
 			}
-			t.Run(assessName, func(t *testing.T) {
+			newT.Run(assessName, func(internalT *testing.T) {
 				skipped, message := e.requireAssessmentProcessing(assess, i+1)
 				if skipped {
-					t.Skipf(message)
+					internalT.Skipf(message)
 				}
-				ctx = e.executeSteps(ctx, t, []types.Step{assess})
+				ctx = e.executeSteps(ctx, internalT, []types.Step{assess})
 			})
 			// Check if the Test assessment under question performed a `t.Fail()` or `t.Failed()` invocation.
 			// We need to track that and stop the next set of assessment in the feature under test from getting
 			// executed
-			if e.cfg.FailFast() && t.Failed() {
+			if e.cfg.FailFast() && newT.Failed() {
 				failed = true
 				break
 			}
@@ -481,12 +481,12 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, featName string
 		// invoked to make sure we leave the traces of the failed test behind to enable better debugging for the
 		// test developers
 		if e.cfg.FailFast() && failed {
-			t.FailNow()
+			newT.FailNow()
 		}
 
 		// teardowns run at feature-level
 		teardowns := features.GetStepsByLevel(f.Steps(), types.LevelTeardown)
-		ctx = e.executeSteps(ctx, t, teardowns)
+		ctx = e.executeSteps(ctx, newT, teardowns)
 	})
 
 	return ctx
