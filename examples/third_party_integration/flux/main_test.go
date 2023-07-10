@@ -43,7 +43,6 @@ func TestMain(m *testing.M) {
 		envfuncs.CreateKindCluster(kindClusterName),
 		envfuncs.CreateNamespace(namespace),
 		flux.InstallFlux(),
-		// Point to a specific commit instead of branch as it reference an external repository
 		flux.CreateGitRepo(gitRepoName, "https://github.com/kubernetes-sigs/e2e-framework", flux.WithBranch("main")),
 		flux.CreateKustomization(ksName, "GitRepository/"+gitRepoName+".flux-system", flux.WithPath("examples/third_party_integration/flux/template"), flux.WithArgs("--target-namespace", namespace, "--prune")),
 	)
