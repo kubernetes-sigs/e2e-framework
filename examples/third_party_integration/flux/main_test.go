@@ -18,12 +18,12 @@ package flux
 
 import (
 	"os"
-	"sigs.k8s.io/e2e-framework/third_party/flux"
 	"testing"
 
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
+	"sigs.k8s.io/e2e-framework/third_party/flux"
 )
 
 var (

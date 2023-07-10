@@ -18,9 +18,10 @@ package flux
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/vladimirvivien/gexe"
 	log "k8s.io/klog/v2"
-	"strings"
 )
 
 type Opts struct {
@@ -115,10 +116,8 @@ func (m *Manager) run(opts *Opts) (err error) {
 		err = fmt.Errorf("'flux' command is missing. Please ensure the tool exists before using the flux manager")
 		return
 	}
-	command, err := m.getCommand(opts)
-	if err != nil {
-		return
-	}
+	command := m.getCommand(opts)
+
 	log.V(4).InfoS("Running Flux Operation", "command", command)
 	proc := m.e.RunProc(command)
 	result := proc.Result()
@@ -134,7 +133,7 @@ func New(kubeConfig string) *Manager {
 	return &Manager{e: gexe.New(), kubeConfig: kubeConfig}
 }
 
-func (m *Manager) getCommand(opt *Opts) (string, error) {
+func (m *Manager) getCommand(opt *Opts) string {
 	commandParts := []string{"flux", opt.mode}
 
 	if opt.name != "" {
@@ -167,7 +166,7 @@ func (m *Manager) getCommand(opt *Opts) (string, error) {
 
 	commandParts = append(commandParts, opt.args...)
 	commandParts = append(commandParts, "--kubeconfig", m.kubeConfig)
-	return strings.Join(commandParts, " "), nil
+	return strings.Join(commandParts, " ")
 }
 
 func (m *Manager) installFlux(opts ...Option) error {
@@ -181,7 +180,8 @@ func (m *Manager) uninstallFlux(opts ...Option) error {
 	o.mode = "uninstall -s"
 	return m.run(o)
 }
-func (m *Manager) createSource(sourceType Source, name string, url string, opts ...Option) error {
+
+func (m *Manager) createSource(sourceType Source, name, url string, opts ...Option) error {
 	o := m.processOpts(opts...)
 	o.mode = string("create source " + sourceType)
 	o.name = name
@@ -196,7 +196,7 @@ func (m *Manager) deleteSource(sourceType Source, name string, opts ...Option) e
 	return m.run(o)
 }
 
-func (m *Manager) createKustomization(name string, source string, opts ...Option) error {
+func (m *Manager) createKustomization(name, source string, opts ...Option) error {
 	o := m.processOpts(opts...)
 	o.mode = "create ks"
 	o.name = name

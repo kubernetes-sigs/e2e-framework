@@ -19,6 +19,7 @@ package flux
 import (
 	"context"
 	"fmt"
+
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
@@ -40,12 +41,12 @@ func InstallFlux(opts ...Option) env.Func {
 }
 
 // CreateGitRepo creates a reference to a specific repository, it is a source for Kustomization or HelmRelease
-func CreateGitRepo(gitRepoName string, gitRepoUrl string, opts ...Option) env.Func {
+func CreateGitRepo(gitRepoName, gitRepoURL string, opts ...Option) env.Func {
 	return func(ctx context.Context, c *envconf.Config) (context.Context, error) {
 		if manager == nil {
 			return ctx, fmt.Errorf(NoFluxInstallationFoundMsg)
 		}
-		err := manager.createSource(Git, gitRepoName, gitRepoUrl, opts...)
+		err := manager.createSource(Git, gitRepoName, gitRepoURL, opts...)
 		if err != nil {
 			return ctx, fmt.Errorf("git reporistory creation failed: %w", err)
 		}
@@ -54,7 +55,7 @@ func CreateGitRepo(gitRepoName string, gitRepoUrl string, opts ...Option) env.Fu
 }
 
 // CreateKustomization is used to point to a specific source and path for reconciliation
-func CreateKustomization(kustomizationName string, sourceRef string, opts ...Option) env.Func {
+func CreateKustomization(kustomizationName, sourceRef string, opts ...Option) env.Func {
 	return func(ctx context.Context, c *envconf.Config) (context.Context, error) {
 		if manager == nil {
 			return ctx, fmt.Errorf(NoFluxInstallationFoundMsg)
