@@ -50,6 +50,7 @@ const (
 type Manager struct {
 	e          *gexe.Echo
 	kubeConfig string
+	path       string
 }
 
 type Option func(*Opts)
@@ -112,7 +113,11 @@ func WithArgs(args ...string) Option {
 }
 
 func (m *Manager) run(opts *Opts) (err error) {
-	if m.e.Prog().Avail("flux") == "" {
+	executable := "flux"
+	if m.path != "" {
+		executable = m.path
+	}
+	if m.e.Prog().Avail(executable) == "" {
 		err = fmt.Errorf("'flux' command is missing. Please ensure the tool exists before using the flux manager")
 		return
 	}
@@ -209,4 +214,10 @@ func (m *Manager) deleteKustomization(name string, opts ...Option) error {
 	o.mode = "delete ks -s"
 	o.name = name
 	return m.run(o)
+}
+
+// WithPath is used to provide a custom path where the `flux` executable command can be found
+func (m *Manager) WithPath(path string) *Manager {
+	m.path = path
+	return m
 }
