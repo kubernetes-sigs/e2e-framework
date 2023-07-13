@@ -95,7 +95,11 @@ func (k *Cluster) clusterExists(name string) (string, bool) {
 }
 
 func (k *Cluster) CreateWithConfig(imageName, kindConfigFile string) (string, error) {
-	return k.Create("--image", imageName, "--config", kindConfigFile)
+	args := []string{"--config", kindConfigFile}
+	if imageName != "" {
+		args = append(args, "--image", imageName)
+	}
+	return k.Create(args...)
 }
 
 func (k *Cluster) Create(args ...string) (string, error) {
