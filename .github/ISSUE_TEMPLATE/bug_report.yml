@@ -1,0 +1,91 @@
+name: Bug Report
+description: This template can be used to report issues with code or documentation
+labels:
+- kind/bug
+body:
+- type: markdown
+  attributes:
+    value: |
+      # Hi! Welcome to `e2e-framework`
+
+      Thanks for taking the time to fill out this bug report!.
+      
+      For a smooth issue process, try to answer the following questions.
+      Don't worry if they're not all applicable; just try to include what you can :smile:
+
+      If you need to include code snippets or logs, please put them in fenced code
+      blocks.
+- type: textarea
+  id: observedBehavior
+  attributes:
+    label: What happened?
+    description: |
+      Please describe what is not working/broken in terms of the behavior. Please include as much detail as possible
+      to help identify the area of interest.
+  validations:
+    required: true
+
+- type: textarea
+  id: expectedBehavior
+  attributes:
+    label: What did you expect to happen?
+    description: |
+      Describe the behavior you were expecting to be exhibited by the framework.
+  validations:
+    required: true
+
+- type: textarea
+  id: howToReproduce
+  attributes:
+    label: How can we reproduce it (as minimally and precisely as possible)?
+    description: |
+      Please include the necessary code sample/snippets that can help reproduce the issue so that the behavior
+      can be analyzed better. Please use right markdown formatters to make your code more readable.
+  validations:
+    required: true
+
+- type: textarea
+  id: additionalDetail 
+  attributes:
+    label: Anything elese we need to know?
+
+- type: dropdown
+  id: provider
+  attributes:
+    label: E2E Provider Used
+    description: Specify the provider used to setup the cluster while running your tests
+    multiple: false
+    options:
+    - kind
+    - kwok
+    - real cluster
+  validations:
+    required: true
+
+- type: input
+  id: frameworkVersion
+  attributes:
+    label: '`e2e-framework` Version'
+  validations:
+    required: true
+
+- type: textarea
+  id: osVersion
+  attributes:
+    label: OS version
+    value: |
+      <details>
+
+      ```console
+      # On Linux:
+      $ cat /etc/os-release
+      # paste output here
+      $ uname -a
+      # paste output here
+
+      # On Windows:
+      C:\> wmic os get Caption, Version, BuildNumber, OSArchitecture
+      # paste output here
+      ```
+
+      </details>
