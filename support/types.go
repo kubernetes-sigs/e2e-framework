@@ -69,18 +69,6 @@ type E2EClusterProvider interface {
 	// Destroy is used to cleanup a cluster brought up as part of the test workflow
 	Destroy(ctx context.Context) error
 
-	// LoadImage is used to load a set of Docker images to the cluster via the cluster provider native workflow
-	// Not every provider will have a mechanism like this/need to do this. So, providers that do not have this support
-	// can just provide a no-op implementation to be compliant with the interface
-	LoadImage(ctx context.Context, image string) error
-
-	// LoadImageArchive is used to provide a mechanism where a tar.gz archive containing the docker images used
-	// by the services running on the cluster can be imported and loaded into the cluster prior to the execution of
-	// test if required.
-	// Not every provider will have a mechanism like this/need to do this. So, providers that do not have this support
-	// can just provide a no-op implementation to be compliant with the interface
-	LoadImageArchive(ctx context.Context, archivePath string) error
-
 	// SetDefaults is a handler function invoked after creating an object of type E2EClusterProvider. This method is
 	// invoked as the first step after creating an object in order to make sure the default values for required
 	// attributes are setup accordingly if any.
@@ -98,4 +86,20 @@ type E2EClusterProvider interface {
 	// KubernetesRestConfig is a helper function that provides an instance of rest.Config which can then be used to
 	// create your own clients if you chose to do so.
 	KubernetesRestConfig() *rest.Config
+}
+
+type E2EClusterProviderWithImageLoader interface {
+	E2EClusterProvider
+
+	// LoadImage is used to load a set of Docker images to the cluster via the cluster provider native workflow
+	// Not every provider will have a mechanism like this/need to do this. So, providers that do not have this support
+	// can just provide a no-op implementation to be compliant with the interface
+	LoadImage(ctx context.Context, image string) error
+
+	// LoadImageArchive is used to provide a mechanism where a tar.gz archive containing the docker images used
+	// by the services running on the cluster can be imported and loaded into the cluster prior to the execution of
+	// test if required.
+	// Not every provider will have a mechanism like this/need to do this. So, providers that do not have this support
+	// can just provide a no-op implementation to be compliant with the interface
+	LoadImageArchive(ctx context.Context, archivePath string) error
 }

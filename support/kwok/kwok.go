@@ -221,16 +221,6 @@ func (k *Cluster) GetKubeconfig() string {
 	return k.kubecfgFile
 }
 
-func (k *Cluster) LoadImage(ctx context.Context, image string) error {
-	klog.V(4).Info("kwokctl doesn't implement the LoadImage handler")
-	return nil
-}
-
-func (k *Cluster) LoadImageArchive(ctx context.Context, archivePath string) error {
-	klog.V(4).Info("kwokctl doesn't implement the LoadImageArchive handler")
-	return nil
-}
-
 func (k *Cluster) SetDefaults() support.E2EClusterProvider {
 	if k.path == "" {
 		k.path = "kwokctl"

@@ -27,6 +27,8 @@ import (
 
 type clusterNameContextKey string
 
+var LoadDockerImageToCluster = LoadImageToCluster
+
 // GetClusterFromContext helps extract the E2EClusterProvider object from the context.
 // This can be used to setup and run tests of multi cluster e2e Prioviders.
 func GetClusterFromContext(ctx context.Context, clusterName string) (support.E2EClusterProvider, bool) {
@@ -117,23 +119,23 @@ func DestroyCluster(name string) env.Func {
 	}
 }
 
-// LoadDockerImageToCluster returns an EnvFunc that
-// retrieves a previously saved e2e provider Cluster in the context (using the name), and then loads a docker image
+// LoadImageToCluster returns an EnvFunc that
+// retrieves a previously saved e2e provider Cluster in the context (using the name), and then loads a container image
 // from the host into the cluster.
-func LoadDockerImageToCluster(name, image string) env.Func {
+func LoadImageToCluster(name, image string) env.Func {
 	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 		clusterVal := ctx.Value(clusterNameContextKey(name))
 		if clusterVal == nil {
-			return ctx, fmt.Errorf("load docker image func: context cluster is nil")
+			return ctx, fmt.Errorf("load image func: context cluster is nil")
 		}
 
-		cluster, ok := clusterVal.(support.E2EClusterProvider)
+		cluster, ok := clusterVal.(support.E2EClusterProviderWithImageLoader)
 		if !ok {
-			return ctx, fmt.Errorf("load docker image func: unexpected type for cluster value")
+			return ctx, fmt.Errorf("load image archive func: cluster provider does not support LoadImage helper")
 		}
 
 		if err := cluster.LoadImage(ctx, image); err != nil {
-			return ctx, fmt.Errorf("load docker image: %w", err)
+			return ctx, fmt.Errorf("load image: %w", err)
 		}
 
 		return ctx, nil
@@ -141,7 +143,7 @@ func LoadDockerImageToCluster(name, image string) env.Func {
 }
 
 // LoadImageArchiveToCluster returns an EnvFunc that
-// retrieves a previously saved e2e provider Cluster in the context (using the name), and then loads a docker image TAR archive
+// retrieves a previously saved e2e provider Cluster in the context (using the name), and then loads a container image TAR archive
 // from the host into the cluster.
 func LoadImageArchiveToCluster(name, imageArchive string) env.Func {
 	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
@@ -150,9 +152,9 @@ func LoadImageArchiveToCluster(name, imageArchive string) env.Func {
 			return ctx, fmt.Errorf("load image archive func: context cluster is nil")
 		}
 
-		cluster, ok := clusterVal.(support.E2EClusterProvider)
+		cluster, ok := clusterVal.(support.E2EClusterProviderWithImageLoader)
 		if !ok {
-			return ctx, fmt.Errorf("load image archive func: unexpected type for cluster value")
+			return ctx, fmt.Errorf("load image archive func: cluster provider does not support LoadImageArchive helper")
 		}
 
 		if err := cluster.LoadImageArchive(ctx, imageArchive); err != nil {
