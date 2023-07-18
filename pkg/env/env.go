@@ -22,6 +22,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"runtime/debug"
 	"sync"
 	"testing"
 
@@ -346,7 +347,7 @@ func (e *testEnv) Run(m *testing.M) int {
 			if e.cfg.DisableGracefulTeardown() {
 				panic(rErr)
 			}
-			klog.Error("Recovering from panic and running finish actions", rErr)
+			klog.Errorf("Recovering from panic and running finish actions", rErr, string(debug.Stack()))
 		}
 
 		finishes := e.getFinishActions()
