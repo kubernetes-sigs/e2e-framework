@@ -347,7 +347,7 @@ func (e *testEnv) Run(m *testing.M) int {
 			if e.cfg.DisableGracefulTeardown() {
 				panic(rErr)
 			}
-			klog.Errorf("Recovering from panic and running finish actions", rErr, string(debug.Stack()))
+			klog.Errorf("Recovering from panic and running finish actions: %s, stack: %s", rErr, string(debug.Stack()))
 		}
 
 		finishes := e.getFinishActions()
