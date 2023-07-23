@@ -87,7 +87,7 @@ func TestHelmChartRepoWorkflow(t *testing.T) {
 			return ctx
 		}).Feature()
 
-	testEnv.Test(t, feature)
+	_ = testEnv.Test(t, feature)
 }
 
 func TestLocalHelmChartWorkflow(t *testing.T) {
@@ -125,5 +125,5 @@ func TestLocalHelmChartWorkflow(t *testing.T) {
 			return ctx
 		}).Feature()
 
-	testEnv.Test(t, feature)
+	_ = testEnv.Test(t, feature)
 }

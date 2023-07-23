@@ -79,7 +79,7 @@ func TestExecPod(t *testing.T) {
 			}
 			return ctx
 		}).Feature()
-	testEnv.Test(t, feature)
+	_ = testEnv.Test(t, feature)
 }
 
 func newDeployment(namespace string, name string, replicas int32, containerName string) *appsv1.Deployment {

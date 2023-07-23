@@ -92,5 +92,5 @@ func TestScenarioOne(t *testing.T) {
 		}).
 		Feature()
 
-	testEnv.Test(t, feature)
+	_ = testEnv.Test(t, feature)
 }

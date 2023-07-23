@@ -64,5 +64,5 @@ func TestCRDSetup(t *testing.T) {
 			return ctx
 		}).Feature()
 
-	testEnv.Test(t, feature)
+	_ = testEnv.Test(t, feature)
 }

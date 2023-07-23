@@ -118,5 +118,5 @@ func TestPodBringUp(t *testing.T) {
 			return ctx
 		}).Feature()
 
-	testEnv.TestInParallel(t, featureOne, featureTwo)
+	_ = testEnv.TestInParallel(t, featureOne, featureTwo)
 }
