@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
+	"sigs.k8s.io/e2e-framework/support/kind"
 )
 
 var (
@@ -55,7 +56,7 @@ func TestMain(m *testing.M) {
 	initYAML = fmt.Sprintf(initYAML, namespace, namespace)
 
 	testenv.Setup(
-		envfuncs.CreateKindCluster(kindClusterName),
+		envfuncs.CreateCluster(kind.NewProvider(), kindClusterName),
 		func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 			r, err := resources.New(cfg.Client().RESTConfig())
 			if err != nil {
@@ -68,7 +69,7 @@ func TestMain(m *testing.M) {
 	)
 	testenv.Finish(
 		envfuncs.DeleteNamespace(namespace),
-		envfuncs.DestroyKindCluster(kindClusterName),
+		envfuncs.DestroyCluster(kindClusterName),
 	)
 	os.Exit(testenv.Run(m))
 }

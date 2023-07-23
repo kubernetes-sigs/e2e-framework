@@ -18,47 +18,77 @@ package kwok
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
-	log "k8s.io/klog/v2"
-
-	"github.com/vladimirvivien/gexe"
+	"k8s.io/client-go/rest"
+	"k8s.io/klog/v2"
+	"sigs.k8s.io/e2e-framework/klient"
+	"sigs.k8s.io/e2e-framework/klient/conf"
+	"sigs.k8s.io/e2e-framework/support"
+	"sigs.k8s.io/e2e-framework/support/utils"
 )
 
 var kwokVersion = "v0.3.0"
 
 type Cluster struct {
 	name         string
-	e            *gexe.Echo
+	path         string
 	kubecfgFile  string
 	version      string
 	waitDuration time.Duration
+	rc           *rest.Config
 }
+
+var _ support.E2EClusterProvider = &Cluster{}
 
 func NewCluster(name string) *Cluster {
-	return &Cluster{name: name, e: gexe.New(), waitDuration: 1 * time.Minute}
+	return &Cluster{name: name, waitDuration: 1 * time.Minute}
 }
 
-// WithVersion set kwok version
-func (k *Cluster) WithVersion(ver string) *Cluster {
-	k.version = ver
-	return k
+func NewProvider() support.E2EClusterProvider {
+	return &Cluster{}
 }
 
-// WithWaitDuration set duration to wait for kwok cluster to be ready
-func (k *Cluster) WithWaitDuration(d time.Duration) *Cluster {
-	k.waitDuration = d
-	return k
+func WithPath(path string) support.ClusterOpts {
+	return func(c support.E2EClusterProvider) {
+		k, ok := c.(*Cluster)
+		if ok {
+			k.path = path
+		}
+	}
+}
+
+func (k *Cluster) findOrInstallKwokCtl() error {
+	if k.version != "" {
+		kwokVersion = k.version
+	}
+	path, err := utils.FindOrInstallGoBasedProvider(k.path, "kwokctl", "sigs.k8s.io/kwok/cmd/kwokctl", kwokVersion)
+	if path != "" {
+		k.path = path
+	}
+	return err
+}
+
+func (k *Cluster) clusterExists(name string) (string, bool) {
+	clusters := utils.FetchCommandOutput(fmt.Sprintf("%s get clusters", k.path))
+	for _, c := range strings.Split(clusters, "\n") {
+		if c == name {
+			return clusters, true
+		}
+	}
+	return clusters, false
 }
 
 func (k *Cluster) getKubeconfig() (string, error) {
 	kubecfg := fmt.Sprintf("%s-kubecfg", k.name)
 
-	p := k.e.RunProc(fmt.Sprintf(`kwokctl get kubeconfig --name %s`, k.name))
+	p := utils.RunCommand(fmt.Sprintf(`%s get kubeconfig --name %s`, k.path, k.name))
 	if p.Err() != nil {
 		return "", fmt.Errorf("kwokctl get kubeconfig: %w", p.Err())
 	}
@@ -83,37 +113,31 @@ func (k *Cluster) getKubeconfig() (string, error) {
 	return file.Name(), nil
 }
 
-func (k *Cluster) clusterExists(name string) (string, bool) {
-	clusters := k.e.Run("kwokctl get clusters")
-	for _, c := range strings.Split(clusters, "\n") {
-		if c == name {
-			return clusters, true
-		}
+func (k *Cluster) initKubernetesAccessClients() error {
+	cfg, err := conf.New(k.kubecfgFile)
+	if err != nil {
+		return err
 	}
-	return clusters, false
+	k.rc = cfg
+	return nil
 }
 
-func (k *Cluster) CreateWithConfig(kwokConfigFile string) (string, error) {
-	return k.Create("--config", kwokConfigFile)
-}
-
-func (k *Cluster) Create(args ...string) (string, error) {
-	log.V(4).Info("Creating kwok cluster ", k.name)
-	if err := k.findOrInstallKwok(k.e); err != nil {
+func (k *Cluster) Create(ctx context.Context, args ...string) (string, error) {
+	klog.V(4).Info("Creating a kwok cluster ", k.name)
+	if err := k.findOrInstallKwokCtl(); err != nil {
 		return "", err
 	}
-
 	if _, ok := k.clusterExists(k.name); ok {
-		log.V(4).Info("Skipping kwok Cluster.Create: cluster already created: ", k.name)
+		klog.V(4).Info("Skipping Kwok Cluster creation. Cluster already created ", k.name)
 		return k.getKubeconfig()
 	}
 
-	command := fmt.Sprintf(`kwokctl create cluster --name %s --wait %s`, k.name, k.waitDuration.String())
+	command := fmt.Sprintf(`%s create cluster --name %s --wait %s`, k.path, k.name, k.waitDuration.String())
 	if len(args) > 0 {
 		command = fmt.Sprintf("%s %s", command, strings.Join(args, " "))
 	}
-	log.V(4).Info("Launching:", command)
-	p := k.e.RunProc(command)
+	klog.V(4).Info("Launching:", command)
+	p := utils.RunCommand(command)
 	if p.Err() != nil {
 		return "", fmt.Errorf("failed to create kwok cluster: %s : %s", p.Err(), p.Result())
 	}
@@ -122,89 +146,115 @@ func (k *Cluster) Create(args ...string) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("kwok Cluster.Create: cluster %v still not in 'cluster list' after creation: %v", k.name, clusters)
 	}
-	log.V(4).Info("kwok cluster available: ", clusters)
+	klog.V(4).Info("kwok cluster available: ", clusters)
 
-	// Grab kubeconig file for cluster.
-	return k.getKubeconfig()
+	kConfig, err := k.getKubeconfig()
+	if err != nil {
+		return "", err
+	}
+	return kConfig, k.initKubernetesAccessClients()
 }
 
-// GetKubeconfig returns the path of the kubeconfig file
-// associated with this kwok cluster
-func (k *Cluster) GetKubeconfig() string {
-	return k.kubecfgFile
+func (k *Cluster) CreateWithConfig(ctx context.Context, configFile string) (string, error) {
+	return k.Create(ctx, "--config", configFile)
 }
 
-func (k *Cluster) GetKubeCtlContext() string {
-	return fmt.Sprintf("kwok-%s", k.name)
-}
-
-func (k *Cluster) Destroy() error {
-	log.V(4).Info("Destroying kwok cluster ", k.name)
-	if err := k.findOrInstallKwok(k.e); err != nil {
+func (k *Cluster) Destroy(ctx context.Context) error {
+	klog.V(4).Info("Destroying kwok cluster ", k.name)
+	if err := k.findOrInstallKwokCtl(); err != nil {
 		return err
 	}
 
-	p := k.e.RunProc(fmt.Sprintf(`kwokctl delete cluster --name %s`, k.name))
+	p := utils.RunCommand(fmt.Sprintf(`%s delete cluster --name %s`, k.path, k.name))
 	if p.Err() != nil {
 		return fmt.Errorf("kwok: delete cluster failed: %s: %s", p.Err(), p.Result())
 	}
 
-	log.V(4).Info("Removing kubeconfig file ", k.kubecfgFile)
+	klog.V(4).Info("Removing kubeconfig file ", k.kubecfgFile)
 	if err := os.RemoveAll(k.kubecfgFile); err != nil {
 		return fmt.Errorf("kwok: remove kubefconfig failed: %w", err)
 	}
 	return nil
 }
 
-func (k *Cluster) findOrInstallKwok(e *gexe.Echo) error {
-	if k.version != "" {
-		kwokVersion = k.version
+func (k *Cluster) ExportLogs(ctx context.Context, dest string) error {
+	if err := k.findOrInstallKwokCtl(); err != nil {
+		return err
 	}
-	// installing kwok means installing kwokctl binary
+	// In kwokctl 0.3.0 and above, there is a new kwokctl export logs feature that has been added which can
+	// simplify the workf of exporting the logs for us. Let us check if the CLI has that command and if so
+	// let us use that to export logs. Otherwise, we can fallback to exporting individual items.
+	p := utils.RunCommand(fmt.Sprintf("%s export logs --help", k.path))
+	if p.ExitCode() == 0 {
+		return utils.RunCommand(fmt.Sprintf("%s --name %s export logs %s", k.path, k.name, dest)).Err()
+	}
 
-	if e.Prog().Avail("kwokctl") == "" {
-		log.V(4).Info(`kwokctl not found, installing version @%s`, kwokVersion)
-		if err := k.installKwokCtl(e); err != nil {
-			return err
+	// TODO: Get Rid of this if we decide to enforce a min version of the kwokctl at some point
+	for _, component := range []string{"audit", "etcd", "kube-apiserver", "kube-controller-manager", "kube-scheduler", "kwok-controller", "prometheus"} {
+		command := fmt.Sprintf("%s logs %s", k.path, component)
+		p := utils.RunCommand(command)
+		if p.Err() != nil {
+			klog.ErrorS(p.Err(), "ran into an error trying to export the log", "component", component)
+			continue
+		}
+		var stdout bytes.Buffer
+		if _, err := stdout.ReadFrom(p.Out()); err != nil {
+			return fmt.Errorf("kwokctl logs %s stdout bytes: %w", component, err)
+		}
+		file, err := os.Create(filepath.Join(dest, fmt.Sprintf("%s.log", component)))
+		if err != nil {
+			klog.ErrorS(err, "ran into an error trying to create file to export logs", "component", component)
+			continue
+		}
+		if n, err := io.Copy(file, &stdout); n == 0 || err != nil {
+			klog.ErrorS(err, "kwokctl logs %s file: bytes copied: %d: %w]", component, n, err)
 		}
 	}
-	// PATH may already be set to include $GOPATH/bin so we don't need to.
-	if kwokCtlPath := e.Prog().Avail("kwokctl"); kwokCtlPath != "" {
-		log.V(4).Info("Installed kwokctl at", kwokCtlPath)
-		return nil
-	}
-
-	p := e.RunProc("ls $GOPATH/bin")
-	if p.Err() != nil {
-		return fmt.Errorf("failed to install kwokctl: %s", p.Err())
-	}
-
-	p = e.RunProc("echo $PATH:$GOPATH/bin")
-	if p.Err() != nil {
-		return fmt.Errorf("failed to install kwokctl: %s", p.Err())
-	}
-
-	log.V(4).Info(`Setting path to include $GOPATH/bin:`, p.Result())
-	e.SetEnv("PATH", p.Result())
-
-	if kwokCtlPath := e.Prog().Avail("kwokctl"); kwokCtlPath != "" {
-		log.V(4).Info("Installed kwokctl at", kwokCtlPath)
-		return nil
-	}
-	return fmt.Errorf("kwokctl not available even after installation")
+	return nil
 }
 
-func (k *Cluster) installKwokCtl(e *gexe.Echo) error {
-	log.V(4).Info("Installing: go install sigs.k8s.io/kwok/cmd/kwokctl@%s", kwokVersion)
-	installKwokCtlCmd := fmt.Sprintf("go install sigs.k8s.io/kwok/cmd/kwokctl@%s", kwokVersion)
-	log.V(4).Info("%s", installKwokCtlCmd)
-	p := e.RunProc(installKwokCtlCmd)
-	if p.Err() != nil {
-		return fmt.Errorf("failed to install kwokctl: %s %s", installKwokCtlCmd, p.Err())
-	}
+func (k *Cluster) GetKubectlContext() string {
+	return fmt.Sprintf("kwok-%s", k.name)
+}
 
-	if !p.IsSuccess() || p.ExitCode() != 0 {
-		return fmt.Errorf("failed to install kwokctl: %s", p.Result())
+func (k *Cluster) GetKubeconfig() string {
+	return k.kubecfgFile
+}
+
+func (k *Cluster) SetDefaults() support.E2EClusterProvider {
+	if k.path == "" {
+		k.path = "kwokctl"
 	}
+	return k
+}
+
+func (k *Cluster) WaitForControlPlane(ctx context.Context, client klient.Client) error {
+	klog.V(4).Info("kwokctl doesn't implement a WaitForControlPlane handler. The --wait argument passed to the `kwokctl` should take care of this already")
 	return nil
+}
+
+func (k *Cluster) WithName(name string) support.E2EClusterProvider {
+	k.name = name
+	return k
+}
+
+func (k *Cluster) WithOpts(opts ...support.ClusterOpts) support.E2EClusterProvider {
+	for _, o := range opts {
+		o(k)
+	}
+	return k
+}
+
+func (k *Cluster) WithPath(path string) support.E2EClusterProvider {
+	k.path = path
+	return k
+}
+
+func (k *Cluster) WithVersion(version string) support.E2EClusterProvider {
+	k.version = version
+	return k
+}
+
+func (k *Cluster) KubernetesRestConfig() *rest.Config {
+	return k.rc
 }

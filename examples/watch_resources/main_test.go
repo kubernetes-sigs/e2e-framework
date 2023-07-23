@@ -23,6 +23,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
+	"sigs.k8s.io/e2e-framework/support/kind"
 )
 
 var testenv env.Environment
@@ -32,12 +33,12 @@ func TestMain(m *testing.M) {
 	kindClusterName := envconf.RandomName("watch-for-resources", 16)
 	namespace := envconf.RandomName("watch-ns", 16)
 	testenv.Setup(
-		envfuncs.CreateKindCluster(kindClusterName),
+		envfuncs.CreateCluster(kind.NewProvider(), kindClusterName),
 		envfuncs.CreateNamespace(namespace),
 	)
 	testenv.Finish(
 		envfuncs.DeleteNamespace(namespace),
-		envfuncs.DestroyKindCluster(kindClusterName),
+		envfuncs.DestroyCluster(kindClusterName),
 	)
 	os.Exit(testenv.Run(m))
 }

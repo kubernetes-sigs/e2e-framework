@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package resources
+package resources_test
 
 import (
 	"bytes"
@@ -33,11 +33,12 @@ import (
 	log "k8s.io/klog/v2"
 
 	"sigs.k8s.io/e2e-framework/klient/k8s"
+	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources/testdata/projectExample"
 )
 
 func TestCreate(t *testing.T) {
-	res, err := New(cfg)
+	res, err := resources.New(cfg)
 	if err != nil {
 		t.Fatalf("Error creating new resources object: %v", err)
 	}
@@ -60,7 +61,7 @@ func TestCreate(t *testing.T) {
 }
 
 func TestRes(t *testing.T) {
-	res, err := New(cfg)
+	res, err := resources.New(cfg)
 	if err != nil {
 		t.Fatalf("Error creating new resources object: %v", err)
 	}
@@ -91,14 +92,14 @@ func TestRes(t *testing.T) {
 }
 
 func TestResNoConfig(t *testing.T) {
-	_, err := New(nil)
+	_, err := resources.New(nil)
 	if err == nil {
 		t.Error("expected error while invoking Res without k8s config")
 	}
 }
 
 func TestUpdate(t *testing.T) {
-	res, err := New(cfg)
+	res, err := resources.New(cfg)
 	if err != nil {
 		t.Fatalf("Error creating new resources object: %v", err)
 	}
@@ -133,7 +134,7 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestUpdateStatus(t *testing.T) {
-	res, err := New(cfg)
+	res, err := resources.New(cfg)
 	if err != nil {
 		t.Fatalf("Error creating new resources object: %v", err)
 	}
@@ -182,7 +183,7 @@ func TestUpdateStatus(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	res, err := New(cfg)
+	res, err := resources.New(cfg)
 	if err != nil {
 		t.Fatalf("Error creating new resources object: %v", err)
 	}
@@ -201,7 +202,7 @@ func TestDelete(t *testing.T) {
 }
 
 func TestList(t *testing.T) {
-	res, err := New(cfg)
+	res, err := resources.New(cfg)
 	if err != nil {
 		t.Fatalf("Error creating new resources object: %v", err)
 	}
@@ -230,7 +231,7 @@ func TestList(t *testing.T) {
 }
 
 func TestPatch(t *testing.T) {
-	res, err := New(cfg)
+	res, err := resources.New(cfg)
 	if err != nil {
 		t.Fatalf("Error creating new resources object: %v", err)
 	}
@@ -263,7 +264,7 @@ func TestPatch(t *testing.T) {
 }
 
 func TestPatchStatus(t *testing.T) {
-	res, err := New(cfg)
+	res, err := resources.New(cfg)
 	if err != nil {
 		t.Fatalf("Error creating new resources object: %v", err)
 	}
@@ -311,7 +312,7 @@ func TestPatchStatus(t *testing.T) {
 }
 
 func TestListAllPods(t *testing.T) {
-	res, err := New(cfg)
+	res, err := resources.New(cfg)
 	if err != nil {
 		t.Fatalf("Error creating new resources object: %v", err)
 	}
@@ -330,7 +331,7 @@ func TestListAllPods(t *testing.T) {
 }
 
 func TestGetCRDs(t *testing.T) {
-	res, err := New(cfg)
+	res, err := resources.New(cfg)
 	if err != nil {
 		t.Fatalf("Error creating new resources object: %v", err)
 	}
@@ -370,7 +371,7 @@ func TestGetCRDs(t *testing.T) {
 }
 
 func TestExecInPod(t *testing.T) {
-	res, err := New(cfg)
+	res, err := resources.New(cfg)
 	containerName := "nginx"
 	if err != nil {
 		t.Fatalf("Error initiating runtime controller: %v", err)
@@ -405,7 +406,7 @@ func TestExecInPod(t *testing.T) {
 	onAddfunc := func(obj interface{}) {
 		addWait <- struct{}{}
 	}
-	w := res.Watch(&corev1.PodList{}, WithFieldSelector(labels.FormatLabels(
+	w := res.Watch(&corev1.PodList{}, resources.WithFieldSelector(labels.FormatLabels(
 		map[string]string{
 			"metadata.name":      pod.Name,
 			"metadata.namespace": namespace.Name,

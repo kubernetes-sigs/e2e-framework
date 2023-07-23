@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
+	"sigs.k8s.io/e2e-framework/support/kind"
 )
 
 var (
@@ -44,7 +45,7 @@ func TestMain(m *testing.M) {
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
 			var err error
 			for _, cluster := range clusterNames {
-				ctx, err = envfuncs.CreateKindCluster(cluster)(ctx, config)
+				ctx, err = envfuncs.CreateCluster(kind.NewProvider(), cluster)(ctx, config)
 				if err != nil {
 					return ctx, err
 				}
@@ -55,7 +56,7 @@ func TestMain(m *testing.M) {
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
 			var err error
 			for _, cluster := range clusterNames {
-				ctx, err = envfuncs.DestroyKindCluster(cluster)(ctx, config)
+				ctx, err = envfuncs.DestroyCluster(cluster)(ctx, config)
 				if err != nil {
 					return ctx, err
 				}

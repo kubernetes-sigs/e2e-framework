@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package decoder
+package decoder_test
 
 import (
 	"context"
@@ -26,6 +26,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/e2e-framework/klient/decoder"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 )
@@ -43,7 +44,7 @@ func TestDecode(t *testing.T) {
 	}
 	defer f.Close()
 	cfg := v1.ConfigMap{}
-	if err := Decode(f, &cfg); err != nil {
+	if err := decoder.Decode(f, &cfg); err != nil {
 		t.Fatal(err)
 	}
 	if _, ok := cfg.Data["foo.cfg"]; !ok {
@@ -58,7 +59,7 @@ func TestDecodeUnstructuredCRD(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer f.Close()
-	obj, err := DecodeAny(f)
+	obj, err := decoder.DecodeAny(f)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +93,7 @@ func TestDecodeAny(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer f.Close()
-	if obj, err := DecodeAny(f); err != nil {
+	if obj, err := decoder.DecodeAny(f); err != nil {
 		t.Fatal(err)
 	} else if cfg, ok := obj.(*v1.ConfigMap); !ok && cfg.Data["foo.cfg"] != "" {
 		t.Fatal("key foo.cfg not found in decoded ConfigMap")
@@ -106,7 +107,7 @@ func TestDecodeFile(t *testing.T) {
 	testdata := os.DirFS("testdata")
 
 	cfg := v1.ConfigMap{}
-	if err := DecodeFile(testdata, testYAML, &cfg, MutateOption(func(o k8s.Object) error {
+	if err := decoder.DecodeFile(testdata, testYAML, &cfg, decoder.MutateOption(func(o k8s.Object) error {
 		obj, ok := o.(*v1.ConfigMap)
 		if !ok {
 			t.Fatalf("unexpected type %T not ConfigMap", o)
@@ -123,7 +124,7 @@ func TestDecodeFile(t *testing.T) {
 		t.Fatal("injected label value not found", cfg.ObjectMeta.Labels)
 	}
 	cfg = v1.ConfigMap{}
-	if err := DecodeFile(testdata, testYAML, &cfg, MutateLabels(map[string]string{"injected": testLabel})); err != nil {
+	if err := decoder.DecodeFile(testdata, testYAML, &cfg, decoder.MutateLabels(map[string]string{"injected": testLabel})); err != nil {
 		t.Fatal(err)
 	}
 	if cfg.ObjectMeta.Labels["injected"] != testLabel {
@@ -135,7 +136,7 @@ func TestDecodeEachFile(t *testing.T) {
 	testdata := os.DirFS(filepath.Join("testdata", "examples"))
 
 	count := 0
-	if err := DecodeEachFile(context.TODO(), testdata, serviceAccountPrefix, func(ctx context.Context, obj k8s.Object) error {
+	if err := decoder.DecodeEachFile(context.TODO(), testdata, serviceAccountPrefix, func(ctx context.Context, obj k8s.Object) error {
 		count++
 		return nil
 	}); err != nil {
@@ -147,7 +148,7 @@ func TestDecodeEachFile(t *testing.T) {
 	count = 0
 	serviceAccounts := 0
 	configs := 0
-	if err := DecodeEachFile(context.TODO(), testdata, "*", func(ctx context.Context, obj k8s.Object) error {
+	if err := decoder.DecodeEachFile(context.TODO(), testdata, "*", func(ctx context.Context, obj k8s.Object) error {
 		count++
 		switch obj.(type) {
 		case *v1.ConfigMap:
@@ -170,13 +171,13 @@ func TestDecodeEachFile(t *testing.T) {
 func TestDecodeAllFiles(t *testing.T) {
 	// load `testdata/examples/example-sa*`
 	testdata := os.DirFS(filepath.Join("testdata", "examples"))
-	if objects, err := DecodeAllFiles(context.TODO(), testdata, serviceAccountPrefix); err != nil {
+	if objects, err := decoder.DecodeAllFiles(context.TODO(), testdata, serviceAccountPrefix); err != nil {
 		t.Fatal(err)
 	} else if expected, got := 3, len(objects); got != expected {
 		t.Fatalf("expected %d objects, got: %d", expected, got)
 	}
 	// load `testdata/examples/*`
-	if objects, err := DecodeAllFiles(context.TODO(), testdata, "*"); err != nil {
+	if objects, err := decoder.DecodeAllFiles(context.TODO(), testdata, "*"); err != nil {
 		t.Fatal(err)
 	} else if expected, got := 4, len(objects); got != expected {
 		t.Fatalf("expected %d objects, got: %d", expected, got)
@@ -191,7 +192,7 @@ func TestDecodeEach(t *testing.T) {
 	}
 	defer f.Close()
 	count := 0
-	err = DecodeEach(context.TODO(), f, func(ctx context.Context, obj k8s.Object) error {
+	err = decoder.DecodeEach(context.TODO(), f, func(ctx context.Context, obj k8s.Object) error {
 		count++
 		switch cfg := obj.(type) {
 		case *v1.ConfigMap:
@@ -218,7 +219,7 @@ func TestDecodeAll(t *testing.T) {
 	}
 	defer f.Close()
 
-	if objects, err := DecodeAll(context.TODO(), f); err != nil {
+	if objects, err := decoder.DecodeAll(context.TODO(), f); err != nil {
 		t.Fatal(err)
 	} else if expected, got := 2, len(objects); got != expected {
 		t.Fatalf("expected 2 documents, got: %d", got)
@@ -233,7 +234,7 @@ func TestDecodersWithMutateFunc(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer f.Close()
-		if obj, err := DecodeAny(f, MutateLabels(map[string]string{"injected": testLabel})); err != nil {
+		if obj, err := decoder.DecodeAny(f, decoder.MutateLabels(map[string]string{"injected": testLabel})); err != nil {
 			t.Fatal(err)
 		} else if cfg, ok := obj.(*v1.ConfigMap); !ok && cfg.Data["foo.cfg"] != "" {
 			t.Fatal("key foo.cfg not found in decoded ConfigMap")
@@ -243,12 +244,12 @@ func TestDecodersWithMutateFunc(t *testing.T) {
 	})
 	t.Run("DecodeEach", func(t *testing.T) {
 		testdata := os.DirFS(filepath.Join("testdata", "examples"))
-		if err := DecodeEachFile(context.TODO(), testdata, serviceAccountPrefix, func(ctx context.Context, obj k8s.Object) error {
+		if err := decoder.DecodeEachFile(context.TODO(), testdata, serviceAccountPrefix, func(ctx context.Context, obj k8s.Object) error {
 			if labels := obj.GetLabels(); labels["injected"] != testLabel {
 				t.Fatalf("unexpected value in labels: %q", labels["injected"])
 			}
 			return nil
-		}, MutateLabels(map[string]string{"injected": testLabel})); err != nil {
+		}, decoder.MutateLabels(map[string]string{"injected": testLabel})); err != nil {
 			t.Fatal(err)
 		}
 	})
@@ -265,15 +266,15 @@ func TestHandlerFuncs(t *testing.T) {
 		t.Fatalf("error while creating namespace %q: %s", handlerNS.Name, err)
 	}
 	testdata := os.DirFS(filepath.Join("testdata", "examples"))
-	patches := []DecodeOption{MutateNamespace(handlerNS.Name), MutateLabels(map[string]string{"injected": testLabel})}
+	patches := []decoder.DecodeOption{decoder.MutateNamespace(handlerNS.Name), decoder.MutateLabels(map[string]string{"injected": testLabel})}
 	// lookup all objects to use for verification / deletion steps later on
-	objects, err := DecodeAllFiles(context.TODO(), testdata, "*", patches...)
+	objects, err := decoder.DecodeAllFiles(context.TODO(), testdata, "*", patches...)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	t.Run("DecodeEach_Create", func(t *testing.T) {
-		if err := DecodeEachFile(context.TODO(), testdata, "*", CreateHandler(res), patches...); err != nil {
+		if err := decoder.DecodeEachFile(context.TODO(), testdata, "*", decoder.CreateHandler(res), patches...); err != nil {
 			t.Fatal(err)
 		}
 	})
@@ -282,7 +283,7 @@ func TestHandlerFuncs(t *testing.T) {
 		count := 0
 		serviceAccounts := 0
 		configs := 0
-		if err := DecodeEachFile(context.TODO(), testdata, "*", ReadHandler(res, func(ctx context.Context, obj k8s.Object) error {
+		if err := decoder.DecodeEachFile(context.TODO(), testdata, "*", decoder.ReadHandler(res, func(ctx context.Context, obj k8s.Object) error {
 			if labels := obj.GetLabels(); labels["injected"] != testLabel {
 				t.Fatalf("unexpected value in labels: %q", labels["injected"])
 			} else {
@@ -300,7 +301,7 @@ func TestHandlerFuncs(t *testing.T) {
 				}
 			}
 			return nil
-		}), MutateNamespace(handlerNS.Name)); err != nil {
+		}), decoder.MutateNamespace(handlerNS.Name)); err != nil {
 			t.Fatal(err)
 		}
 
@@ -314,14 +315,14 @@ func TestHandlerFuncs(t *testing.T) {
 	})
 
 	t.Run("DecodeEach_Delete", func(t *testing.T) {
-		if err := DecodeEachFile(context.TODO(), testdata, "*", DeleteHandler(res), patches...); err != nil {
+		if err := decoder.DecodeEachFile(context.TODO(), testdata, "*", decoder.DeleteHandler(res), patches...); err != nil {
 			t.Fatal(err)
 		}
 
 		t.Run("Verify", func(t *testing.T) {
 			count := 0
 			for i := range objects {
-				if err := IgnoreErrorHandler(ReadHandler(res, func(ctx context.Context, obj k8s.Object) error {
+				if err := decoder.IgnoreErrorHandler(decoder.ReadHandler(res, func(ctx context.Context, obj k8s.Object) error {
 					t.Logf("Object { apiVersion: %q; Kind:%q; Namespace:%q; Name:%q } found", obj.GetObjectKind().GroupVersionKind().Version, obj.GetObjectKind().GroupVersionKind().Kind, obj.GetNamespace(), obj.GetName())
 					count++
 					return nil
@@ -336,7 +337,7 @@ func TestHandlerFuncs(t *testing.T) {
 	})
 
 	t.Run("DecodeEach_DeleteIgnoreNotFound", func(t *testing.T) {
-		err := DecodeEachFile(context.TODO(), testdata, "*", DeleteIgnoreNotFound(res), patches...)
+		err := decoder.DecodeEachFile(context.TODO(), testdata, "*", decoder.DeleteIgnoreNotFound(res), patches...)
 		if err != nil {
 			t.Fatalf("DeleteIgnoreNotFound should not return an error if object is not found. Error: %s", err)
 		}
