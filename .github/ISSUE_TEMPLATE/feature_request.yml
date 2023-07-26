@@ -1,0 +1,36 @@
+name: Feature Request
+description: This template can be used to request for a new feature or behavior for the framework
+labels:
+- kind/feature
+body:
+- type: markdown
+  attributes:
+    value: |
+      # Hi! Welcome to `e2e-framework`
+
+      Thanks for taking the time to fill out this Feature Request!.
+      
+- type: textarea
+  attributes:
+    label: What do you want to see?
+    description: |
+      Describe the feature you want and the motivation behind the request.
+
+      Along with the details of the fature and the motivation, it would be
+      great if some use cases are included as well that can help us assess the
+      feature request better.
+  validations:
+    required: true
+
+- type: dropdown
+  attributes:
+    label: "Extra Labels"
+    description: |
+      If this is *also* a documentation request, etc, please select that below.
+    multiple: true
+    options:
+    - "/kind documentation"
+    - "/kind regression"
+    - "/kind deprecation"
+    - "/kind cleanup"
+
