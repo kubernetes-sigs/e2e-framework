@@ -60,7 +60,10 @@ update-deps-go: ## Update all golang dependencies for this repo
 install-helm:  ## Install Helm toolchain for 3rd party integration
 	./hack/install-helm.sh
 
-test: install-helm ## Runs golang unit tests
+install-flux:
+	./hack/install-flux.sh
+
+test: install-helm install-flux ## Runs golang unit tests
 	./hack/test-go.sh
 
 ##@ Helpers
