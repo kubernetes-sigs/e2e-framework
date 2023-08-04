@@ -54,6 +54,20 @@ func CreateGitRepo(gitRepoName, gitRepoURL string, opts ...Option) env.Func {
 	}
 }
 
+// CreateHelmRepository is used to create a reference to helm repository with charts, it is a source for HelmRelease
+func CreateHelmRepository(name, url string, opts ...Option) env.Func {
+	return func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+		if manager == nil {
+			return ctx, fmt.Errorf(NoFluxInstallationFoundMsg)
+		}
+		err := manager.createSource(Helm, name, url, opts...)
+		if err != nil {
+			return ctx, fmt.Errorf("helm reporistory creation failed: %w", err)
+		}
+		return ctx, nil
+	}
+}
+
 // CreateKustomization is used to point to a specific source and path for reconciliation
 func CreateKustomization(kustomizationName, sourceRef string, opts ...Option) env.Func {
 	return func(ctx context.Context, c *envconf.Config) (context.Context, error) {
@@ -63,6 +77,21 @@ func CreateKustomization(kustomizationName, sourceRef string, opts ...Option) en
 		err := manager.createKustomization(kustomizationName, sourceRef, opts...)
 		if err != nil {
 			return ctx, fmt.Errorf("kustomization creation failed: %w", err)
+		}
+		return ctx, nil
+	}
+}
+
+// CreateHelmRelease is used to point to a specific source (e.g. HelmRepository). The chart parameter is a
+// combination of chart name and path. Chart values could be provided via opts.
+func CreateHelmRelease(name, source, chart string, opts ...Option) env.Func {
+	return func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+		if manager == nil {
+			return ctx, fmt.Errorf(NoFluxInstallationFoundMsg)
+		}
+		err := manager.createHelmRelease(name, source, chart, opts...)
+		if err != nil {
+			return ctx, fmt.Errorf("helmrelease creation failed: %w", err)
 		}
 		return ctx, nil
 	}
@@ -96,6 +125,20 @@ func DeleteKustomization(kustomizationName string, opts ...Option) env.Func {
 	}
 }
 
+// DeleteHelmRelease removes a specific HelmRelease object from the cluster
+func DeleteHelmRelease(name string, opts ...Option) env.Func {
+	return func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+		if manager == nil {
+			return ctx, fmt.Errorf(NoFluxInstallationFoundMsg)
+		}
+		err := manager.deleteHelmRelease(name, opts...)
+		if err != nil {
+			return ctx, fmt.Errorf("kustomization creation failed: %w", err)
+		}
+		return ctx, nil
+	}
+}
+
 // DeleteGitRepo removes a specific GitRepository object from the cluster
 func DeleteGitRepo(gitRepoName string, opts ...Option) env.Func {
 	return func(ctx context.Context, c *envconf.Config) (context.Context, error) {
@@ -103,6 +146,20 @@ func DeleteGitRepo(gitRepoName string, opts ...Option) env.Func {
 			return ctx, fmt.Errorf(NoFluxInstallationFoundMsg)
 		}
 		err := manager.deleteSource(Git, gitRepoName, opts...)
+		if err != nil {
+			return ctx, fmt.Errorf("git reporistory deletion failed: %w", err)
+		}
+		return ctx, nil
+	}
+}
+
+// DeleteHelmRepo removes a specific HelmRepository object from the cluster
+func DeleteHelmRepo(name string, opts ...Option) env.Func {
+	return func(ctx context.Context, c *envconf.Config) (context.Context, error) {
+		if manager == nil {
+			return ctx, fmt.Errorf(NoFluxInstallationFoundMsg)
+		}
+		err := manager.deleteSource(Helm, name, opts...)
 		if err != nil {
 			return ctx, fmt.Errorf("git reporistory deletion failed: %w", err)
 		}

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package flux
+package nginx
 
 import (
 	"os"
@@ -44,7 +44,10 @@ func TestMain(m *testing.M) {
 		envfuncs.CreateNamespace(namespace),
 		flux.InstallFlux(),
 		flux.CreateGitRepo(gitRepoName, "https://github.com/kubernetes-sigs/e2e-framework", flux.WithBranch("main")),
-		flux.CreateKustomization(ksName, "GitRepository/"+gitRepoName+".flux-system", flux.WithPath("examples/third_party_integration/flux/template"), flux.WithArgs("--target-namespace", namespace, "--prune")),
+		flux.CreateKustomization(ksName,
+			"GitRepository/"+gitRepoName+".flux-system",
+			flux.WithPath("examples/third_party_integration/flux/template"),
+			flux.WithArgs("--target-namespace", namespace, "--prune")),
 	)
 
 	testEnv.Finish(
