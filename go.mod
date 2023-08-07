@@ -8,7 +8,7 @@ require (
 	k8s.io/apimachinery v0.27.4
 	k8s.io/client-go v0.27.4
 	k8s.io/klog/v2 v2.100.1
-	sigs.k8s.io/controller-runtime v0.15.0
+	sigs.k8s.io/controller-runtime v0.15.1
 )
 
 require (
@@ -28,6 +28,7 @@ require (
 	github.com/imdario/mergo v0.3.15 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
