@@ -32,6 +32,7 @@ import (
 )
 
 const (
+	testAnnotation       = "annotationvalue"
 	testLabel            = "labelvalue"
 	serviceAccountPrefix = "example-sa*"
 )
@@ -253,6 +254,26 @@ func TestDecodersWithMutateFunc(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+}
+
+func TestMutateAnnotations(t *testing.T) {
+	testObj := &v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{"injected": "original"},
+		},
+	}
+	options := &decoder.Options{}
+	opt := decoder.MutateAnnotations(map[string]string{"injected": testAnnotation})
+	opt(options)
+	for _, fn := range options.MutateFuncs {
+		if err := fn(testObj); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if testObj.Annotations["injected"] != testAnnotation {
+		t.Fatal("expected object annotation to be overwritten")
+	}
 }
 
 func TestHandlerFuncs(t *testing.T) {
