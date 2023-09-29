@@ -303,5 +303,8 @@ func RandomName(prefix string, n int) string {
 	rand.Seed(time.Now().UnixNano())
 	p := make([]byte, n)
 	rand.Read(p)
+	if prefix == "" {
+		return hex.EncodeToString(p)[:n]
+	}
 	return fmt.Sprintf("%s-%s", prefix, hex.EncodeToString(p))[:n]
 }
