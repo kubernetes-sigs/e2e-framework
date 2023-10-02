@@ -18,7 +18,6 @@ package envconf
 
 import (
 	"flag"
-	"math/rand"
 	"os"
 	"strings"
 	"testing"
@@ -89,17 +88,15 @@ func TestConfig_New_WithIgnorePanicRecovery(t *testing.T) {
 }
 
 func TestRandomName(t *testing.T) {
-	const maxLen = 64
-
 	t.Run("no prefix yields random name without dash", func(t *testing.T) {
-		out := RandomName("", int(rand.Int31n(maxLen)))
+		out := RandomName("", 16)
 		if strings.Contains(out, "-") {
 			t.Errorf("random name %q shouldn't contain a dash when no prefix provided", out)
 		}
 	})
 
 	t.Run("non empty prefix yields random name with dash", func(t *testing.T) {
-		out := RandomName("abc", int(rand.Int31n(maxLen)))
+		out := RandomName("abc", 16)
 		if !strings.Contains(out, "-") {
 			t.Errorf("random name %q should contain a dash when prefix provided", out)
 		}
