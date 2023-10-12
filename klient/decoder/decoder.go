@@ -254,7 +254,7 @@ func MutateAnnotations(overrides map[string]string) DecodeOption {
 		annotations := obj.GetAnnotations()
 		if annotations == nil {
 			annotations = make(map[string]string)
-			obj.SetLabels(annotations)
+			obj.SetAnnotations(annotations)
 		}
 		for key, value := range overrides {
 			annotations[key] = value
