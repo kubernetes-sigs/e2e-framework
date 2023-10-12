@@ -1,0 +1,17 @@
+# Allow app:nginx pod to call api.github.com
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: fqdn
+  namespace: cilium-test
+spec:
+  endpointSelector:
+    matchLabels:
+      app: nginx
+  egress:
+    - toFQDNs:
+        - matchName: "api.github.com"
+      toPorts:
+        - ports:
+            - port: "443"
+---
