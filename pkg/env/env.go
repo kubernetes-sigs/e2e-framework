@@ -204,6 +204,10 @@ func (e *testEnv) processTestActions(ctx context.Context, t *testing.T, actions 
 // workflow of orchestrating the feature execution be running the action configured by BeforeEachFeature /
 // AfterEachFeature.
 func (e *testEnv) processTestFeature(ctx context.Context, t *testing.T, featureName string, feature types.Feature) context.Context {
+	skipped, message := e.requireFeatureProcessing(feature)
+	if skipped {
+		t.Skipf(message)
+	}
 	// execute beforeEachFeature actions
 	ctx = e.processFeatureActions(ctx, t, feature, e.getBeforeFeatureActions())
 
@@ -433,11 +437,6 @@ func (e *testEnv) executeSteps(ctx context.Context, t *testing.T, steps []types.
 func (e *testEnv) execFeature(ctx context.Context, t *testing.T, featName string, f types.Feature) context.Context {
 	// feature-level subtest
 	t.Run(featName, func(newT *testing.T) {
-		skipped, message := e.requireFeatureProcessing(f)
-		if skipped {
-			newT.Skipf(message)
-		}
-
 		if fDescription, ok := f.(types.DescribableFeature); ok && fDescription.Description() != "" {
 			t.Logf("Processing Feature: %s", fDescription.Description())
 		}
