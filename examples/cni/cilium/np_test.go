@@ -19,11 +19,12 @@ package cilium
 import (
 	"bytes"
 	"context"
-	"sigs.k8s.io/e2e-framework/klient/decoder"
-	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"strings"
 	"testing"
 	"time"
+
+	"sigs.k8s.io/e2e-framework/klient/decoder"
+	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -119,7 +120,6 @@ func TestNetworkPolicies(t *testing.T) {
 		}).Feature()
 
 	_ = testEnv.Test(t, feature)
-
 }
 
 func newDeployment(namespace string, name string, replicas int32, containerName string) *appsv1.Deployment {
