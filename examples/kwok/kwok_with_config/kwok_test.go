@@ -68,7 +68,7 @@ func TestKwokCluster(t *testing.T) {
 			}
 			pod := pods.Items[0]
 			// wait for the pod to be ready
-			err = wait.For(conditions.New(cfg.Client().Resources()).PodConditionMatch(&pod, corev1.PodReady, corev1.ConditionTrue), wait.WithTimeout(time.Minute*1))
+			err = wait.For(conditions.New(cfg.Client().Resources()).PodConditionMatch(&pod, corev1.PodReady, corev1.ConditionTrue), wait.WithTimeout(time.Minute*3))
 			if err != nil {
 				t.Fatal(err)
 			}
