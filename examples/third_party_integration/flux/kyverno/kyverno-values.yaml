@@ -1,0 +1,10 @@
+validationFailureAction: Enforce
+policyExclude:
+  disallow-privileged-containers:
+     any:
+     - resources:
+         kinds:
+         - Pod
+         selector:
+           matchLabels:
+             app: admin

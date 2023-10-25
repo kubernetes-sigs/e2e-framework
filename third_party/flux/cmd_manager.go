@@ -35,6 +35,7 @@ type Opts struct {
 	commit    string
 	path      string
 	interval  string
+	chart     string
 	args      []string
 }
 
@@ -63,7 +64,7 @@ func (m *Manager) processOpts(opts ...Option) *Opts {
 	return option
 }
 
-// WithNamespace is used to specify the namespace of flux installation
+// WithNamespace If present, the namespace scope for this request (default "flux-system")
 func WithNamespace(namespace string) Option {
 	return func(opts *Opts) {
 		opts.namespace = namespace
@@ -168,6 +169,9 @@ func (m *Manager) getCommand(opt *Opts) string {
 	if opt.interval != "" {
 		commandParts = append(commandParts, "--interval", opt.interval)
 	}
+	if opt.chart != "" {
+		commandParts = append(commandParts, "--chart", opt.chart)
+	}
 
 	commandParts = append(commandParts, opt.args...)
 	commandParts = append(commandParts, "--kubeconfig", m.kubeConfig)
@@ -209,9 +213,25 @@ func (m *Manager) createKustomization(name, source string, opts ...Option) error
 	return m.run(o)
 }
 
+func (m *Manager) createHelmRelease(name, source, chart string, opts ...Option) error {
+	o := m.processOpts(opts...)
+	o.mode = "create hr"
+	o.name = name
+	o.source = source
+	o.chart = chart
+	return m.run(o)
+}
+
 func (m *Manager) deleteKustomization(name string, opts ...Option) error {
 	o := m.processOpts(opts...)
 	o.mode = "delete ks -s"
+	o.name = name
+	return m.run(o)
+}
+
+func (m *Manager) deleteHelmRelease(name string, opts ...Option) error {
+	o := m.processOpts(opts...)
+	o.mode = "delete hr -s"
 	o.name = name
 	return m.run(o)
 }
