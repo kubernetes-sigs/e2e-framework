@@ -583,6 +583,38 @@ func TestEnv_Test(t *testing.T) {
 				return val
 			},
 		},
+		{
+			name: "with before-and-after features",
+			ctx:  context.TODO(),
+			expected: []string{
+				"before-each-feature",
+				"test-feat-1",
+				"after-each-feature",
+			},
+			setup: func(ctx context.Context, t *testing.T) (val []string) {
+				env := NewWithConfig(envconf.New().WithSkipLabels(map[string][]string{"test": {"skip"}}))
+
+				env.BeforeEachFeature(func(ctx context.Context, _ *envconf.Config, _ *testing.T, info features.Feature) (context.Context, error) {
+					val = append(val, "before-each-feature")
+					return ctx, nil
+				}).AfterEachFeature(func(ctx context.Context, _ *envconf.Config, _ *testing.T, info features.Feature) (context.Context, error) {
+					val = append(val, "after-each-feature")
+					return ctx, nil
+				})
+				f1 := features.New("test-feat").
+					WithLabel("test", "run").Assess("assess", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+					val = append(val, "test-feat-1")
+					return ctx
+				})
+				f2 := features.New("test-feat").
+					WithLabel("test", "skip").Assess("assess", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+					val = append(val, "test-feat-2")
+					return ctx
+				})
+				_ = env.Test(t, f1.Feature(), f2.Feature())
+				return
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
