@@ -342,7 +342,7 @@ func (e *testEnv) Finish(funcs ...Func) types.Environment {
 // package.  This method will all Env.Setup operations prior to
 // starting the tests and run all Env.Finish operations after
 // before completing the suite.
-func (e *testEnv) Run(m *testing.M) int {
+func (e *testEnv) Run(m *testing.M) (exitCode int) {
 	e.panicOnMissingContext()
 	ctx := e.ctx
 
@@ -359,6 +359,9 @@ func (e *testEnv) Run(m *testing.M) int {
 				panic(rErr)
 			}
 			klog.Errorf("Recovering from panic and running finish actions: %s, stack: %s", rErr, string(debug.Stack()))
+			// Set this exit code value to non 0 to indicate that the test suite has failed
+			// Not doing this will mark the test suite as passed even though there was a panic
+			exitCode = 1
 		}
 
 		finishes := e.getFinishActions()
