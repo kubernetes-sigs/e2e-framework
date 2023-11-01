@@ -87,7 +87,7 @@ type Environment interface {
 	Run(*testing.M) int
 }
 
-type Labels = flags.LabelsMap
+type Labels = flags.FlagMap
 
 type Feature interface {
 	// Name is a descriptive text for the feature

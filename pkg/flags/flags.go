@@ -39,6 +39,7 @@ const (
 	flagFailFast                = "fail-fast"
 	flagDisableGracefulTeardown = "disable-graceful-teardown"
 	flagContext                 = "context"
+	flagClusterProviderOption   = "cluster-provider-option"
 )
 
 // Supported flag definitions
@@ -95,16 +96,20 @@ var (
 		Name:  flagContext,
 		Usage: "The name of the kubeconfig context to use",
 	}
+	clusterProviderOptionFlag = flag.Flag{
+		Name:  flagClusterProviderOption,
+		Usage: "An option to pass to the cluster provider",
+	}
 )
 
 // EnvFlags surfaces all resolved flag values for the testing framework
 type EnvFlags struct {
 	feature                 string
 	assess                  string
-	labels                  LabelsMap
+	labels                  FlagMap
 	kubeconfig              string
 	namespace               string
-	skiplabels              LabelsMap
+	skiplabels              FlagMap
 	skipFeatures            string
 	skipAssessments         string
 	parallelTests           bool
@@ -112,6 +117,7 @@ type EnvFlags struct {
 	failFast                bool
 	disableGracefulTeardown bool
 	kubeContext             string
+	clusterProviderOptions  FlagMap
 }
 
 // Feature returns value for `-feature` flag
@@ -125,7 +131,7 @@ func (f *EnvFlags) Assessment() string {
 }
 
 // Labels returns a map of parsed key/value from `-labels` flag
-func (f *EnvFlags) Labels() LabelsMap {
+func (f *EnvFlags) Labels() FlagMap {
 	return f.labels
 }
 
@@ -149,7 +155,7 @@ func (f *EnvFlags) SkipAssessment() string {
 
 // SkipLabels is used to define a series of labels that can be used
 // to skip test cases during execution
-func (f *EnvFlags) SkipLabels() LabelsMap {
+func (f *EnvFlags) SkipLabels() FlagMap {
 	return f.skiplabels
 }
 
@@ -191,6 +197,11 @@ func (f *EnvFlags) KubeContext() string {
 	return f.kubeContext
 }
 
+// ClusterProviderOptions returns a map of parsed key/value from `-cluster-provider-option` flag(s)
+func (f *EnvFlags) ClusterProviderOptions() FlagMap {
+	return f.clusterProviderOptions
+}
+
 // ParseArgs parses the specified args from global flag.CommandLine
 // and returns a set of environment flag values.
 func ParseArgs(args []string) (*EnvFlags, error) {
@@ -208,8 +219,8 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 		kubeContext             string
 	)
 
-	labels := make(LabelsMap)
-	skipLabels := make(LabelsMap)
+	labels := make(FlagMap)
+	skipLabels := make(FlagMap)
 
 	if flag.Lookup(featureFlag.Name) == nil {
 		flag.StringVar(&feature, featureFlag.Name, featureFlag.DefValue, featureFlag.Usage)
@@ -263,6 +274,11 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 		flag.StringVar(&kubeContext, contextFlag.Name, contextFlag.DefValue, contextFlag.Usage)
 	}
 
+	clusterProviderOptions := make(FlagMap)
+	if flag.Lookup(clusterProviderOptionFlag.Name) == nil {
+		flag.Var(&clusterProviderOptions, clusterProviderOptionFlag.Name, clusterProviderOptionFlag.Usage)
+	}
+
 	// Enable klog/v2 flag integration
 	klog.InitFlags(nil)
 
@@ -294,23 +310,24 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 		failFast:                failFast,
 		disableGracefulTeardown: disableGracefulTeardown,
 		kubeContext:             kubeContext,
+		clusterProviderOptions:  clusterProviderOptions,
 	}, nil
 }
 
-type LabelsMap map[string][]string
+type FlagMap map[string][]string
 
-func (m LabelsMap) String() string {
+func (m FlagMap) String() string {
 	i := map[string][]string(m)
 	return fmt.Sprint(i)
 }
 
-func (m LabelsMap) Set(val string) error {
+func (m FlagMap) Set(val string) error {
 	// label: []string{"key=value",...}
-	for _, label := range strings.Split(val, ",") {
+	for _, kv := range strings.Split(val, ",") {
 		// split into k,v
-		kv := strings.Split(label, "=")
+		kv := strings.Split(kv, "=")
 		if len(kv) != 2 {
-			return fmt.Errorf("label format error: %s", label)
+			return fmt.Errorf("key=value format error: %s", kv)
 		}
 		k := strings.TrimSpace(kv[0])
 		v := strings.TrimSpace(kv[1])
@@ -320,7 +337,7 @@ func (m LabelsMap) Set(val string) error {
 	return nil
 }
 
-func (m LabelsMap) Contains(key, val string) bool {
+func (m FlagMap) Contains(key, val string) bool {
 	for _, v := range m[key] {
 		if val == v {
 			return true

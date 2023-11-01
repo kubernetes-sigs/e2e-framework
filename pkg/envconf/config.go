@@ -36,15 +36,16 @@ type Config struct {
 	namespace               string
 	assessmentRegex         *regexp.Regexp
 	featureRegex            *regexp.Regexp
-	labels                  flags.LabelsMap
+	labels                  flags.FlagMap
 	skipFeatureRegex        *regexp.Regexp
-	skipLabels              flags.LabelsMap
+	skipLabels              flags.FlagMap
 	skipAssessmentRegex     *regexp.Regexp
 	parallelTests           bool
 	dryRun                  bool
 	failFast                bool
 	disableGracefulTeardown bool
 	kubeContext             string
+	clusterProviderOptions  flags.FlagMap
 }
 
 // New creates and initializes an empty environment configuration
@@ -87,6 +88,7 @@ func NewFromFlags() (*Config, error) {
 	e.failFast = envFlags.FailFast()
 	e.disableGracefulTeardown = envFlags.DisableGracefulTeardown()
 	e.kubeContext = envFlags.KubeContext()
+	e.clusterProviderOptions = envFlags.ClusterProviderOptions()
 
 	return e, nil
 }
@@ -285,6 +287,17 @@ func (c *Config) WithKubeContext(kubeContext string) *Config {
 // WithKubeContext is used to get the kubeconfig context
 func (c *Config) KubeContext() string {
 	return c.kubeContext
+}
+
+// WithClusterProviderOptions sets the environment's cluster provider options
+func (c *Config) WithClusterProviderOptions(opts map[string][]string) *Config {
+	c.clusterProviderOptions = opts
+	return c
+}
+
+// ClusterProviderOptions returns the environment's cluster provider options
+func (c *Config) ClusterProviderOptions() map[string][]string {
+	return c.clusterProviderOptions
 }
 
 func randNS() string {
