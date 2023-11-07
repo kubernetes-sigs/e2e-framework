@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
-	"sigs.k8s.io/e2e-framework/pkg/internal/types"
+	"sigs.k8s.io/e2e-framework/pkg/types"
 )
 
 func TestNew(t *testing.T) {
