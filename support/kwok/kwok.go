@@ -139,7 +139,11 @@ func (k *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 	klog.V(4).Info("Launching:", command)
 	p := utils.RunCommand(command)
 	if p.Err() != nil {
-		return "", fmt.Errorf("failed to create kwok cluster: %s : %s", p.Err(), p.Result())
+		outBytes, err := io.ReadAll(p.Out())
+		if err != nil {
+			klog.ErrorS(err, "failed to read data from the kwok create process output due to an error")
+		}
+		return "", fmt.Errorf("failed to create kwok cluster: %s: %s: %s", p.Err(), p.Result(), string(outBytes))
 	}
 
 	clusters, ok := k.clusterExists(k.name)
