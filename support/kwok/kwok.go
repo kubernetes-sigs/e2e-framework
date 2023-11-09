@@ -156,6 +156,10 @@ func (k *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 }
 
 func (k *Cluster) CreateWithConfig(ctx context.Context, configFile string) (string, error) {
+	if configFile == "" {
+		return k.Create(ctx)
+	}
+
 	return k.Create(ctx, "--config", configFile)
 }
 
