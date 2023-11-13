@@ -146,7 +146,10 @@ func (k *Cluster) clusterExists(name string) (string, bool) {
 }
 
 func (k *Cluster) CreateWithConfig(ctx context.Context, kindConfigFile string) (string, error) {
-	args := []string{"--config", kindConfigFile}
+	var args []string
+	if kindConfigFile != "" {
+		args = append(args, "--config", kindConfigFile)
+	}
 	if k.image != "" {
 		args = append(args, "--image", k.image)
 	}
