@@ -300,9 +300,9 @@ func RandomName(prefix string, n int) string {
 	if len(prefix) >= n {
 		return prefix
 	}
-	rand.Seed(time.Now().UnixNano())
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	p := make([]byte, n)
-	rand.Read(p)
+	r.Read(p)
 	if prefix == "" {
 		return hex.EncodeToString(p)[:n]
 	}
