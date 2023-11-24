@@ -8,11 +8,21 @@ updates:
       - "area/dependency"
       - "release-note-none"
       - "ok-to-test"
+    groups:
+      all:
+        update-types:
+          - "minor"
+          - "patch"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-        interval: "daily"
+      interval: "daily"
     labels:
       - "area/dependency"
       - "release-note-none"
       - "ok-to-test"
+    groups:
+      all:
+        update-types:
+          - "minor"
+          - "patch"
