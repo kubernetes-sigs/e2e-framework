@@ -174,14 +174,11 @@ func (k *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 	log.V(4).Info("Launching:", command)
 	p := utils.RunCommand(command)
 	if p.Err() != nil {
-		// Print the output data as well so that it can be useful to debug cluster bringup failures
-		var data []byte
-		b := bytes.NewBuffer(data)
-		_, err := io.Copy(b, p.Out())
+		outBytes, err := io.ReadAll(p.Out())
 		if err != nil {
 			log.ErrorS(err, "failed to read data from the kind create process output due to an error")
 		}
-		return "", fmt.Errorf("failed to create kind cluster: %s : %s: %s", p.Err(), p.Result(), b.String())
+		return "", fmt.Errorf("kind: failed to create cluster %q: %s: %s: %s", k.name, p.Err(), p.Result(), string(outBytes))
 	}
 	clusters, ok := k.clusterExists(k.name)
 	if !ok {
@@ -236,7 +233,11 @@ func (k *Cluster) Destroy(ctx context.Context) error {
 
 	p := utils.RunCommand(fmt.Sprintf(`%s delete cluster --name %s`, k.path, k.name))
 	if p.Err() != nil {
-		return fmt.Errorf("kind: delete cluster %v failed: %s: %s", k.name, p.Err(), p.Result())
+		outBytes, err := io.ReadAll(p.Out())
+		if err != nil {
+			log.ErrorS(err, "failed to read data from the kind delete process output due to an error")
+		}
+		return fmt.Errorf("kind: failed to delete cluster %q: %s: %s: %s", k.name, p.Err(), p.Result(), string(outBytes))
 	}
 
 	log.V(4).Info("Removing kubeconfig file ", k.kubecfgFile)
