@@ -143,7 +143,7 @@ func (k *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 		if err != nil {
 			klog.ErrorS(err, "failed to read data from the kwok create process output due to an error")
 		}
-		return "", fmt.Errorf("failed to create kwok cluster: %s: %s: %s", p.Err(), p.Result(), string(outBytes))
+		return "", fmt.Errorf("kwok: failed to create cluster %q: %s: %s: %s", k.name, p.Err(), p.Result(), string(outBytes))
 	}
 
 	clusters, ok := k.clusterExists(k.name)
@@ -175,7 +175,11 @@ func (k *Cluster) Destroy(ctx context.Context) error {
 
 	p := utils.RunCommand(fmt.Sprintf(`%s delete cluster --name %s`, k.path, k.name))
 	if p.Err() != nil {
-		return fmt.Errorf("kwok: delete cluster failed: %s: %s", p.Err(), p.Result())
+		outBytes, err := io.ReadAll(p.Out())
+		if err != nil {
+			klog.ErrorS(err, "failed to read data from the kwok delete process output due to an error")
+		}
+		return fmt.Errorf("kwok: failed to delete cluster %q: %s: %s: %s", k.name, p.Err(), p.Result(), string(outBytes))
 	}
 
 	klog.V(4).Info("Removing kubeconfig file ", k.kubecfgFile)
