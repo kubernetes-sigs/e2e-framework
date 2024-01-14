@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"math/rand"
 	"regexp"
+	"sync"
 	"time"
 
 	log "k8s.io/klog/v2"
@@ -31,6 +32,7 @@ import (
 
 // Config represents and environment configuration
 type Config struct {
+	clientLock              sync.RWMutex
 	client                  klient.Client
 	kubeconfig              string
 	namespace               string
@@ -103,6 +105,8 @@ func (c *Config) KubeconfigFile() string {
 
 // WithClient used to update the environment klient.Client
 func (c *Config) WithClient(client klient.Client) *Config {
+	c.clientLock.Lock()
+	defer c.clientLock.Unlock()
 	c.client = client
 	return c
 }
@@ -111,6 +115,8 @@ func (c *Config) WithClient(client klient.Client) *Config {
 // created klient.Client or create a new one based on configuration
 // previously set. Will return an error if unable to do so.
 func (c *Config) NewClient() (klient.Client, error) {
+	c.clientLock.Lock()
+	defer c.clientLock.Unlock()
 	if c.client != nil {
 		return c.client, nil
 	}
@@ -130,6 +136,8 @@ func (c *Config) NewClient() (klient.Client, error) {
 // are confident in the configuration or call NewClient() to ensure its
 // safe creation.
 func (c *Config) Client() klient.Client {
+	c.clientLock.Lock()
+	defer c.clientLock.Unlock()
 	if c.client != nil {
 		return c.client
 	}
