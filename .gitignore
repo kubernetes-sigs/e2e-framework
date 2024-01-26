@@ -8,3 +8,4 @@
 vendor/
 examples/kind/kind_with_config/logs/
 examples/kwok/kwok_with_config/logs/
+examples/cni/cilium/logs/

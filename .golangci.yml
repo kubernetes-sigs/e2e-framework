@@ -8,6 +8,7 @@ run:
     - (^|/)testdata($|/)
     - (^|/)Godeps($|/)
     - (^|/)builtin($|/)
+    - .*.gvm/.*  # This is enabled to avoid linting the gvm install directory
 issues:
   exclude-rules:
     # counterfeiter fakes are usually named 'fake_<something>.go'
