@@ -21,7 +21,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/rest"
-	"k8s.io/klog/v2"
+	klog "k8s.io/klog/v2"
 	cr "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/e2e-framework/klient/k8s"

@@ -39,9 +39,9 @@ import (
 func TestNetworkPolicies(t *testing.T) {
 	containerName := "nginx"
 	podName := ""
-	feature := features.New("FQDN whitelisting").
+	feature := features.New("FQDN allowlisting").
 		Setup(func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
-			// Setup cluster network policies to only allow whitelisted traffic
+			// Setup cluster network policies to only allow alloslisted traffic
 			r, err := resources.New(config.Client().RESTConfig())
 			if err != nil {
 				t.Fatal(err)

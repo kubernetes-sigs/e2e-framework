@@ -50,7 +50,7 @@ func FindOrInstallGoBasedProvider(pPath, provider, module, version string) (stri
 	}
 
 	if providerPath := commandRunner.Prog().Avail(provider); providerPath != "" {
-		log.V(4).Infof("Installed %s at", pPath, providerPath)
+		log.V(4).Infof("Installed %s at %s", pPath, providerPath)
 		return provider, nil
 	}
 
@@ -68,7 +68,7 @@ func FindOrInstallGoBasedProvider(pPath, provider, module, version string) (stri
 	commandRunner.SetEnv("PATH", p.Result())
 
 	if providerPath := commandRunner.Prog().Avail(provider); providerPath != "" {
-		log.V(4).Infof("Installed %s at", pPath, providerPath)
+		log.V(4).Infof("Installed %s at %s", pPath, providerPath)
 		return provider, nil
 	}
 

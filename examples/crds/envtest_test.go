@@ -21,7 +21,7 @@ import (
 	"os"
 	"testing"
 
-	"k8s.io/klog/v2"
+	klog "k8s.io/klog/v2"
 	"sigs.k8s.io/e2e-framework/examples/crds/testdata/crontabs"
 	"sigs.k8s.io/e2e-framework/klient/decoder"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"

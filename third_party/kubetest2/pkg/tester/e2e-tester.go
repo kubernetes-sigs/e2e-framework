@@ -24,7 +24,7 @@ import (
 
 	"github.com/octago/sflags/gen/gpflag"
 	"github.com/vladimirvivien/gexe"
-	"k8s.io/klog/v2"
+	klog "k8s.io/klog/v2"
 	"sigs.k8s.io/kubetest2/pkg/testers"
 )
 
