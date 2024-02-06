@@ -122,6 +122,8 @@ func (k *Cluster) initKubernetesAccessClients() error {
 	return nil
 }
 
+// Create creates a cluster. If Cluster is created by NewCluster, the time to wait for the cluster to be ready is 1 minute.
+// Longer time is preferred, if ctx has a deadline.
 func (k *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 	klog.V(4).Info("Creating a kwok cluster ", k.name)
 	if err := k.findOrInstallKwokCtl(); err != nil {
@@ -132,7 +134,13 @@ func (k *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 		return k.getKubeconfig()
 	}
 
-	command := fmt.Sprintf(`%s create cluster --name %s --wait %s`, k.path, k.name, k.waitDuration.String())
+	wait := k.waitDuration
+	waitTime, ok := ctx.Deadline()
+	// If the deadline is set and the wait time is less than the time left before the deadline, then we should use the wait time
+	if ok && waitTime.Before(time.Now().Add(wait)) {
+		wait = waitTime.Sub(time.Now())
+	}
+	command := fmt.Sprintf(`%s create cluster --name %s --wait %s`, k.path, k.name, wait)
 	if len(args) > 0 {
 		command = fmt.Sprintf("%s %s", command, strings.Join(args, " "))
 	}
