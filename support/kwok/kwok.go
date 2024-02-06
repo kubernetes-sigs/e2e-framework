@@ -34,7 +34,7 @@ import (
 	"sigs.k8s.io/e2e-framework/support/utils"
 )
 
-var kwokVersion = "v0.3.0"
+var kwokVersion = "v0.5.0"
 
 type Cluster struct {
 	name         string
