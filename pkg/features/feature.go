@@ -30,6 +30,15 @@ type (
 	Level   = types.Level
 )
 
+const (
+	// LevelSetup when doing the setup phase
+	LevelSetup Level = types.LevelSetup
+	// LevelAssess when doing the assess phase
+	LevelAssess = types.LevelAssess
+	// LevelTeardown when doing the teardown phase
+	LevelTeardown = types.LevelTeardown
+)
+
 type defaultFeature struct {
 	name        string
 	description string
