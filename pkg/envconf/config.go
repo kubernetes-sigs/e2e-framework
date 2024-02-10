@@ -32,7 +32,7 @@ import (
 
 // Config represents and environment configuration
 type Config struct {
-	clientLock              sync.RWMutex
+	clientLock              sync.Mutex
 	client                  klient.Client
 	kubeconfig              string
 	namespace               string

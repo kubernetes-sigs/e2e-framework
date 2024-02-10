@@ -118,7 +118,6 @@ func TestClientIsGorountineSafe(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for i := 0; i < count; i++ {
-
 				client := cfg.Client()
 				if client == nil {
 					t.Errorf("client should not be nil")
