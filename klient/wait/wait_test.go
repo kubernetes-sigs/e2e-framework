@@ -247,3 +247,46 @@ func TestDeploymentAvailable(t *testing.T) {
 		t.Error("failed waiting for deployment to become available")
 	}
 }
+
+func TestForTimeout(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	start := time.Now()
+	defer func() {
+		dur := time.Since(start)
+		if dur < 1*time.Second {
+			t.Error("expected to wait for at least 1 second")
+		}
+	}()
+	err := wait.For(func(ctx context.Context) (bool, error) {
+		return false, nil
+	}, wait.WithContext(ctx), wait.WithTimeout(1*time.Second))
+
+	if err == nil {
+		t.Error("expected error")
+	}
+}
+
+func TestForCancel(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	start := time.Now()
+	go func() {
+		time.Sleep(1 * time.Second)
+		cancel()
+	}()
+	defer func() {
+		dur := time.Since(start)
+		if dur < 1*time.Second || dur > 2*time.Second {
+			t.Errorf("got %v, expected to wait for at least 2 seconds", dur)
+		}
+	}()
+	err := wait.For(func(ctx context.Context) (bool, error) {
+		return false, nil
+	}, wait.WithContext(ctx), wait.WithTimeout(2*time.Second))
+	if err == nil {
+		t.Error("expected error")
+	}
+}

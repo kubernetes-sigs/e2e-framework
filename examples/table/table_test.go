@@ -44,7 +44,7 @@ func TestMain(m *testing.M) {
 func TestTableDriven(t *testing.T) {
 	// feature 1
 	table0 := features.Table{
-		{
+		features.TableRow{
 			Name:        "testWithDescription",
 			Description: "This is an example of how to create a test with description",
 			Assessment: func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
@@ -54,7 +54,7 @@ func TestTableDriven(t *testing.T) {
 				return ctx
 			},
 		},
-		{
+		features.TableRow{
 			Name: "less than equal 64",
 			Assessment: func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
 				rnd := ctx.Value("randsrc").(*rand.Rand) // in real test, check asserted type
@@ -65,7 +65,7 @@ func TestTableDriven(t *testing.T) {
 				return ctx
 			},
 		},
-		{
+		features.TableRow{
 			Name: "more than than equal 128",
 			Assessment: func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
 				rnd := ctx.Value("randsrc").(*rand.Rand) // in real test, check asserted type
@@ -76,7 +76,7 @@ func TestTableDriven(t *testing.T) {
 				return ctx
 			},
 		},
-		{
+		features.TableRow{
 			Assessment: func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
 				rnd := ctx.Value("randsrc").(*rand.Rand) // in real test, check asserted type
 				lim := ctx.Value("limit").(int32)        // check type assertion
@@ -90,7 +90,7 @@ func TestTableDriven(t *testing.T) {
 
 	// feature 2
 	table1 := features.Table{
-		{
+		features.TableRow{
 			Name: "A simple feature",
 			Assessment: func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
 				rnd := ctx.Value("randsrc").(*rand.Rand)

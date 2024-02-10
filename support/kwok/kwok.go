@@ -27,14 +27,14 @@ import (
 	"time"
 
 	"k8s.io/client-go/rest"
-	"k8s.io/klog/v2"
+	klog "k8s.io/klog/v2"
 	"sigs.k8s.io/e2e-framework/klient"
 	"sigs.k8s.io/e2e-framework/klient/conf"
 	"sigs.k8s.io/e2e-framework/support"
 	"sigs.k8s.io/e2e-framework/support/utils"
 )
 
-var kwokVersion = "v0.3.0"
+var kwokVersion = "v0.5.0"
 
 type Cluster struct {
 	name         string

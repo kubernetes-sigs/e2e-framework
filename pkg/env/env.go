@@ -26,7 +26,7 @@ import (
 	"sync"
 	"testing"
 
-	"k8s.io/klog/v2"
+	klog "k8s.io/klog/v2"
 
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"

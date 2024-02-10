@@ -22,7 +22,7 @@ import (
 	"os"
 	"strings"
 
-	"k8s.io/klog/v2"
+	klog "k8s.io/klog/v2"
 )
 
 const (
