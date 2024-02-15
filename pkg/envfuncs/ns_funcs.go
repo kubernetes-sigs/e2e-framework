@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
-type namespaceContextKey string
+type NamespaceContextKey string
 
 type CreateNamespaceOpts func(klient.Client, *corev1.Namespace)
 
@@ -66,7 +66,7 @@ func CreateNamespace(name string, opts ...CreateNamespaceOpts) env.Func {
 			return ctx, fmt.Errorf("create namespace func: %w", err)
 		}
 		cfg.WithNamespace(name) // set env config default namespace
-		return context.WithValue(ctx, namespaceContextKey(name), namespace), nil
+		return context.WithValue(ctx, NamespaceContextKey(name), namespace), nil
 	}
 }
 
@@ -78,7 +78,7 @@ func DeleteNamespace(name string) env.Func {
 		var namespace *corev1.Namespace
 
 		// attempt to retrieve from context
-		nsVal := ctx.Value(namespaceContextKey(name))
+		nsVal := ctx.Value(NamespaceContextKey(name))
 		if nsVal != nil {
 			if ns, ok := nsVal.(corev1.Namespace); ok {
 				namespace = &ns
