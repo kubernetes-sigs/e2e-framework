@@ -60,8 +60,8 @@ func DeleteNamespace(name string) env.Func {
 		// attempt to retrieve from context
 		nsVal := ctx.Value(namespaceContextKey(name))
 		if nsVal != nil {
-			if ns, ok := nsVal.(*corev1.Namespace); ok {
-				namespace = ns
+			if ns, ok := nsVal.(corev1.Namespace); ok {
+				namespace = &ns
 			}
 		}
 
