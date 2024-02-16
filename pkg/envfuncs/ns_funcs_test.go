@@ -22,6 +22,11 @@ import (
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
+	"sigs.k8s.io/e2e-framework/klient/wait"
+	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -108,4 +113,44 @@ func TestCreateNamespace(t *testing.T) {
 	}
 
 	nsTestenv.Test(t, feats...)
+}
+
+func TestDeleteNamespace(t *testing.T) {
+	var ns corev1.Namespace
+	namespace := envconf.RandomName("delete-ns", 16)
+	feat := features.New("DeleteNamespace").
+		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			ctx, err := envfuncs.CreateNamespace(namespace)(ctx, cfg)
+			if err != nil {
+				t.Fatal("Error creating namespace", err)
+			}
+			ctx, err = envfuncs.DeleteNamespace(namespace)(ctx, cfg)
+			if err != nil {
+				t.Fatal("Unexpected error deleting namespace", err)
+			}
+			r, err := resources.New(cfg.Client().RESTConfig())
+			if err != nil {
+				t.Fatal("Error creating new resources", err)
+			}
+			err = wait.For(conditions.New(r).ResourceDeleted(&corev1.Namespace{
+				ObjectMeta: v1.ObjectMeta{
+					Name: namespace,
+				},
+			}),
+				wait.WithImmediate())
+			if err != nil {
+				t.Fatal("Error waiting for namespace deletion", err)
+			}
+			return ctx
+		}).
+		Assess("namespace deleted", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			err := cfg.Client().Resources().Get(ctx, namespace, namespace, &ns)
+			if !errors.IsNotFound(err) {
+				t.Error("unexpected error when checking if namespace is deleted", err)
+			}
+			return ctx
+		}).
+		Feature()
+
+	nsTestenv.Test(t, feat)
 }
