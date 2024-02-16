@@ -25,69 +25,87 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
 	"sigs.k8s.io/e2e-framework/pkg/features"
-	"sigs.k8s.io/e2e-framework/support/kind"
 )
 
 func TestCreateNamespace(t *testing.T) {
-	var err error
-	var ns corev1.Namespace
-	kindClusterName := envconf.RandomName("my-cluster", 16)
-	namespace := envconf.RandomName("myns", 16)
 	labels := map[string]string{"label": "myns-label"}
 	annotations := map[string]string{"ann": "myns-ann"}
 
-	feat := features.New("CreateNamespaceWithLabelsAndAnn").
-		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			ctx, err = envfuncs.CreateCluster(kind.NewProvider(), kindClusterName)(ctx, cfg)
-			if err != nil {
-				t.Fatal("Error creating kind cluster", err)
-			}
-			ctx, err = envfuncs.CreateNamespace(namespace, envfuncs.WithAnnotations(annotations), envfuncs.WithLabels(labels))(ctx, cfg)
-			if err != nil {
-				t.Fatal("Error creating namespace", err)
-			}
-			return ctx
-		}).
-		Assess("namespace created with custom labels and annotations", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			// Get namespace
-			err := cfg.Client().Resources().Get(ctx, namespace, namespace, &ns)
-			if err != nil {
-				t.Fatal("error getting namespace", err)
-			}
+	tests := []struct {
+		name                string
+		opts                []envfuncs.CreateNamespaceOpts
+		expectedLabels      map[string]string
+		expectedAnnotations map[string]string
+	}{
+		{
+			name: "CreateBasicNamespace",
+		},
+		{
+			name:                "CreateNamespaceWithLabelsAndAnn",
+			opts:                []envfuncs.CreateNamespaceOpts{envfuncs.WithAnnotations(annotations), envfuncs.WithLabels(labels)},
+			expectedLabels:      labels,
+			expectedAnnotations: annotations,
+		},
+	}
 
-			// Check labels and annotations
-			// No DeepEqual for labels because k8s adds the `kubernetes.io/metadata.name` label on creation
-			if labels["label"] != ns.Labels["label"] {
-				t.Errorf("namespace labels do not match. Expected:\n%v but got:\n%v", labels, ns.Labels)
-			}
-			if !reflect.DeepEqual(annotations, ns.Annotations) {
-				t.Errorf("namespace annotations do not match. Expected:\n%v but got:\n%v", annotations, ns.Annotations)
-			}
+	feats := make([]features.Feature, 0, len(tests))
+	for _, test := range tests {
+		var ns corev1.Namespace
+		namespace := envconf.RandomName("create-ns", 16)
+		feat := features.New(test.name).
+			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				ctx, err := envfuncs.CreateNamespace(namespace, test.opts...)(ctx, cfg)
+				if err != nil {
+					t.Fatal("Error creating namespace", err)
+				}
+				return ctx
+			}).
+			Assess("namespace created", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				err := cfg.Client().Resources().Get(ctx, namespace, namespace, &ns)
+				if err != nil {
+					t.Fatal("error getting namespace", err)
+				}
+				return ctx
+			}).
+			Assess("namespace labels and annotations", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				// K8s adds the `kubernetes.io/metadata.name` label on namespace creation
+				test.expectedLabels["kubernetes.io/metadata.name"] = namespace
+				if !reflect.DeepEqual(test.expectedLabels, ns.Labels) {
+					t.Errorf("namespace labels do not match. Expected:\n%v but got:\n%v", test.expectedLabels, ns.Labels)
+				}
+				if !reflect.DeepEqual(test.expectedAnnotations, ns.Annotations) {
+					t.Errorf("namespace annotations do not match. Expected:\n%v but got:\n%v", test.expectedAnnotations, ns.Annotations)
+				}
+				return ctx
+			}).
+			Assess("namespace stored in config", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				if ns.Name != cfg.Namespace() {
+					t.Errorf("namespace stored in config does not match the one created. Expected:\n%v but got:\n%v", ns.Name, cfg.Namespace())
+				}
+				return ctx
+			}).
+			Assess("namespace stored in context", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				nsVal := ctx.Value(envfuncs.NamespaceContextKey(ns.Name))
+				nsFromCtx, ok := nsVal.(corev1.Namespace)
+				if !ok {
+					t.Errorf("error casting namespace from context to namespace object. Value:%+v", nsVal)
+				} else if !reflect.DeepEqual(nsFromCtx, ns) {
+					t.Errorf("namespace stored in context does not match the one created. Expected:\n%v but got:\n%v", &ns, nsFromCtx)
+				}
 
-			// Check namespace is stored in config
-			if ns.Name != cfg.Namespace() {
-				t.Errorf("namespace stored in config does not match the one created. Expected:\n%v but got:\n%v", ns.Name, cfg.Namespace())
-			}
+				return ctx
+			}).
+			Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				ctx, err := envfuncs.DeleteNamespace(namespace)(ctx, cfg)
+				if err != nil {
+					t.Error("Error deleting namespace", err)
+				}
+				return ctx
+			}).
+			Feature()
 
-			// Check namespace is stored in context
-			nsVal := ctx.Value(envfuncs.NamespaceContextKey(ns.Name))
-			nsFromCtx, ok := nsVal.(corev1.Namespace)
-			if !ok {
-				t.Errorf("error casting namespace from context to namespace object. Value:%+v", nsVal)
-			} else if !reflect.DeepEqual(nsFromCtx, ns) {
-				t.Errorf("namespace stored in context does not match the one created. Expected:\n%v but got:\n%v", &ns, nsFromCtx)
-			}
+		feats = append(feats, feat)
+	}
 
-			return ctx
-		}).
-		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			ctx, err = envfuncs.DestroyCluster(kindClusterName)(ctx, cfg)
-			if err != nil {
-				t.Error("Error destroying kind cluster", err)
-			}
-			return ctx
-		}).
-		Feature()
-
-	testenv.Test(t, feat)
+	nsTestenv.Test(t, feats...)
 }
