@@ -555,7 +555,7 @@ func (e *testEnv) requireProcessing(kind, testName string, requiredRegexp, skipR
 			for _, v := range vals {
 				if labels.Contains(key, v) {
 					skip = true
-					message = fmt.Sprintf(`Skipping feature "%s": matched label provided in --skip-lables "%s=%s"`, testName, key, labels[key])
+					message = fmt.Sprintf(`Skipping feature "%s": matched label provided in --skip-labels "%s=%s"`, testName, key, labels[key])
 					return skip, message
 				}
 			}

@@ -1,24 +1,28 @@
 # Watcher for K8S Objects
 
-K8S object watchers are great functionality provided by k8s to get efficient change notifications on resources.
+K8S object watchers are great functionality provided by k8S to get efficient change notifications on resources.
 
-The events supported by these watchers are
+The events supported by these watchers are:
+
 1. ADD
 2. MODIFY/UPDATE
 3. DELETE
 
 ## Motivation
-Users must implement watchers such a way that whenever any events recieved some action/job has to be triggered. Developer has to write lots of code to do this and its sometimes difficult to manage. 
 
-This can be achieved by using the k8s client built in function but understanding which packages to import or which core type needs to be used might be a complex for the developer.
+Users must implement watchers in such a way that whenever any events are received, some action/job has to be triggered. Developers have to write lots of code to do this, and it's sometimes difficult to manage.
 
-The below design would make developer life easier. They have to just register their actions for respective events. To stay informed about when these events get triggered just use Watch(), which resides inside klient/k8s/resources package.
+This can be achieved by using the K8S client built-in function, but understanding which packages to import or which core types need to be used might be complex for the developer.
+
+The below design would make a developer's life easier. They have to just register their actions for respective events. To stay informed about when these events get triggered, just use Watch(), which resides inside the klient/k8s/resources package.
 
 ## Proposal
-Watch function accepts a `object ObjectList` as a argument. ObjectList type is used to inject the resource type in which Watch has to be applied.
+
+The Watch function accepts an `object ObjectList` as an argument. ObjectList type is used to inject the resource type in which Watch has to be applied.
 
 `klient/k8s/resources/resources.go`
-```go=
+
+```go
 import (
     "sigs.k8s.io/controller-runtime/pkg/client"
     "k8s.io/apimachinery/pkg/watch"
@@ -41,12 +45,12 @@ func (r *Resources) Watch(object k8s.ObjectList, opts ...ListOption) *watcher.Ev
 }
 ```
 
-Watch() in resources.go will return the `watcher` type which helps to call `Start()`. InvokeEventHandler accepts `EventHandlerFuncs` which carries the user registerd function sets.
+Watch() in resources.go will return the `watcher` type which helps to call `Start()`. InvokeEventHandler accepts `EventHandlerFuncs` which carries the user-registered function sets.
 
 file : klient/k8s/resources/watch.go
 
-```go=
-// Start triggers the registered methods based on the event recieved for particular k8s resources.
+```go
+// Start triggers the registered methods based on the event received for particular k8s resources.
 func (watcher watch.Interface)Start(ctx context.Context) {
     ...
     go func() {
@@ -106,14 +110,14 @@ type EventHandler interface {
 
 ```
 
-`Start()` is invoked in a goroutine so that whenever watched resource changes the states it will call the registered user defined functions.
-`Stop()` should be explicitly invoked by the user after the watch once the feature is done to ensure no unwanted go routine thread leackage.
+`Start()` is invoked in a goroutine so that whenever a watched resource changes states, it will call the registered user-defined functions.
+`Stop()` should be explicitly invoked by the user after the watch once the feature is done to ensure no unwanted goroutine thread leakage.
 
-If any error while Start() one can retry it for number of times.
+If any error occurs while Start(), one can retry it for a number of times.
 
-This example shows how to use klient/resources/resources.go Watch() func and how to register the user defined functions.
- 
-```go=
+This example shows how to use klient/resources/resources.go Watch() func and how to register the user-defined functions.
+
+```go
 
 import (
     "sigs.k8s.io/e2e-framework/klient/conf"
@@ -129,10 +133,10 @@ func main() {
 	}
 
 	dep := appsv1.Deployment{
-    	ObjectMeta: metav1.ObjectMeta{Name: "watch-dep", Namespace: cfg.Namespace()},
+		ObjectMeta: metav1.ObjectMeta{Name: "watch-dep", Namespace: cfg.Namespace()},
 	}
 
-	// watch for the deployment and triger action based on the event recieved.
+	// watch for the deployment and triger action based on the event received.
 	cl.Resources().Watch(&appsv1.DeploymentList{}, resources.WithFieldSelector(labels.FormatLabels(map[string]string{"metadata.name": dep.Name}))).
 	WithAddFunc(onAdd).WithDeleteFunc(onDelete).Start(ctx)
 
@@ -149,7 +153,7 @@ func onAdd(obj interface{}) {
     }
 }
 
-// onDelete is the function executed when the kubernetes watch notifies 
+// onDelete is the function executed when the kubernetes watch notifies
 // delete event on deployment
 func onDelete(obj interface{}) {
     dep := obj.(*appsv1.Deployment)

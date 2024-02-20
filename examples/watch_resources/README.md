@@ -1,6 +1,6 @@
 # Watching for Resource Changes
 
-The test harness supports several methods for querying Kubernetes object types and watching for resource states. This example shows how to watch particular resource and how to register the functions to act upon based on the events recieved.
+The test harness supports several methods for querying Kubernetes object types and watching for resource states. This example shows how to watch particular resource and how to register the functions to act upon based on the events received.
 
 
 # Watch for the deployment and triger action based on the event
@@ -13,7 +13,7 @@ dep := appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{Name: "watch-dep", Namespace: cfg.Namespace()},
 			}
 
-			// watch for the deployment and triger action based on the event recieved.
+			// watch for the deployment and triger action based on the event received.
 			cl.Resources().Watch(&appsv1.DeploymentList{}, &client.ListOptions{
 				FieldSelector: fields.OneTermEqualSelector("metadata.name", dep.Name),
 				Namespace:     dep.Namespace}, cl.RESTConfig()).WithAddFunc(onAdd).WithDeleteFunc(onDelete).Start(ctx)
@@ -29,7 +29,7 @@ dep := appsv1.Deployment{
 func onAdd(obj interface{}) {
 	dep := obj.(*appsv1.Deployment)
 	depName := dep.GetName()
-	fmt.Printf("Dep name recieved is %s", depName)
+	fmt.Printf("Dep name received is %s", depName)
 	if depName == "watch-dep" {
 		fmt.Println("Dep name matches with actual name!")
 	}
