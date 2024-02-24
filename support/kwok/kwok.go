@@ -138,7 +138,7 @@ func (k *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 	waitTime, ok := ctx.Deadline()
 	// If the deadline is set and the wait time is less than the time left before the deadline, then we should use the wait time
 	if ok && waitTime.Before(time.Now().Add(wait)) {
-		wait = waitTime.Sub(time.Now())
+		wait = time.Until(waitTime)
 	}
 	command := fmt.Sprintf(`%s create cluster --name %s --wait %s`, k.path, k.name, wait)
 	if len(args) > 0 {
