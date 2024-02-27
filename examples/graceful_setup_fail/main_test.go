@@ -25,12 +25,11 @@ import (
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
-	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-var testEnv env.Environment
-
 func TestMain(m *testing.M) {
+	var testEnv env.Environment
+
 	tests := []struct {
 		name             string
 		testEnvGenerator func(context.Context, *[]string) env.Environment
@@ -124,12 +123,4 @@ func TestMain(m *testing.M) {
 
 		klog.Infof("PASS: %s\n\tActions completed: %+v", test.name, readableActions)
 	}
-}
-
-func TestGracefulSetupFail(t *testing.T) {
-	f := features.New("Dummy feature").
-		Assess("Dummy test", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			return ctx
-		})
-	testEnv.Test(t, f.Feature())
 }
