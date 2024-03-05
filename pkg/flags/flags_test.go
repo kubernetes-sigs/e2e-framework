@@ -20,6 +20,8 @@ import (
 	"flag"
 	"reflect"
 	"testing"
+
+	"sigs.k8s.io/e2e-framework/pkg/featuregate"
 )
 
 func TestParseFlags(t *testing.T) {
@@ -30,7 +32,7 @@ func TestParseFlags(t *testing.T) {
 	}{
 		{
 			name:  "with all",
-			args:  []string{"-assess", "volume test", "--feature", "beta", "--labels", "k0=v0, k0=v01, k1=v1, k1=v11, k2=v2", "--skip-labels", "k0=v0, k1=v1", "-skip-features", "networking", "-skip-assessment", "volume test", "-parallel", "--dry-run", "--disable-graceful-teardown"},
+			args:  []string{"-assess", "volume test", "--feature", "beta", "--labels", "k0=v0, k0=v01, k1=v1, k1=v11, k2=v2", "--skip-labels", "k0=v0, k1=v1", "-skip-features", "networking", "-skip-assessment", "volume test", "-parallel", "--dry-run", "--disable-graceful-teardown", "--feature-gates", "ReverseTestFinishExecutionOrder=true"},
 			flags: &EnvFlags{assess: "volume test", feature: "beta", labels: LabelsMap{"k0": {"v0", "v01"}, "k1": {"v1", "v11"}, "k2": {"v2"}}, skiplabels: LabelsMap{"k0": {"v0"}, "k1": {"v1"}}, skipFeatures: "networking", skipAssessments: "volume test"},
 		},
 	}
@@ -80,6 +82,10 @@ func TestParseFlags(t *testing.T) {
 
 			if !testFlags.DisableGracefulTeardown() {
 				t.Errorf("unmatched flag parsed. Expected disableGracefulTeardown to be true")
+			}
+
+			if !featuregate.DefaultFeatureGate.Enabled(featuregate.ReverseTestFinishExecutionOrder) {
+				t.Errorf("unmatched flag parsed. Expected feature gate to be enabled")
 			}
 		})
 	}
