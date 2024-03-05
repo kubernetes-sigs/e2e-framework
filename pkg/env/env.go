@@ -23,12 +23,14 @@ import (
 	"fmt"
 	"regexp"
 	"runtime/debug"
+	"sort"
 	"sync"
 	"testing"
 
 	klog "k8s.io/klog/v2"
 
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"sigs.k8s.io/e2e-framework/pkg/featuregate"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 	"sigs.k8s.io/e2e-framework/pkg/internal/types"
 )
@@ -424,7 +426,13 @@ func (e *testEnv) getAfterTestActions() []action {
 }
 
 func (e *testEnv) getFinishActions() []action {
-	return e.getActionsByRole(roleFinish)
+	finishAction := e.getActionsByRole(roleFinish)
+	if featuregate.DefaultFeatureGate.Enabled(featuregate.ReverseTestFinishExecutionOrder) {
+		sort.Slice(finishAction, func(i, j int) bool {
+			return i > j
+		})
+	}
+	return finishAction
 }
 
 func (e *testEnv) executeSteps(ctx context.Context, t *testing.T, steps []types.Step) context.Context {

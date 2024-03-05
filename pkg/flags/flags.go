@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	klog "k8s.io/klog/v2"
+	"sigs.k8s.io/e2e-framework/pkg/featuregate"
 )
 
 const (
@@ -262,6 +263,8 @@ func ParseArgs(args []string) (*EnvFlags, error) {
 	if flag.Lookup(contextFlag.Name) == nil {
 		flag.StringVar(&kubeContext, contextFlag.Name, contextFlag.DefValue, contextFlag.Usage)
 	}
+
+	flag.Var(featuregate.FeatureGate, "feature-gates", "A set of key=value pairs that describe feature gates for alpha/experimental features. Options are: \n"+strings.Join(featuregate.FeatureGate.KnownFeatures(), "\n"))
 
 	// Enable klog/v2 flag integration
 	klog.InitFlags(nil)
