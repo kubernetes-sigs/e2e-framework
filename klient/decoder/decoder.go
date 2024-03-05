@@ -125,6 +125,12 @@ func DecodeEach(ctx context.Context, manifest io.Reader, handlerFn HandlerFunc, 
 		}
 		obj, err := DecodeAny(bytes.NewReader(b), options...)
 		if err != nil {
+			// Skip the Missing Kind entries. This will avoid unwanted failures of the yaml apply workflow in cases
+			// if the file has an empty item with just comments in it.
+			if runtime.IsMissingKind(err) {
+				klog.V(2).InfoS("Skipping document with missing Kind", "document", strings.TrimSpace(string(b)))
+				continue
+			}
 			return err
 		}
 		if err := handlerFn(ctx, obj); err != nil {

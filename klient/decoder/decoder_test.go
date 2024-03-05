@@ -18,6 +18,7 @@ package decoder_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -186,44 +187,52 @@ func TestDecodeAllFiles(t *testing.T) {
 }
 
 func TestDecodeEach(t *testing.T) {
-	testYAML := filepath.Join("testdata", "example-multidoc-1.yaml")
-	f, err := os.Open(testYAML)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer f.Close()
-	count := 0
-	err = decoder.DecodeEach(context.TODO(), f, func(ctx context.Context, obj k8s.Object) error {
-		count++
-		switch cfg := obj.(type) {
-		case *v1.ConfigMap:
-			if _, ok := cfg.Data["foo"]; !ok {
-				t.Fatalf("expected key 'foo' in ConfigMap.Data, got: %v", cfg.Data)
+	for _, file := range []string{"example-multidoc-1.yaml", "example-multidoc-emptyitemcomment.yaml"} {
+		t.Run(fmt.Sprintf("Testing multi doc with %s", file), func(t *testing.T) {
+			testYAML := filepath.Join("testdata", file)
+			f, err := os.Open(testYAML)
+			if err != nil {
+				t.Fatal(err)
 			}
-		default:
-			t.Fatalf("unexpected type returned not ConfigMap: %T", cfg)
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	} else if count != 2 {
-		t.Fatalf("expected 2 documents, got: %d", count)
+			defer f.Close()
+			count := 0
+			err = decoder.DecodeEach(context.TODO(), f, func(ctx context.Context, obj k8s.Object) error {
+				count++
+				switch cfg := obj.(type) {
+				case *v1.ConfigMap:
+					if _, ok := cfg.Data["foo"]; !ok {
+						t.Fatalf("expected key 'foo' in ConfigMap.Data, got: %v", cfg.Data)
+					}
+				default:
+					t.Fatalf("unexpected type returned not ConfigMap: %T", cfg)
+				}
+				return nil
+			})
+			if err != nil {
+				t.Fatal(err)
+			} else if count != 2 {
+				t.Fatalf("expected 2 documents, got: %d", count)
+			}
+		})
 	}
 }
 
 func TestDecodeAll(t *testing.T) {
-	testYAML := filepath.Join("testdata", "example-multidoc-1.yaml")
-	f, err := os.Open(testYAML)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer f.Close()
+	for _, file := range []string{"example-multidoc-1.yaml", "example-multidoc-emptyitemcomment.yaml"} {
+		t.Run(fmt.Sprintf("Testing multi doc with %s", file), func(t *testing.T) {
+			testYAML := filepath.Join("testdata", file)
+			f, err := os.Open(testYAML)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer f.Close()
 
-	if objects, err := decoder.DecodeAll(context.TODO(), f); err != nil {
-		t.Fatal(err)
-	} else if expected, got := 2, len(objects); got != expected {
-		t.Fatalf("expected 2 documents, got: %d", got)
+			if objects, err := decoder.DecodeAll(context.TODO(), f); err != nil {
+				t.Fatal(err)
+			} else if expected, got := 2, len(objects); got != expected {
+				t.Fatalf("expected 2 documents, got: %d", got)
+			}
+		})
 	}
 }
 
