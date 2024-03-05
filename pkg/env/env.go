@@ -460,17 +460,27 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, featName string
 			if assessName == "" {
 				assessName = fmt.Sprintf("Assessment-%d", i+1)
 			}
+			// shouldFailNow catches whether t.FailNow() is called in the assessment.
+			// If it is, we won't proceed with the next assessment.
+			var shouldFailNow bool
 			newT.Run(assessName, func(internalT *testing.T) {
 				skipped, message := e.requireAssessmentProcessing(assess, i+1)
 				if skipped {
 					internalT.Skipf(message)
 				}
+				// Set shouldFailNow to true before actually running the assessment, because if the assessment
+				// calls t.FailNow(), the function will be abruptly stopped in the middle of `e.executeSteps()`.
+				shouldFailNow = true
 				ctx = e.executeSteps(ctx, internalT, []types.Step{assess})
+				// If we reach this point, it means the assessment did not call t.FailNow().
+				shouldFailNow = false
 			})
-			// Check if the Test assessment under question performed a `t.Fail()` or `t.Failed()` invocation.
-			// We need to track that and stop the next set of assessment in the feature under test from getting
-			// executed
-			if e.cfg.FailFast() && newT.Failed() {
+			// Check if the Test assessment under question performed either 2 things:
+			// - a t.FailNow() invocation
+			// - a `t.Fail()` or `t.Failed()` invocation
+			// In one of those cases, we need to track that and stop the next set of assessment in the feature
+			// under test from getting executed.
+			if shouldFailNow || (e.cfg.FailFast() && newT.Failed()) {
 				failed = true
 				break
 			}
