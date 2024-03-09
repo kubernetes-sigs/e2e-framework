@@ -19,7 +19,7 @@ package features
 import (
 	"regexp"
 
-	"sigs.k8s.io/e2e-framework/pkg/internal/types"
+	"sigs.k8s.io/e2e-framework/pkg/types"
 )
 
 type (

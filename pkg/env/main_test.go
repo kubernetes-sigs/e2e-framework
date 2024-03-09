@@ -24,7 +24,7 @@ import (
 	log "k8s.io/klog/v2"
 
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
-	"sigs.k8s.io/e2e-framework/pkg/internal/types"
+	"sigs.k8s.io/e2e-framework/pkg/types"
 )
 
 var envForTesting types.Environment

@@ -19,7 +19,7 @@ package features
 import (
 	"fmt"
 
-	"sigs.k8s.io/e2e-framework/pkg/internal/types"
+	"sigs.k8s.io/e2e-framework/pkg/types"
 )
 
 // FeatureBuilder represents is a type to define a
