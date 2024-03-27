@@ -17,6 +17,7 @@ limitations under the License.
 package utils
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/vladimirvivien/gexe"
@@ -75,10 +76,24 @@ func FindOrInstallGoBasedProvider(pPath, provider, module, version string) (stri
 	return "", fmt.Errorf("%s not available even after installation", provider)
 }
 
+// RunCommand run command and returns an *exec.Proc with information about the executed process.
 func RunCommand(command string) *exec.Proc {
 	return commandRunner.RunProc(command)
 }
 
+// RunCommandWithSeperatedOutput run command and returns the result as stdout, stderr and err.
+func RunCommandWithSeperatedOutput(command string) (stdout, stderr string, err error) {
+	var sout, serr bytes.Buffer
+
+	p := commandRunner.NewProc(command)
+	p.SetStdout(&sout)
+	p.SetStderr(&serr)
+	result := p.Run()
+
+	return sout.String(), serr.String(), result.Err()
+}
+
+// FetchCommandOutput run command and returns the combined stderr and stdout output.
 func FetchCommandOutput(command string) string {
 	return commandRunner.Run(command)
 }
