@@ -19,7 +19,9 @@ package envconf
 import (
 	"flag"
 	"os"
+	"runtime"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -101,4 +103,24 @@ func TestRandomName(t *testing.T) {
 			t.Errorf("random name %q should contain a dash when prefix provided", out)
 		}
 	})
+}
+
+func TestClientIsGorountineSafe(t *testing.T) {
+	t.Parallel()
+
+	cfg := New()
+	wg := sync.WaitGroup{}
+	count := 10000
+	wgCount := runtime.NumCPU()
+	wg.Add(wgCount)
+
+	for i := 0; i < wgCount; i++ {
+		go func() {
+			defer wg.Done()
+			for i := 0; i < count; i++ {
+				_ = cfg.Client()
+			}
+		}()
+	}
+	wg.Wait()
 }
