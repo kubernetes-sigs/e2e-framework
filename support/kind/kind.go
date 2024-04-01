@@ -150,9 +150,6 @@ func (k *Cluster) CreateWithConfig(ctx context.Context, kindConfigFile string) (
 	if kindConfigFile != "" {
 		args = append(args, "--config", kindConfigFile)
 	}
-	if k.image != "" {
-		args = append(args, "--image", k.image)
-	}
 	return k.Create(ctx, args...)
 }
 
@@ -165,6 +162,10 @@ func (k *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 	if _, ok := k.clusterExists(k.name); ok {
 		log.V(4).Info("Skipping Kind Cluster.Create: cluster already created: ", k.name)
 		return k.getKubeconfig()
+	}
+
+	if k.image != "" {
+		args = append(args, "--image", k.image)
 	}
 
 	command := fmt.Sprintf(`%s create cluster --name %s`, k.path, k.name)
