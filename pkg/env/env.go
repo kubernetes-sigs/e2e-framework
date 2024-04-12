@@ -117,15 +117,18 @@ func newTestEnvWithParallel() *testEnv {
 	}
 }
 
+type ctxName string
+
 // newChildTestEnv returns a child testEnv based on the one passed as an argument.
 // The child env inherits the context and actions from the parent and
 // creates a deep copy of the config so that it can be mutated without
 // affecting the parent's.
 func newChildTestEnv(e *testEnv) *testEnv {
+	childCtx := context.WithValue(e.ctx, ctxName("parent"), fmt.Sprintf("%s", e.ctx))
 	return &testEnv{
-		ctx:     e.ctx,
+		ctx:     childCtx,
 		cfg:     e.deepCopyConfig(),
-		actions: e.actions,
+		actions: append([]action{}, e.actions...),
 	}
 }
 
