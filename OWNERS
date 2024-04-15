@@ -1,21 +1,21 @@
 # See the OWNERS docs at https://go.k8s.io/owners
 
 approvers:
-- spiffxp
-- vladimirvivien
-- ShwethaKumbla
+- cpanato
 - harshanarayana
+- ShwethaKumbla
+- vladimirvivien
 reviewers:
 - cpanato
-- spiffxp
-- vladimirvivien
-- ShwethaKumbla
 - harshanarayana
+- ShwethaKumbla
+- vladimirvivien
 
 emeritus_approvers:
+- alejandrox1
 - andrewsykim
 - BenTheElder
-- alejandrox1
+- spiffxp
 
 labels:
 - sig/testing
