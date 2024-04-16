@@ -597,8 +597,9 @@ func (e *testEnv) deepCopyConfig() *envconf.Config {
 	configCopy := *e.cfg
 
 	// Manually setting fields that are struct types
-	if e.cfg.KubeconfigFile() != "" { // No kubeconfig means than no client could have been created
-		clientCopy, _ := klient.New(e.cfg.Client().RESTConfig())
+	if client := e.cfg.GetClient(); client != nil {
+		// Need to recreate the underlying client because client.Resource is not thread safe
+		clientCopy, _ := klient.New(client.RESTConfig())
 		configCopy.WithClient(clientCopy)
 	}
 	if e.cfg.AssessmentRegex() != nil {

@@ -107,6 +107,11 @@ func (c *Config) WithClient(client klient.Client) *Config {
 	return c
 }
 
+// GetClient returns the client for the environment
+func (c *Config) GetClient() klient.Client {
+	return c.client
+}
+
 // NewClient is a constructor function that returns a previously
 // created klient.Client or create a new one based on configuration
 // previously set. Will return an error if unable to do so.
