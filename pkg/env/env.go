@@ -381,7 +381,8 @@ func (e *testEnv) Run(m *testing.M) (exitCode int) {
 	for _, setup := range setups {
 		// context passed down to each setup
 		if ctx, err = setup.run(ctx, e.cfg); err != nil {
-			klog.Fatalf("%s failure: %s", setup.role, err)
+			klog.Errorf("%s failure: %s", setup.role, err)
+			break
 		}
 	}
 	e.ctx = ctx
