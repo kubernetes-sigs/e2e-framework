@@ -131,12 +131,11 @@ func (c *Config) NewClient() (klient.Client, error) {
 // are confident in the configuration or call NewClient() to ensure its
 // safe creation.
 func (c *Config) Client() klient.Client {
-	client, err := klient.NewWithKubeConfigFile(c.kubeconfig)
+	client, err := c.NewClient()
 	if err != nil {
-		panic(fmt.Errorf("envconfig: client failed: %w", err).Error())
+		panic(err)
 	}
-	c.client = client
-	return c.client
+	return client
 }
 
 // WithNamespace updates the environment namespace value
