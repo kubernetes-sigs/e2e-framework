@@ -599,7 +599,11 @@ func (e *testEnv) deepCopyConfig() *envconf.Config {
 	// Manually setting fields that are struct types
 	if client := e.cfg.GetClient(); client != nil {
 		// Need to recreate the underlying client because client.Resource is not thread safe
-		clientCopy, _ := klient.New(client.RESTConfig())
+		// Panic on error because this should never happen since the client was built once already
+		clientCopy, err := klient.New(client.RESTConfig())
+		if err != nil {
+			panic(err)
+		}
 		configCopy.WithClient(clientCopy)
 	}
 	if e.cfg.AssessmentRegex() != nil {

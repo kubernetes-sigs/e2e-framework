@@ -733,7 +733,6 @@ func TestTestEnv_TestInParallel(t *testing.T) {
 var envTForChildCfgParallelTesting = NewWithConfig(envconf.New().WithParallelTestEnabled().WithNamespace("child-cfg"))
 
 func TestTestEnv_ChildCfgInParallel(t *testing.T) {
-
 	envTForChildCfgParallelTesting.BeforeEachTest(func(ctx context.Context, config *envconf.Config, t *testing.T) (context.Context, error) {
 		t.Logf("Running before each test for test %s", t.Name())
 		t.Parallel()
