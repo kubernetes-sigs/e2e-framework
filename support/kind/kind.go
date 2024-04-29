@@ -110,17 +110,14 @@ func (k *Cluster) WithOpts(opts ...support.ClusterOpts) support.E2EClusterProvid
 func (k *Cluster) getKubeconfig() (string, error) {
 	kubecfg := fmt.Sprintf("%s-kubecfg", k.name)
 
-	p := utils.RunCommand(fmt.Sprintf(`%s get kubeconfig --name %s`, k.path, k.name))
-	if p.Err() != nil {
-		return "", fmt.Errorf("kind get kubeconfig: %w", p.Err())
+	var stdout, stderr bytes.Buffer
+	err := utils.RunCommandWithSeperatedOutput(fmt.Sprintf(`%s get kubeconfig --name %s`, k.path, k.name), &stdout, &stderr)
+	if err != nil {
+		return "", fmt.Errorf("kind get kubeconfig: stderr: %s: %w", stderr.String(), err)
 	}
+	log.V(4).Info("kind get kubeconfig stderr \n", stderr.String())
 
-	var stdout bytes.Buffer
-	if _, err := stdout.ReadFrom(p.Out()); err != nil {
-		return "", fmt.Errorf("kind kubeconfig stdout bytes: %w", err)
-	}
-
-	file, err := os.CreateTemp("", fmt.Sprintf("kind-cluser-%s", kubecfg))
+	file, err := os.CreateTemp("", fmt.Sprintf("kind-cluster-%s", kubecfg))
 	if err != nil {
 		return "", fmt.Errorf("kind kubeconfig file: %w", err)
 	}
@@ -128,7 +125,7 @@ func (k *Cluster) getKubeconfig() (string, error) {
 
 	k.kubecfgFile = file.Name()
 
-	if n, err := io.Copy(file, &stdout); n == 0 || err != nil {
+	if n, err := io.WriteString(file, stdout.String()); n == 0 || err != nil {
 		return "", fmt.Errorf("kind kubecfg file: bytes copied: %d: %w]", n, err)
 	}
 
