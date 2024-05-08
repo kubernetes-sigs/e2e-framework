@@ -116,13 +116,16 @@ func (c *Config) GetClient() klient.Client {
 // created klient.Client or create a new one based on configuration
 // previously set. Will return an error if unable to do so.
 func (c *Config) NewClient() (klient.Client, error) {
+	if c.client != nil {
+		return c.client, nil
+	}
+
 	client, err := klient.NewWithKubeConfigFile(c.kubeconfig)
 	if err != nil {
-		return nil, fmt.Errorf("envconfig: client failed: %w", err)
+		return nil, fmt.Errorf("client failed: %w", err)
 	}
-	c.client = client
 
-	return c.client, nil
+	return client, nil
 }
 
 // Client is a constructor function that returns a previously
@@ -131,9 +134,13 @@ func (c *Config) NewClient() (klient.Client, error) {
 // are confident in the configuration or call NewClient() to ensure its
 // safe creation.
 func (c *Config) Client() klient.Client {
-	client, err := c.NewClient()
+	if c.client != nil {
+		return c.client
+	}
+
+	client, err := klient.NewWithKubeConfigFile(c.kubeconfig)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("client failed: %w", err).Error())
 	}
 	return client
 }
