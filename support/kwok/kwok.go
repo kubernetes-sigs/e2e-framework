@@ -129,7 +129,11 @@ func (k *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 	}
 	if _, ok := k.clusterExists(k.name); ok {
 		klog.V(4).Info("Skipping Kwok Cluster creation. Cluster already created ", k.name)
-		return k.getKubeconfig()
+		kConfig, err := k.getKubeconfig()
+		if err != nil {
+			return "", err
+		}
+		return kConfig, k.initKubernetesAccessClients()
 	}
 
 	command := fmt.Sprintf(`%s create cluster --name %s --wait %s`, k.path, k.name, k.waitDuration.String())

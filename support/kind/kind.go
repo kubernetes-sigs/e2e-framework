@@ -158,7 +158,11 @@ func (k *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 
 	if _, ok := k.clusterExists(k.name); ok {
 		log.V(4).Info("Skipping Kind Cluster.Create: cluster already created: ", k.name)
-		return k.getKubeconfig()
+		kConfig, err := k.getKubeconfig()
+		if err != nil {
+			return "", err
+		}
+		return kConfig, k.initKubernetesAccessClients()
 	}
 
 	if k.image != "" {
