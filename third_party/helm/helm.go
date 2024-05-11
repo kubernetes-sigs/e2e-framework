@@ -260,7 +260,7 @@ func (m *Manager) run(opts *Opts) (err error) {
 
 // WithPath is used to provide a custom path where the `helm` executable command
 // can be found. This is useful in case if your binary is in a non standard location
-// and you want to framework to use that instead of retunring an error.
+// and you want to framework to use that instead of returning an error.
 func (m *Manager) WithPath(path string) *Manager {
 	m.path = path
 	return m
