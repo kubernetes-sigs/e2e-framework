@@ -1,14 +1,8 @@
 ---
 run:
   concurrency: 6
-  deadline: 5m
-  skip-dirs-use-default: false
-  skip-dirs:
-    - (^|/)vendor($|/)
-    - (^|/)testdata($|/)
-    - (^|/)Godeps($|/)
-    - (^|/)builtin($|/)
-    - .*.gvm/.*  # This is enabled to avoid linting the gvm install directory
+  timeout: 10m
+
 issues:
   exclude-rules:
     # counterfeiter fakes are usually named 'fake_<something>.go'
@@ -26,6 +20,13 @@ issues:
         - goconst
         - errcheck
         - stylecheck  #Since Example packages have _ in them this will break a bunch of tests unless we rename all of those packages
+  exclude-dirs-use-default: false
+  exclude-dirs:
+    - (^|/)vendor($|/)
+    - (^|/)testdata($|/)
+    - (^|/)Godeps($|/)
+    - (^|/)builtin($|/)
+    - .*.gvm/.*  # This is enabled to avoid linting the gvm install directory
 linters:
   disable-all: true
   enable:
@@ -79,22 +80,8 @@ linters-settings:
   gocritic:
     enabled-checks:
       # Diagnostic
-      - appendAssign
-      - argOrder
-      - badCond
-      - caseOrder
-      - codegenComment
       - commentedOutCode
-      - deprecatedComment
-      - dupArg
-      - dupBranchBody
-      - dupCase
-      - dupSubExpr
-      - exitAfterDefer
-      - flagDeref
-      - flagName
       - nilValReturn
-      - offBy1
       - sloppyReassign
       - weakCond
       - octalLiteral
@@ -108,31 +95,16 @@ linters-settings:
       - rangeValCopy
 
       # Style
-      - assignOp
       - boolExprSimplify
-      - captLocal
-      - commentFormatting
       - commentedOutImport
-      - defaultCaseOrder
       - docStub
-      - elseif
       - emptyFallthrough
       - emptyStringTest
       - hexLiteral
       - methodExprCall
-      - regexpMust
-      - singleCaseSwitch
-      - sloppyLen
       - stringXbytes
-      - switchTrue
       - typeAssertChain
-      - typeSwitchVar
-      - underef
       - unlabelStmt
-      - unlambda
-      - unslice
-      - valSwap
-      - wrapperFunc
       - yodaStyleExpr
 
       # Opinionated
