@@ -74,7 +74,7 @@ func DecodeEachFile(ctx context.Context, fsys fs.FS, pattern string, handlerFn H
 		}
 		defer f.Close()
 		if err := DecodeEach(ctx, f, handlerFn, options...); err != nil {
-			return err
+			return fmt.Errorf("failed to decode file %q: %w", file, err)
 		}
 		if err := f.Close(); err != nil {
 			return err
