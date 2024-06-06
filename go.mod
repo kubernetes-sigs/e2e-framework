@@ -9,7 +9,7 @@ require (
 	k8s.io/client-go v0.30.1
 	k8s.io/component-base v0.30.1
 	k8s.io/klog/v2 v2.120.1
-	sigs.k8s.io/controller-runtime v0.18.3
+	sigs.k8s.io/controller-runtime v0.18.4
 )
 
 require (
