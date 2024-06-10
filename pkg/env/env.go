@@ -208,7 +208,8 @@ func (e *testEnv) processTestActions(ctx context.Context, t *testing.T, actions 
 func (e *testEnv) processTestFeature(ctx context.Context, t *testing.T, featureName string, feature types.Feature) context.Context {
 	skipped, message := e.requireFeatureProcessing(feature)
 	if skipped {
-		t.Skipf(message)
+		t.Log(message)
+		return ctx
 	}
 	// execute beforeEachFeature actions
 	ctx = e.processFeatureActions(ctx, t, feature, e.getBeforeFeatureActions())
@@ -475,7 +476,8 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, featName string
 			newT.Run(assessName, func(internalT *testing.T) {
 				skipped, message := e.requireAssessmentProcessing(assess, i+1)
 				if skipped {
-					internalT.Skipf(message)
+					internalT.Log(message)
+					return
 				}
 				// Set shouldFailNow to true before actually running the assessment, because if the assessment
 				// calls t.FailNow(), the function will be abruptly stopped in the middle of `e.executeSteps()`.
