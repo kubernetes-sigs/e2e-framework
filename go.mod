@@ -3,7 +3,7 @@ module sigs.k8s.io/e2e-framework
 go 1.22.3
 
 require (
-	github.com/vladimirvivien/gexe v0.2.0
+	github.com/vladimirvivien/gexe v0.3.0
 	k8s.io/api v0.30.1
 	k8s.io/apimachinery v0.30.1
 	k8s.io/client-go v0.30.1
