@@ -324,10 +324,12 @@ func TestEnv_Test(t *testing.T) {
 			name: "context value propagation with with multiple features, before, during, and after test",
 			ctx:  context.TODO(),
 			expected: []string{
-				"before-each-test",
+				"before-each-test-1",
+				"before-each-test-2",
 				"test-feat-1",
 				"test-feat-2",
-				"after-each-test",
+				"after-each-test-1",
+				"after-each-test-2",
 			},
 			setup: func(ctx context.Context, t *testing.T) []string {
 				env, err := NewWithContext(context.WithValue(ctx, &ctxTestKeyString{}, []string{}), envconf.New())
@@ -340,7 +342,16 @@ func TestEnv_Test(t *testing.T) {
 					if !ok {
 						t.Fatal("context value was not []string")
 					}
-					val = append(val, "before-each-test")
+					val = append(val, "before-each-test-1")
+					return context.WithValue(ctx, &ctxTestKeyString{}, val), nil
+				})
+				env.BeforeEachTest(func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
+					// update before test
+					val, ok := ctx.Value(&ctxTestKeyString{}).([]string)
+					if !ok {
+						t.Fatal("context value was not []string")
+					}
+					val = append(val, "before-each-test-2")
 					return context.WithValue(ctx, &ctxTestKeyString{}, val), nil
 				})
 				env.AfterEachTest(func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
@@ -349,7 +360,16 @@ func TestEnv_Test(t *testing.T) {
 					if !ok {
 						t.Fatal("context value was not []string")
 					}
-					val = append(val, "after-each-test")
+					val = append(val, "after-each-test-1")
+					return context.WithValue(ctx, &ctxTestKeyString{}, val), nil
+				})
+				env.AfterEachTest(func(ctx context.Context, _ *envconf.Config, t *testing.T) (context.Context, error) {
+					// update after the test
+					val, ok := ctx.Value(&ctxTestKeyString{}).([]string)
+					if !ok {
+						t.Fatal("context value was not []string")
+					}
+					val = append(val, "after-each-test-2")
 					return context.WithValue(ctx, &ctxTestKeyString{}, val), nil
 				})
 				f1 := features.New("test-feat").Assess("assess", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {

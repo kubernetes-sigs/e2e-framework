@@ -194,7 +194,7 @@ func (e *testEnv) processTestActions(ctx context.Context, t *testing.T, actions 
 	var err error
 	out := ctx
 	for _, action := range actions {
-		out, err = action.runWithT(ctx, e.cfg, t)
+		out, err = action.runWithT(out, e.cfg, t)
 		if err != nil {
 			t.Fatalf("%s failure: %s", action.role, err)
 		}
