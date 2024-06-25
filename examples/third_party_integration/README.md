@@ -5,3 +5,4 @@ This section of the repository contains the example of how the third party tooli
 
 1. [Helm](./helm)
 2. [Flux](./flux)
+3. [Ko](./ko)
