@@ -382,18 +382,13 @@ func (e *testEnv) Run(m *testing.M) (exitCode int) {
 		// context passed down to each setup
 		if ctx, err = setup.run(ctx, e.cfg); err != nil {
 			klog.Errorf("%s failure: %s", setup.role, err)
-			exitCode = 1
-			break
+			return 1
 		}
 	}
 	e.ctx = ctx
 
-	// Execute the test suite (if the setup was successful)
-	if err == nil {
-		exitCode = m.Run()
-	}
-
-	return exitCode
+	// Execute the test suite
+	return m.Run()
 }
 
 func (e *testEnv) getActionsByRole(r actionRole) []action {
