@@ -187,7 +187,7 @@ func Parse() (*EnvFlags, error) {
 	return ParseArgs(os.Args[1:])
 }
 
-// Context returns an optional kubeconfig context to use
+// KubeContext returns an optional kubeconfig context to use
 func (f *EnvFlags) KubeContext() string {
 	return f.kubeContext
 }

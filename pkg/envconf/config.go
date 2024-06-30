@@ -282,7 +282,7 @@ func (c *Config) WithKubeContext(kubeContext string) *Config {
 	return c
 }
 
-// WithKubeContext is used to get the kubeconfig context
+// KubeContext is used to get the kubeconfig context
 func (c *Config) KubeContext() string {
 	return c.kubeContext
 }
