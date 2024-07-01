@@ -29,6 +29,7 @@ import (
 
 	klog "k8s.io/klog/v2"
 
+	"sigs.k8s.io/e2e-framework/klient"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/featuregate"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -113,6 +114,21 @@ func newTestEnvWithParallel() *testEnv {
 	return &testEnv{
 		ctx: context.Background(),
 		cfg: envconf.New().WithParallelTestEnabled(),
+	}
+}
+
+type ctxName string
+
+// newChildTestEnv returns a child testEnv based on the one passed as an argument.
+// The child env inherits the context and actions from the parent and
+// creates a deep copy of the config so that it can be mutated without
+// affecting the parent's.
+func newChildTestEnv(e *testEnv) *testEnv {
+	childCtx := context.WithValue(e.ctx, ctxName("parent"), fmt.Sprintf("%s", e.ctx))
+	return &testEnv{
+		ctx:     childCtx,
+		cfg:     e.deepCopyConfig(),
+		actions: append([]action{}, e.actions...),
 	}
 }
 
@@ -241,7 +257,8 @@ func (e *testEnv) processFeatureActions(ctx context.Context, t *testing.T, featu
 // In case if the parallel run of test features are enabled, this function will invoke the processTestFeature
 // as a go-routine to get them to run in parallel
 func (e *testEnv) processTests(ctx context.Context, t *testing.T, enableParallelRun bool, testFeatures ...types.Feature) context.Context {
-	if e.cfg.DryRunMode() {
+	dedicatedTestEnv := newChildTestEnv(e)
+	if dedicatedTestEnv.cfg.DryRunMode() {
 		klog.V(2).Info("e2e-framework is being run in dry-run mode. This will skip all the before/after step functions configured around your test assessments and features")
 	}
 	if ctx == nil {
@@ -251,19 +268,20 @@ func (e *testEnv) processTests(ctx context.Context, t *testing.T, enableParallel
 		t.Log("No test testFeatures provided, skipping test")
 		return ctx
 	}
-	beforeTestActions := e.getBeforeTestActions()
-	afterTestActions := e.getAfterTestActions()
+	beforeTestActions := dedicatedTestEnv.getBeforeTestActions()
+	afterTestActions := dedicatedTestEnv.getAfterTestActions()
 
-	runInParallel := e.cfg.ParallelTestEnabled() && enableParallelRun
+	runInParallel := dedicatedTestEnv.cfg.ParallelTestEnabled() && enableParallelRun
 
 	if runInParallel {
 		klog.V(4).Info("Running test features in parallel")
 	}
 
-	ctx = e.processTestActions(ctx, t, beforeTestActions)
+	ctx = dedicatedTestEnv.processTestActions(ctx, t, beforeTestActions)
 
 	var wg sync.WaitGroup
 	for i, feature := range testFeatures {
+		featureTestEnv := newChildTestEnv(dedicatedTestEnv)
 		featureCopy := feature
 		featName := feature.Name()
 		if featName == "" {
@@ -273,13 +291,13 @@ func (e *testEnv) processTests(ctx context.Context, t *testing.T, enableParallel
 			wg.Add(1)
 			go func(ctx context.Context, w *sync.WaitGroup, featName string, f types.Feature) {
 				defer w.Done()
-				_ = e.processTestFeature(ctx, t, featName, f)
+				_ = featureTestEnv.processTestFeature(ctx, t, featName, f)
 			}(ctx, &wg, featName, featureCopy)
 		} else {
-			ctx = e.processTestFeature(ctx, t, featName, featureCopy)
+			ctx = featureTestEnv.processTestFeature(ctx, t, featName, featureCopy)
 			// In case if the feature under test has failed, skip reset of the features
 			// that are part of the same test
-			if e.cfg.FailFast() && t.Failed() {
+			if featureTestEnv.cfg.FailFast() && t.Failed() {
 				break
 			}
 		}
@@ -287,7 +305,7 @@ func (e *testEnv) processTests(ctx context.Context, t *testing.T, enableParallel
 	if runInParallel {
 		wg.Wait()
 	}
-	return e.processTestActions(ctx, t, afterTestActions)
+	return dedicatedTestEnv.processTestActions(ctx, t, afterTestActions)
 }
 
 // TestInParallel executes a series a feature tests from within a
@@ -583,7 +601,54 @@ func (e *testEnv) requireProcessing(kind, testName string, requiredRegexp, skipR
 	return skip, message
 }
 
-// deepCopyFeature just copies the values from the Feature but creates a deep
+// deepCopyConfig just copies the values from the Config to create a deep
+// copy to avoid mutation when we just want an informational copy.
+func (e *testEnv) deepCopyConfig() *envconf.Config {
+	// Basic copy which takes care of all the basic types (str, bool...)
+	configCopy := *e.cfg
+
+	// Manually setting fields that are struct types
+	if client := e.cfg.GetClient(); client != nil {
+		// Need to recreate the underlying client because client.Resource is not thread safe
+		// Panic on error because this should never happen since the client was built once already
+		clientCopy, err := klient.New(client.RESTConfig())
+		if err != nil {
+			panic(err)
+		}
+		configCopy.WithClient(clientCopy)
+	}
+	if e.cfg.AssessmentRegex() != nil {
+		configCopy.WithAssessmentRegex(e.cfg.AssessmentRegex().String())
+	}
+	if e.cfg.FeatureRegex() != nil {
+		configCopy.WithFeatureRegex(e.cfg.FeatureRegex().String())
+	}
+	if e.cfg.SkipAssessmentRegex() != nil {
+		configCopy.WithSkipAssessmentRegex(e.cfg.SkipAssessmentRegex().String())
+	}
+	if e.cfg.SkipFeatureRegex() != nil {
+		configCopy.WithSkipFeatureRegex(e.cfg.SkipFeatureRegex().String())
+	}
+
+	labels := make(map[string][]string, len(e.cfg.Labels()))
+	for k, vals := range e.cfg.Labels() {
+		copyVals := make([]string, len(vals))
+		copyVals = append(copyVals, vals...)
+		labels[k] = copyVals
+	}
+	configCopy.WithLabels(labels)
+
+	skipLabels := make(map[string][]string, len(e.cfg.SkipLabels()))
+	for k, vals := range e.cfg.SkipLabels() {
+		copyVals := make([]string, len(vals))
+		copyVals = append(copyVals, vals...)
+		skipLabels[k] = copyVals
+	}
+	configCopy.WithSkipLabels(e.cfg.SkipLabels())
+	return &configCopy
+}
+
+// deepCopyFeature just copies the values from the Feature to create a deep
 // copy to avoid mutation when we just want an informational copy.
 func deepCopyFeature(f types.Feature) types.Feature {
 	fcopy := features.New(f.Name())

@@ -107,6 +107,11 @@ func (c *Config) WithClient(client klient.Client) *Config {
 	return c
 }
 
+// GetClient returns the client for the environment
+func (c *Config) GetClient() klient.Client {
+	return c.client
+}
+
 // NewClient is a constructor function that returns a previously
 // created klient.Client or create a new one based on configuration
 // previously set. Will return an error if unable to do so.
@@ -117,11 +122,10 @@ func (c *Config) NewClient() (klient.Client, error) {
 
 	client, err := klient.NewWithKubeConfigFile(c.kubeconfig)
 	if err != nil {
-		return nil, fmt.Errorf("envconfig: client failed: %w", err)
+		return nil, fmt.Errorf("client failed: %w", err)
 	}
-	c.client = client
 
-	return c.client, nil
+	return client, nil
 }
 
 // Client is a constructor function that returns a previously
@@ -136,10 +140,9 @@ func (c *Config) Client() klient.Client {
 
 	client, err := klient.NewWithKubeConfigFile(c.kubeconfig)
 	if err != nil {
-		panic(fmt.Errorf("envconfig: client failed: %w", err).Error())
+		panic(fmt.Errorf("client failed: %w", err).Error())
 	}
-	c.client = client
-	return c.client
+	return client
 }
 
 // WithNamespace updates the environment namespace value

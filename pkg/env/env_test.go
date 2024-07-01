@@ -746,6 +746,89 @@ func TestTestEnv_TestInParallel(t *testing.T) {
 	}
 }
 
+// Create a dedicated env that can be used to test the parallel execution of tests and features to make sure
+// they don't share the same config object but they inherit the one from the parent env.
+// Meaning that each test inherit the global testEnv and each feature inherit the testEnv of the test.
+// This env is used for the 3 tests below.
+var envTForChildCfgParallelTesting = NewWithConfig(envconf.New().WithParallelTestEnabled().WithNamespace("child-cfg"))
+
+func TestTestEnv_ChildCfgInParallel(t *testing.T) {
+	envTForChildCfgParallelTesting.BeforeEachTest(func(ctx context.Context, config *envconf.Config, t *testing.T) (context.Context, error) {
+		t.Logf("Running before each test for test %s", t.Name())
+		t.Parallel()
+
+		// Check that namespace was inherited from the global config
+		if config.Namespace() != "child-cfg" {
+			t.Errorf("Expected namespace to be %s but got %s", t.Name(), config.Namespace())
+		}
+		config.WithNamespace(t.Name())
+		return ctx, nil
+	})
+
+	envTForChildCfgParallelTesting.AfterEachTest(func(ctx context.Context, config *envconf.Config, t *testing.T) (context.Context, error) {
+		t.Logf("Running after each test for test %s", t.Name())
+		if config.Namespace() != t.Name() {
+			t.Errorf("Expected namespace to be %s but got %s", t.Name(), config.Namespace())
+		}
+		return ctx, nil
+	})
+
+	envTForChildCfgParallelTesting.BeforeEachFeature(func(ctx context.Context, config *envconf.Config, t *testing.T, feature types.Feature) (context.Context, error) {
+		t.Logf("Running before each feature for feature %s", feature.Name())
+
+		// Check that namespace was inherited from the test
+		if config.Namespace() != t.Name() {
+			t.Errorf("Namespace in feature was not inherited from the test. Expected %s but got %s", t.Name(), config.Namespace())
+		}
+		config.WithNamespace(feature.Name())
+		return ctx, nil
+	})
+
+	envTForChildCfgParallelTesting.AfterEachFeature(func(ctx context.Context, config *envconf.Config, t *testing.T, feature types.Feature) (context.Context, error) {
+		t.Logf("Running after each feature for feature %s", feature.Name())
+		if config.Namespace() != feature.Name() {
+			t.Errorf("Expected namespace in feature to be %s but got %s", feature.Name(), config.Namespace())
+		}
+		return ctx, nil
+	})
+}
+
+func TestTestEnv_ChildCfgInParallelOne(t *testing.T) {
+	// Here, each feature sleeps for a different amount of time. This is done to ensure that both features can
+	// run their BeforeEachFeature that modify the config.Namespace BEFORE they run their AfterEachFeature that
+	// checks the config.Namespace. If the deepcopy did not work, the config.Namespace from 1 feature would be
+	// overwritten by the other feature.
+	f1 := features.New("test-parallel-feature1").
+		Assess("sleep more", func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
+			t.Log("sleeping more to be sure feature 2 finishes first")
+			time.Sleep(5 * time.Second)
+			return ctx
+		})
+
+	f2 := features.New("test-parallel-feature2").
+		Assess("sleep less", func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
+			t.Log("sleeping less to be sure feature 1 starts")
+			time.Sleep(1 * time.Second)
+			return ctx
+		})
+
+	_ = envTForChildCfgParallelTesting.TestInParallel(t, f1.Feature(), f2.Feature())
+}
+
+func TestTestEnv_ChildCfgInParallelTwo(t *testing.T) {
+	// Here, the only feature just sleeps a bit to make sure both tests will have run their BeforeEachTest
+	// before either runs their AfterEachTest. If the deepcopy did not work, the config.Namespace from 1 test
+	// would be overwritten by the other test.
+	f1 := features.New("test-parallel-feature1").
+		Assess("sleep less", func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
+			t.Log("sleeping less to be sure test 1 starts")
+			time.Sleep(1 * time.Second)
+			return ctx
+		})
+
+	_ = envTForChildCfgParallelTesting.Test(t, f1.Feature())
+}
+
 // TestTParallelMultipleFeaturesInParallel runs multple features in parallel with a dedicated Parallel environment,
 // just to check there are no race conditions with this setting
 func TestTParallelMultipleFeaturesInParallel(t *testing.T) {
