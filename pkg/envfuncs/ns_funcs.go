@@ -38,7 +38,7 @@ func WithLabels(labels map[string]string) CreateNamespaceOpts {
 	}
 }
 
-// WithLabels provides an option to set custom annotations on the namespace.
+// WithAnnotations provides an option to set custom annotations on the namespace.
 func WithAnnotations(annotations map[string]string) CreateNamespaceOpts {
 	return func(client klient.Client, ns *corev1.Namespace) {
 		client.Resources().Annotate(ns, annotations)

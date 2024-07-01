@@ -269,7 +269,7 @@ func (r *Resources) GetScheme() *runtime.Scheme {
 	return r.scheme
 }
 
-// GetClient return the controller-runtime client instance
+// GetControllerRuntimeClient return the controller-runtime client instance
 func (r *Resources) GetControllerRuntimeClient() cr.Client {
 	return r.client
 }
