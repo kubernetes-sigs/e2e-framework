@@ -1,23 +1,24 @@
 # Decoding Resources
 
-This document proposes the design for a set of decoding functions a new package, `klient/decoder`, intended to provide utilities for creating `k8s.Object` types from common sources of input in Go programs: files, strings, or any type that satisfies the [io.Reader](https://pkg.go.dev/io#Reader) interface.  The goal of these decoding functions is to provide an easy way for test developers to interact with Kubernetes objects in their Go tests.
+This document proposes the design for a set of decoding functions a new package, `klient/decoder`, intended to provide utilities for creating `k8s.Object` types from common sources of input in Go programs: files, strings, or any type that satisfies the [io.Reader](https://pkg.go.dev/io#Reader) interface. The goal of these decoding functions is to provide an easy way for test developers to interact with Kubernetes objects in their Go tests.
 
 ## Table of Contents
 
-1. [Motivation](#Motivation)
-2. [Supported object formats](#Supported-object-formats)
-3. [Goals](#Goals)
-4. [Non-Goals](#Non-Goals)
-5. [Design Components](#Design-Components)
-    * [Decoding Options](#Decoding-Options)
-    * [Handlers](#Handlers)
-    * [Decoding a single-document YAML/JSON input](#decoding-a-single-document-yamljson-input)
-    * [Decoding a multi-document YAML/JSON input](#decoding-a-multi-document-yamljson-input)
-        * [Decoding to a known object type](#decoding-without-knowing-the-object-type)
-        * [Decoding without knowing the object type](#decoding-without-knowing-the-object-type)
-6. [Decode Proposal](#Decode-Proposal)
-    * [Pre-defined Decoders](#Pre-defined-Decoders)
-    * [Pre-defined Helpers](#Pre-defined-Helpers)
+- [Decoding Resources](#decoding-resources)
+  - [Table of Contents](#table-of-contents)
+  - [Motivation](#motivation)
+  - [Supported object formats](#supported-object-formats)
+  - [Goals](#goals)
+  - [Non-Goals](#non-goals)
+  - [Design Components](#design-components)
+    - [**Decoding Options**](#decoding-options)
+    - [**Handlers**](#handlers)
+    - [Decoding a single-document YAML/JSON input](#decoding-a-single-document-yamljson-input)
+    - [Decoding a multi-document YAML/JSON input](#decoding-a-multi-document-yamljson-input)
+      - [**Decoding without knowing the object type**](#decoding-without-knowing-the-object-type)
+  - [Decode Proposal](#decode-proposal)
+    - [Pre-defined Decoders](#pre-defined-decoders)
+    - [Pre-defined Helpers](#pre-defined-helpers)
 
 ## Motivation
 
@@ -52,8 +53,8 @@ Finally, to help develop feature tests, it is common to need to have a set of re
 
 ```go
 type DecodeOption struct {
-	DefaultGVK  *schema.GroupVersionKind
-	MutateFuncs []MutateFunc
+    DefaultGVK  *schema.GroupVersionKind
+    MutateFuncs []MutateFunc
 }
 
 type DecodeOption func(*DecodeOption)
@@ -211,7 +212,6 @@ func DecodeEach(ctx context.Context, manifest io.Reader, handlerFn HandlerFunc, 
 
 Usage:
 
-
 ```go
 list := &unstructured.UnstructuredList{}
 err := DecodeEach(context.TODO(), strings.NewReader("..."), func(ctx context.Context, obj ks8.Object) error {
@@ -229,7 +229,6 @@ Usage with pre-defined HandlerFunc:
 ```go
 err := DecodeEach(context.TODO(), strings.NewReader("..."), CreateHandler(klient.Resources(namespace)))
 ```
-
 
 2. Decode all documents.
 
@@ -260,7 +259,7 @@ func Decode(manifest io.Reader, obj k8s.Object, options ...DecodeOption) error
 // Patches are optional and applied after decoding.
 func DecodeAny(manifest io.Reader, options ...DecodeOption) (k8s.Object, error)
 
-// Decode a stream of documents of any Kind using either the innate typing of the scheme or the default kind, group, and version provided. 
+// Decode a stream of documents of any Kind using either the innate typing of the scheme or the default kind, group, and version provided.
 // If handlerFn returns an error, decoding is halted.
 // Patches are optional and applied after decoding and before handlerFn is executed.
 func DecodeEach(ctx context.Context, manifest io.Reader, handlerFn HandlerFunc, options ...DecodeOption) error
@@ -298,6 +297,7 @@ func DecodeEachFile(ctx context.Context, fsys fs.FS, pattern string, handlerFn H
 // Options may be provided to configure the behavior of the decoder.
 func DecodeAllFiles(ctx context.Context, fsys fs.FS, pattern string, options ...DecodeOption) ([]k8s.Object, error)
 ```
+
 ### Pre-defined Helpers
 
 ```go

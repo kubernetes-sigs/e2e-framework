@@ -54,7 +54,7 @@ type Resources struct {
 }
 
 // New instantiates the controller runtime client
-// object. User can get panic for belopw scenarios.
+// object. User can get panic for below scenarios.
 // 1. if user does not provide k8s config
 // 2. if controller runtime client instantiation fails.
 func New(cfg *rest.Config) (*Resources, error) {
