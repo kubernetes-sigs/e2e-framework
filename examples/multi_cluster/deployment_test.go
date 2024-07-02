@@ -37,7 +37,7 @@ import (
 
 var curDir, _ = os.Getwd()
 
-func checkPodStatus(t *testing.T, kubeConfig string, clusterName string) {
+func checkDeploymentStatus(t *testing.T, kubeConfig string, clusterName string) {
 	t.Helper()
 	client, err := klient.NewWithKubeConfigFile(kubeConfig)
 	if err != nil {
@@ -79,7 +79,7 @@ func TestScenarioOne(t *testing.T) {
 			if !ok {
 				t.Fatalf("Failed to extract kind cluster %s from context", clusterNames[0])
 			}
-			checkPodStatus(t, cluster.GetKubeconfig(), clusterNames[0])
+			checkDeploymentStatus(t, cluster.GetKubeconfig(), clusterNames[0])
 			return ctx
 		}).
 		Assess(fmt.Sprintf("Deployment is running successfully - %s", clusterNames[1]), func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
@@ -87,7 +87,7 @@ func TestScenarioOne(t *testing.T) {
 			if !ok {
 				t.Fatalf("Failed to extract kind cluster %s from context", clusterNames[1])
 			}
-			checkPodStatus(t, cluster.GetKubeconfig(), clusterNames[1])
+			checkDeploymentStatus(t, cluster.GetKubeconfig(), clusterNames[1])
 			return ctx
 		}).
 		Feature()
