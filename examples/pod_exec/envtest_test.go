@@ -51,7 +51,7 @@ func TestExecPod(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			return ctx
+			return context.WithValue(ctx, "test-deployment", deployment)
 		}).
 		Assess("check connectivity to wikipedia.org main page", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 			client, err := c.NewClient()
@@ -60,7 +60,7 @@ func TestExecPod(t *testing.T) {
 			}
 
 			pods := &corev1.PodList{}
-			err = client.Resources(c.Namespace()).List(context.TODO(), pods)
+			err = client.Resources(c.Namespace()).List(ctx, pods)
 			if err != nil || pods.Items == nil {
 				t.Error("error while getting pods", err)
 			}
@@ -68,7 +68,7 @@ func TestExecPod(t *testing.T) {
 			podName := pods.Items[0].Name
 			command := []string{"curl", "-I", "https://en.wikipedia.org/wiki/Main_Page"}
 
-			if err := client.Resources().ExecInPod(context.TODO(), c.Namespace(), podName, containerName, command, &stdout, &stderr); err != nil {
+			if err := client.Resources().ExecInPod(ctx, c.Namespace(), podName, containerName, command, &stdout, &stderr); err != nil {
 				t.Log(stderr.String())
 				t.Fatal(err)
 			}
@@ -76,6 +76,13 @@ func TestExecPod(t *testing.T) {
 			httpStatus := strings.Split(stdout.String(), "\n")[0]
 			if !strings.Contains(httpStatus, "200") {
 				t.Fatal("Couldn't connect to en.wikipedia.org")
+			}
+			return ctx
+		}).
+		Teardown(func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
+			dep := ctx.Value("test-deployment").(*appsv1.Deployment)
+			if err := c.Client().Resources().Delete(ctx, dep); err != nil {
+				t.Fatal(err)
 			}
 			return ctx
 		}).Feature()
