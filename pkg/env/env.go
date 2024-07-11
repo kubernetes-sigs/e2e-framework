@@ -207,6 +207,7 @@ func (e *testEnv) panicOnMissingContext() {
 // processTestActions is used to run a series of test action that were configured as
 // BeforeEachTest or AfterEachTest
 func (e *testEnv) processTestActions(ctx context.Context, t *testing.T, actions []action) context.Context {
+	t.Helper()
 	var err error
 	out := ctx
 	for _, action := range actions {
@@ -222,6 +223,7 @@ func (e *testEnv) processTestActions(ctx context.Context, t *testing.T, actions 
 // workflow of orchestrating the feature execution be running the action configured by BeforeEachFeature /
 // AfterEachFeature.
 func (e *testEnv) processTestFeature(ctx context.Context, t *testing.T, featureName string, feature types.Feature) context.Context {
+	t.Helper()
 	skipped, message := e.requireFeatureProcessing(feature)
 	if skipped {
 		t.Skipf(message)
@@ -239,6 +241,7 @@ func (e *testEnv) processTestFeature(ctx context.Context, t *testing.T, featureN
 // processFeatureActions is used to run a series of feature action that were configured as
 // BeforeEachFeature or AfterEachFeature
 func (e *testEnv) processFeatureActions(ctx context.Context, t *testing.T, feature types.Feature, actions []action) context.Context {
+	t.Helper()
 	var err error
 	out := ctx
 	for _, action := range actions {
@@ -257,6 +260,7 @@ func (e *testEnv) processFeatureActions(ctx context.Context, t *testing.T, featu
 // In case if the parallel run of test features are enabled, this function will invoke the processTestFeature
 // as a go-routine to get them to run in parallel
 func (e *testEnv) processTests(ctx context.Context, t *testing.T, enableParallelRun bool, testFeatures ...types.Feature) context.Context {
+	t.Helper()
 	dedicatedTestEnv := newChildTestEnv(e)
 	if dedicatedTestEnv.cfg.DryRunMode() {
 		klog.V(2).Info("e2e-framework is being run in dry-run mode. This will skip all the before/after step functions configured around your test assessments and features")
@@ -327,6 +331,7 @@ func (e *testEnv) processTests(ctx context.Context, t *testing.T, enableParallel
 // are executed in parallel to avoid duplication of action that might happen
 // in BeforeTest and AfterTest actions
 func (e *testEnv) TestInParallel(t *testing.T, testFeatures ...types.Feature) context.Context {
+	t.Helper()
 	return e.processTests(e.ctx, t, true, testFeatures...)
 }
 
@@ -343,6 +348,7 @@ func (e *testEnv) TestInParallel(t *testing.T, testFeatures ...types.Feature) co
 // BeforeTest and AfterTest operations are executed before and after
 // the feature is tested respectively.
 func (e *testEnv) Test(t *testing.T, testFeatures ...types.Feature) context.Context {
+	t.Helper()
 	return e.processTests(e.ctx, t, false, testFeatures...)
 }
 
@@ -455,6 +461,7 @@ func (e *testEnv) getFinishActions() []action {
 }
 
 func (e *testEnv) executeSteps(ctx context.Context, t *testing.T, steps []types.Step) context.Context {
+	t.Helper()
 	if e.cfg.DryRunMode() {
 		return ctx
 	}
@@ -465,8 +472,11 @@ func (e *testEnv) executeSteps(ctx context.Context, t *testing.T, steps []types.
 }
 
 func (e *testEnv) execFeature(ctx context.Context, t *testing.T, featName string, f types.Feature) context.Context {
+	t.Helper()
 	// feature-level subtest
 	t.Run(featName, func(newT *testing.T) {
+		newT.Helper()
+
 		if fDescription, ok := f.(types.DescribableFeature); ok && fDescription.Description() != "" {
 			t.Logf("Processing Feature: %s", fDescription.Description())
 		}
@@ -491,6 +501,7 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, featName string
 			// If it is, we won't proceed with the next assessment.
 			var shouldFailNow bool
 			newT.Run(assessName, func(internalT *testing.T) {
+				internalT.Helper()
 				skipped, message := e.requireAssessmentProcessing(assess, i+1)
 				if skipped {
 					internalT.Skipf(message)
