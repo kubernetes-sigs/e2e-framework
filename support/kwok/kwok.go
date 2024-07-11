@@ -88,14 +88,11 @@ func (k *Cluster) clusterExists(name string) (string, bool) {
 func (k *Cluster) getKubeconfig() (string, error) {
 	kubecfg := fmt.Sprintf("%s-kubecfg", k.name)
 
-	p := utils.RunCommand(fmt.Sprintf(`%s get kubeconfig --name %s`, k.path, k.name))
-	if p.Err() != nil {
-		return "", fmt.Errorf("kwokctl get kubeconfig: %w", p.Err())
-	}
-
-	var stdout bytes.Buffer
-	if _, err := stdout.ReadFrom(p.Out()); err != nil {
-		return "", fmt.Errorf("kwokctl kubeconfig stdout bytes: %w", err)
+	var stdout, stderr bytes.Buffer
+	err := utils.RunCommandWithSeperatedOutput(fmt.Sprintf(`%s get kubeconfig --name %s`,
+		k.path, k.name), &stdout, &stderr)
+	if err != nil {
+		return "", fmt.Errorf("kwokctl get kubeconfig: stderr: %s: %w", stderr.String(), err)
 	}
 
 	file, err := os.CreateTemp("", fmt.Sprintf("kwok-cluster-%s", kubecfg))
@@ -106,7 +103,7 @@ func (k *Cluster) getKubeconfig() (string, error) {
 
 	k.kubecfgFile = file.Name()
 
-	if n, err := io.Copy(file, &stdout); n == 0 || err != nil {
+	if n, err := io.WriteString(file, stdout.String()); n == 0 || err != nil {
 		return "", fmt.Errorf("kwok kubecfg file: bytes copied: %d: %w]", n, err)
 	}
 
