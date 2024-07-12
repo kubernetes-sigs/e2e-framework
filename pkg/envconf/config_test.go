@@ -102,3 +102,15 @@ func TestRandomName(t *testing.T) {
 		}
 	})
 }
+
+func TestRandomGeneratorIsIndeedGeneratingRandom(t *testing.T) {
+	randomValues := make(map[string]int)
+	for attempt := 0; attempt < 10; attempt++ {
+		randomValues[RandomName("test-randomness", 32)]++
+	}
+	for key, val := range randomValues {
+		if val > 1 {
+			t.Errorf("random name %q was generated %d times", key, val)
+		}
+	}
+}

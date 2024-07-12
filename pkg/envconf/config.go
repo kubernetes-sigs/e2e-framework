@@ -17,11 +17,10 @@ limitations under the License.
 package envconf
 
 import (
+	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"math/rand"
 	"regexp"
-	"time"
 
 	log "k8s.io/klog/v2"
 
@@ -303,9 +302,13 @@ func RandomName(prefix string, n int) string {
 	if len(prefix) >= n {
 		return prefix
 	}
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+
 	p := make([]byte, n)
-	r.Read(p)
+	_, err := rand.Read(p)
+	if err != nil {
+		log.ErrorS(err, "failed to generate random name. falling back to prefix directly")
+		return prefix
+	}
 	if prefix == "" {
 		return hex.EncodeToString(p)[:n]
 	}
