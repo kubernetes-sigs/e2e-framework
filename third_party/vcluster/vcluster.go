@@ -35,8 +35,8 @@ import (
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
+	"sigs.k8s.io/e2e-framework/pkg/utils"
 	"sigs.k8s.io/e2e-framework/support"
-	"sigs.k8s.io/e2e-framework/support/utils"
 	"sigs.k8s.io/yaml"
 )
 
@@ -248,8 +248,11 @@ func (c *Cluster) WaitForControlPlane(ctx context.Context, client klient.Client)
 	if err != nil {
 		return err
 	}
+
+	// vcluster seem to name the dns pod with label vcluster-kube-dns.
+	// Wish there was a way to avoid hard coding this slightly better.
 	for _, sl := range []metav1.LabelSelectorRequirement{
-		{Key: "k8s-app", Operator: metav1.LabelSelectorOpIn, Values: []string{"kube-dns"}},
+		{Key: "k8s-app", Operator: metav1.LabelSelectorOpIn, Values: []string{"vcluster-kube-dns"}},
 	} {
 		selector, err := metav1.LabelSelectorAsSelector(
 			&metav1.LabelSelector{

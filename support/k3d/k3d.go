@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Kubernetes Authors.
+Copyright 2024 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,16 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package kwok
+package k3d
 
 import (
-	tptkwok "sigs.k8s.io/e2e-framework/third_party/kwok"
+	tptk3d "sigs.k8s.io/e2e-framework/third_party/k3d"
 )
 
-type Cluster = tptkwok.Cluster
+type Cluster = tptk3d.Cluster
 
 var (
-	NewCluster  = tptkwok.NewCluster
-	NewProvider = tptkwok.NewProvider
-	WithPath    = tptkwok.WithPath
+	WithArgs    = tptk3d.WithArgs
+	WithImage   = tptk3d.WithImage
+	NewCluster  = tptk3d.NewCluster
+	NewProvider = tptk3d.NewProvider
 )
