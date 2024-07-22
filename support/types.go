@@ -18,12 +18,32 @@ package support
 
 import (
 	"context"
+	"net"
 
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/e2e-framework/klient"
 )
 
 type ClusterOpts func(c E2EClusterProvider)
+
+type Node struct {
+	Name    string
+	Role    string
+	Cluster string
+	State   string
+	IP      net.IP
+}
+
+type NodeOperation string
+
+const (
+	AddNode    NodeOperation = "add"
+	RemoveNode NodeOperation = "remove"
+	StartNode  NodeOperation = "start"
+	StopNode   NodeOperation = "stop"
+)
+
+type ClusterNameContextKey string
 
 type E2EClusterProvider interface {
 	// WithName is used to configure the cluster Name that should be used while setting up the cluster. Might
@@ -94,12 +114,48 @@ type E2EClusterProviderWithImageLoader interface {
 	// LoadImage is used to load a set of Docker images to the cluster via the cluster provider native workflow
 	// Not every provider will have a mechanism like this/need to do this. So, providers that do not have this support
 	// can just provide a no-op implementation to be compliant with the interface
-	LoadImage(ctx context.Context, image string) error
+	LoadImage(ctx context.Context, image string, args ...string) error
 
 	// LoadImageArchive is used to provide a mechanism where a tar.gz archive containing the docker images used
 	// by the services running on the cluster can be imported and loaded into the cluster prior to the execution of
 	// test if required.
 	// Not every provider will have a mechanism like this/need to do this. So, providers that do not have this support
 	// can just provide a no-op implementation to be compliant with the interface
-	LoadImageArchive(ctx context.Context, archivePath string) error
+	LoadImageArchive(ctx context.Context, archivePath string, args ...string) error
+}
+
+// E2EClusterProviderWithLifeCycle is an interface that extends the E2EClusterProviderWithImageLoader
+// interface to provide a mechanism to add/remove nodes from the cluster as part of the E2E Test workflow.
+//
+// This can be useful while performing the e2e test that revolves around the node lifecycle events.
+// eg: You have a kubernetes controller that acts upon the v1.Node resource of the k8s and you want to
+// test out how the Remove operation impacts your workflow.
+// Or you want to simulate a case where one or more node of your cluster is down and you want to see how
+// your application reacts to such failure events.
+type E2EClusterProviderWithLifeCycle interface {
+	E2EClusterProviderWithImageLoader
+
+	// AddNode is used to add a new node to the existing cluster as part of the E2E Test workflow.
+	// Not every provider will have a mechanism to support this. e.g Kind. But k3d has support for this.
+	// This will be implemented as an optional interface depending on the provider in question.
+	AddNode(ctx context.Context, node *Node, args ...string) error
+
+	// RemoveNode can be used to remove a node from an existing cluster as part of the E2E Test workflow.
+	// Not every provider will have a mechanism to support this. e.g Kind. But k3d has support for this.
+	// This will be implemented as an optional interface depending on the provider in question.
+	RemoveNode(ctx context.Context, node *Node, args ...string) error
+
+	// StartNode is used to start a node that was shutdown/powered down as part of the E2E Test workflow.
+	// Not every provider will have a mechanism to support this. e.g Kind. But k3d has support for this.
+	// This will be implemented as an optional interface depending on the provider in question.
+	StartNode(ctx context.Context, node *Node, args ...string) error
+
+	// StopNode can be used to stop an running node from the cluster as part of the E2E test Workflow.
+	// Not every provider will have a mechanism to support this. e.g Kind. But k3d has support for this.
+	// This will be implemented as an optional interface depending on the provider in question.
+	StopNode(ctx context.Context, node *Node, args ...string) error
+
+	// ListNode can be used to fetch the list of nodes in the cluster. This can be used to extract the
+	// List of existing nodes on the cluster and their state before they can be operated on.
+	ListNode(ctx context.Context, args ...string) ([]Node, error)
 }

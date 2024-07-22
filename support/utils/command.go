@@ -17,6 +17,7 @@ limitations under the License.
 package utils
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 
@@ -34,41 +35,57 @@ var commandRunner = gexe.New()
 // be set in the in the invoker to make sure the right path is used for the binaries while invoking
 // rest of the workfow after this helper is triggered.
 func FindOrInstallGoBasedProvider(pPath, provider, module, version string) (string, error) {
-	if commandRunner.Prog().Avail(pPath) != "" {
+	if gexe.ProgAvail(pPath) != "" {
 		log.V(4).InfoS("Found Provider tooling already installed on the machine", "command", pPath)
 		return pPath, nil
 	}
 
+	var stdout, stderr bytes.Buffer
 	installCommand := fmt.Sprintf("go install %s@%s", module, version)
 	log.V(4).InfoS("Installing provider tooling using go install", "command", installCommand)
-	p := commandRunner.RunProc(installCommand)
-	if p.Err() != nil {
-		return "", fmt.Errorf("failed to install %s: %s", pPath, p.Err())
+	p := commandRunner.NewProc(installCommand)
+	p.SetStdout(&stdout)
+	p.SetStderr(&stderr)
+	result := p.Run()
+	if result.Err() != nil {
+		return "", fmt.Errorf("failed to install %s: %s: \n %s", pPath, result.Result(), stderr.String())
 	}
 
-	if !p.IsSuccess() || p.ExitCode() != 0 {
-		return "", fmt.Errorf("failed to install %s: %s", pPath, p.Result())
+	if !result.IsSuccess() || result.ExitCode() != 0 {
+		return "", fmt.Errorf("failed to install %s: %s \n %s", pPath, result.Result(), stderr.String())
 	}
 
-	if providerPath := commandRunner.Prog().Avail(provider); providerPath != "" {
+	log.V(4).InfoS("Installed provider tooling using go install", "command", installCommand, "output", stdout.String())
+
+	if providerPath := gexe.ProgAvail(provider); providerPath != "" {
 		log.V(4).Infof("Installed %s at %s", pPath, providerPath)
 		return provider, nil
 	}
 
-	p = commandRunner.RunProc("ls $GOPATH/bin")
-	if p.Err() != nil {
-		return "", fmt.Errorf("failed to install %s: %s", pPath, p.Err())
+	p = commandRunner.NewProc("ls $GOPATH/bin")
+	stdout.Reset()
+	stderr.Reset()
+	p.SetStdout(&stdout)
+	p.SetStderr(&stderr)
+	result = p.Run()
+	if result.Err() != nil {
+		return "", fmt.Errorf("failed to install %s: %s \n %ss", pPath, result.Result(), stderr.String())
 	}
 
-	p = commandRunner.RunProc("echo $PATH:$GOPATH/bin")
-	if p.Err() != nil {
-		return "", fmt.Errorf("failed to install %s: %s", pPath, p.Err())
+	p = commandRunner.NewProc("echo $PATH:$GOPATH/bin")
+	stdout.Reset()
+	stderr.Reset()
+	p.SetStdout(&stdout)
+	p.SetStderr(&stderr)
+	result = p.Run()
+	if result.Err() != nil {
+		return "", fmt.Errorf("failed to install %s: %s \n %s", pPath, result.Result(), stderr.String())
 	}
 
-	log.V(4).Info(`Setting path to include $GOPATH/bin:`, p.Result())
-	commandRunner.SetEnv("PATH", p.Result())
+	log.V(4).Info(`Setting path to include $GOPATH/bin:`, result.Result())
+	commandRunner.SetEnv("PATH", result.Result())
 
-	if providerPath := commandRunner.Prog().Avail(provider); providerPath != "" {
+	if providerPath := gexe.ProgAvail(provider); providerPath != "" {
 		log.V(4).Infof("Installed %s at %s", pPath, providerPath)
 		return provider, nil
 	}
@@ -92,7 +109,26 @@ func RunCommandWithSeperatedOutput(command string, stdout, stderr io.Writer) err
 	return result.Err()
 }
 
+// RunCommandWithCustomWriter run command and returns an *exec.Proc with information about the executed process.
+// This helps map the STDOUT/STDERR to custom writer to extract data from the output.
+func RunCommandWithCustomWriter(command string, stdout, stderr io.Writer) *exec.Proc {
+	p := commandRunner.NewProc(command)
+	p.SetStdout(stdout)
+	p.SetStderr(stderr)
+	return p.Run()
+}
+
 // FetchCommandOutput run command and returns the combined stderr and stdout output.
 func FetchCommandOutput(command string) string {
 	return commandRunner.Run(command)
+}
+
+// FetchSeperatedCommandOutput run command and returns the command by splitting the stdout and stderr
+// into different buffers and returns the Process with the buffer that can be ready from to extract
+// the data set on the respective buffers
+func FetchSeperatedCommandOutput(command string) (p *exec.Proc, stdout, stderr bytes.Buffer) {
+	p = commandRunner.NewProc(command)
+	p.SetStdout(&stdout)
+	p.SetStderr(&stderr)
+	return p.Run(), stdout, stderr
 }
