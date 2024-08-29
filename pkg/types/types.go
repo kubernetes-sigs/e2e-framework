@@ -85,6 +85,9 @@ type Environment interface {
 
 	// Run Launches the test suite from within a TestMain
 	Run(*testing.M) int
+
+	// EnvConf returns the test environment's environment configuration
+	EnvConf() *envconf.Config
 }
 
 type Labels = flags.LabelsMap
