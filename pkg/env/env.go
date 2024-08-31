@@ -363,6 +363,12 @@ func (e *testEnv) Finish(funcs ...Func) types.Environment {
 	return e
 }
 
+// EnvConf returns the test environment's environment configuration
+func (e *testEnv) EnvConf() *envconf.Config {
+	cfg := *e.cfg
+	return &cfg
+}
+
 // Run is to launch the test suite from a TestMain function.
 // It will run m.Run() and exercise all test functions in the
 // package.  This method will all Env.Setup operations prior to
