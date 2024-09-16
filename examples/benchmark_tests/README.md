@@ -13,7 +13,7 @@ func BenchmarkListPods(b *testing.B) {
 	// ...your client is ready you use -- or use the `*rest.Config` to create your preferred client
 }
 
-func TestExample(t *testing.T) {
+func TestListPods(t *testing.T) {
 	client, err := testenv.EnvConf().NewClient()
 	// ...
 }
