@@ -91,11 +91,11 @@ func WithHostKubeConfig(kubeconfig string) support.ClusterOpts {
 	}
 }
 
-func WithHostKubeContext(context string) support.ClusterOpts {
+func WithHostKubeContext(kubeContext string) support.ClusterOpts {
 	return func(c support.E2EClusterProvider) {
 		v, ok := c.(*Cluster)
 		if ok {
-			v.hostKubeContext = context
+			v.hostKubeContext = kubeContext
 		}
 	}
 }
