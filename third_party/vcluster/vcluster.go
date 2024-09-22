@@ -114,18 +114,21 @@ func (c *Cluster) WithPath(path string) support.E2EClusterProvider {
 	c.path = path
 	return c
 }
+
 func (c *Cluster) WithOpts(opts ...support.ClusterOpts) support.E2EClusterProvider {
 	for _, opt := range opts {
 		opt(c)
 	}
 	return c
 }
+
 func (c *Cluster) SetDefaults() support.E2EClusterProvider {
 	if c.path == "" {
 		c.path = "vcluster"
 	}
 	return c
 }
+
 func (c *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 	log.V(4).Info("Creating vcluster ", c.name)
 	if err := c.findOrInstallVcluster(); err != nil {
@@ -180,6 +183,7 @@ func (c *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 
 	return kConfig, nil
 }
+
 func (c *Cluster) CreateWithConfig(ctx context.Context, configFile string) (string, error) {
 	var args []string
 	if configFile != "" {
@@ -187,6 +191,7 @@ func (c *Cluster) CreateWithConfig(ctx context.Context, configFile string) (stri
 	}
 	return c.Create(ctx, args...)
 }
+
 func (c *Cluster) GetKubeconfig() string {
 	return c.kubecfgFile
 }
@@ -206,10 +211,12 @@ func (c *Cluster) GetKubectlContext() string {
 	}
 	return kc.CurrentContext
 }
+
 func (c *Cluster) ExportLogs(ctx context.Context, dest string) error {
 	// Not implemented
 	return nil
 }
+
 func (c *Cluster) Destroy(ctx context.Context) error {
 	log.V(4).Info("Destroying vcluster ", c.name)
 	if err := c.findOrInstallVcluster(); err != nil {
@@ -258,6 +265,7 @@ func (c *Cluster) WaitForControlPlane(ctx context.Context, client klient.Client)
 	}
 	return nil
 }
+
 func (c *Cluster) KubernetesRestConfig() *rest.Config {
 	return c.rc
 }
