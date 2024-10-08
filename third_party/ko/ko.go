@@ -19,6 +19,7 @@ package ko
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -159,7 +160,7 @@ func (m *Manager) GetLocalImage(ctx context.Context, packagePath string) (string
 func (m *Manager) run(opts *Opts) (out string, err error) {
 	log.V(4).InfoS("Determining if ko binary is available or not", "executable", m.path)
 	if m.e.Prog().Avail(m.path) == "" {
-		return "", fmt.Errorf(missingKo)
+		return "", errors.New(missingKo)
 	}
 
 	envs := m.getEnvs(opts)

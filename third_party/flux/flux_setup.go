@@ -18,6 +18,7 @@ package flux
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"sigs.k8s.io/e2e-framework/pkg/env"
@@ -44,7 +45,7 @@ func InstallFlux(opts ...Option) env.Func {
 func CreateGitRepo(gitRepoName, gitRepoURL string, opts ...Option) env.Func {
 	return func(ctx context.Context, c *envconf.Config) (context.Context, error) {
 		if manager == nil {
-			return ctx, fmt.Errorf(NoFluxInstallationFoundMsg)
+			return ctx, errors.New(NoFluxInstallationFoundMsg)
 		}
 		err := manager.createSource(Git, gitRepoName, gitRepoURL, opts...)
 		if err != nil {
@@ -58,7 +59,7 @@ func CreateGitRepo(gitRepoName, gitRepoURL string, opts ...Option) env.Func {
 func CreateHelmRepository(name, url string, opts ...Option) env.Func {
 	return func(ctx context.Context, c *envconf.Config) (context.Context, error) {
 		if manager == nil {
-			return ctx, fmt.Errorf(NoFluxInstallationFoundMsg)
+			return ctx, errors.New(NoFluxInstallationFoundMsg)
 		}
 		err := manager.createSource(Helm, name, url, opts...)
 		if err != nil {
@@ -72,7 +73,7 @@ func CreateHelmRepository(name, url string, opts ...Option) env.Func {
 func CreateKustomization(kustomizationName, sourceRef string, opts ...Option) env.Func {
 	return func(ctx context.Context, c *envconf.Config) (context.Context, error) {
 		if manager == nil {
-			return ctx, fmt.Errorf(NoFluxInstallationFoundMsg)
+			return ctx, errors.New(NoFluxInstallationFoundMsg)
 		}
 		err := manager.createKustomization(kustomizationName, sourceRef, opts...)
 		if err != nil {
@@ -87,7 +88,7 @@ func CreateKustomization(kustomizationName, sourceRef string, opts ...Option) en
 func CreateHelmRelease(name, source, chart string, opts ...Option) env.Func {
 	return func(ctx context.Context, c *envconf.Config) (context.Context, error) {
 		if manager == nil {
-			return ctx, fmt.Errorf(NoFluxInstallationFoundMsg)
+			return ctx, errors.New(NoFluxInstallationFoundMsg)
 		}
 		err := manager.createHelmRelease(name, source, chart, opts...)
 		if err != nil {
@@ -101,7 +102,7 @@ func CreateHelmRelease(name, source, chart string, opts ...Option) env.Func {
 func UninstallFlux(opts ...Option) env.Func {
 	return func(ctx context.Context, c *envconf.Config) (context.Context, error) {
 		if manager == nil {
-			return ctx, fmt.Errorf(NoFluxInstallationFoundMsg)
+			return ctx, errors.New(NoFluxInstallationFoundMsg)
 		}
 		err := manager.uninstallFlux(opts...)
 		if err != nil {
@@ -115,7 +116,7 @@ func UninstallFlux(opts ...Option) env.Func {
 func DeleteKustomization(kustomizationName string, opts ...Option) env.Func {
 	return func(ctx context.Context, c *envconf.Config) (context.Context, error) {
 		if manager == nil {
-			return ctx, fmt.Errorf(NoFluxInstallationFoundMsg)
+			return ctx, errors.New(NoFluxInstallationFoundMsg)
 		}
 		err := manager.deleteKustomization(kustomizationName, opts...)
 		if err != nil {
@@ -129,7 +130,7 @@ func DeleteKustomization(kustomizationName string, opts ...Option) env.Func {
 func DeleteHelmRelease(name string, opts ...Option) env.Func {
 	return func(ctx context.Context, c *envconf.Config) (context.Context, error) {
 		if manager == nil {
-			return ctx, fmt.Errorf(NoFluxInstallationFoundMsg)
+			return ctx, errors.New(NoFluxInstallationFoundMsg)
 		}
 		err := manager.deleteHelmRelease(name, opts...)
 		if err != nil {
@@ -143,7 +144,7 @@ func DeleteHelmRelease(name string, opts ...Option) env.Func {
 func DeleteGitRepo(gitRepoName string, opts ...Option) env.Func {
 	return func(ctx context.Context, c *envconf.Config) (context.Context, error) {
 		if manager == nil {
-			return ctx, fmt.Errorf(NoFluxInstallationFoundMsg)
+			return ctx, errors.New(NoFluxInstallationFoundMsg)
 		}
 		err := manager.deleteSource(Git, gitRepoName, opts...)
 		if err != nil {
@@ -157,7 +158,7 @@ func DeleteGitRepo(gitRepoName string, opts ...Option) env.Func {
 func DeleteHelmRepo(name string, opts ...Option) env.Func {
 	return func(ctx context.Context, c *envconf.Config) (context.Context, error) {
 		if manager == nil {
-			return ctx, fmt.Errorf(NoFluxInstallationFoundMsg)
+			return ctx, errors.New(NoFluxInstallationFoundMsg)
 		}
 		err := manager.deleteSource(Helm, name, opts...)
 		if err != nil {
