@@ -4,10 +4,10 @@ go 1.22.3
 
 require (
 	github.com/vladimirvivien/gexe v0.3.0
-	k8s.io/api v0.31.1
-	k8s.io/apimachinery v0.31.1
-	k8s.io/client-go v0.31.1
-	k8s.io/component-base v0.31.1
+	k8s.io/api v0.31.2
+	k8s.io/apimachinery v0.31.2
+	k8s.io/client-go v0.31.2
+	k8s.io/component-base v0.31.2
 	k8s.io/klog/v2 v2.130.1
 	sigs.k8s.io/controller-runtime v0.19.0
 )
