@@ -261,7 +261,7 @@ func (k *Cluster) findOrInstallKind() error {
 	return err
 }
 
-func (k *Cluster) LoadImage(ctx context.Context, image string) error {
+func (k *Cluster) LoadImage(ctx context.Context, image string, args ...string) error {
 	p := utils.RunCommand(fmt.Sprintf(`%s load docker-image --name %s %s`, k.path, k.name, image))
 	if p.Err() != nil {
 		return fmt.Errorf("kind: load docker-image %v failed: %s: %s", image, p.Err(), p.Result())
@@ -269,7 +269,7 @@ func (k *Cluster) LoadImage(ctx context.Context, image string) error {
 	return nil
 }
 
-func (k *Cluster) LoadImageArchive(ctx context.Context, imageArchive string) error {
+func (k *Cluster) LoadImageArchive(ctx context.Context, imageArchive string, args ...string) error {
 	p := utils.RunCommand(fmt.Sprintf(`%s load image-archive --name %s %s`, k.path, k.name, imageArchive))
 	if p.Err() != nil {
 		return fmt.Errorf("kind: load image-archive %v failed: %s: %s", imageArchive, p.Err(), p.Result())
