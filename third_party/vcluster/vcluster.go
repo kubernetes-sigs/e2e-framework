@@ -40,7 +40,10 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-var vclusterVersion = "v0.21.0"
+const (
+	vclusterVersion = "v0.20.0"
+	vclusterPath    = "vclusterctl"
+)
 
 type Cluster struct {
 	path            string
@@ -68,7 +71,7 @@ func WithPath(path string) support.ClusterOpts {
 	return func(c support.E2EClusterProvider) {
 		v, ok := c.(*Cluster)
 		if ok {
-			v.path = path
+			v.WithPath(path)
 		}
 	}
 }
@@ -124,7 +127,7 @@ func (c *Cluster) WithOpts(opts ...support.ClusterOpts) support.E2EClusterProvid
 
 func (c *Cluster) SetDefaults() support.E2EClusterProvider {
 	if c.path == "" {
-		c.path = "vcluster"
+		c.path = vclusterPath
 	}
 	return c
 }
@@ -276,7 +279,7 @@ func (c *Cluster) findOrInstallVcluster() error {
 	if c.version == "" {
 		version = vclusterVersion
 	}
-	path, err := utils.FindOrInstallGoBasedProvider(c.path, "vcluster", "github.com/loft-sh/vcluster/cmd/vcluster", version)
+	path, err := utils.FindOrInstallGoBasedProvider(c.path, vclusterPath, "github.com/loft-sh/vcluster/cmd/vclusterctl", version)
 	if path != "" {
 		c.path = path
 	}
