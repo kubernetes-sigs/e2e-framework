@@ -40,7 +40,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-var vclusterVersion = "v0.20.0"
+var vclusterVersion = "v0.21.0"
 
 type Cluster struct {
 	path            string
@@ -273,7 +273,7 @@ func (c *Cluster) KubernetesRestConfig() *rest.Config {
 // helpers to implement support.E2EClusterProvider
 func (c *Cluster) findOrInstallVcluster() error {
 	version := c.version
-	if c.version != "" {
+	if c.version == "" {
 		version = vclusterVersion
 	}
 	path, err := utils.FindOrInstallGoBasedProvider(c.path, "vcluster", "github.com/loft-sh/vcluster/cmd/vcluster", version)
