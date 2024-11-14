@@ -17,8 +17,9 @@ limitations under the License.
 package tester
 
 import (
-	"github.com/octago/sflags/gen/gpflag"
 	"testing"
+
+	"github.com/octago/sflags/gen/gpflag"
 )
 
 func TestBuildFlags(t *testing.T) {
