@@ -41,22 +41,24 @@ var (
 )
 
 func TestMain(m *testing.M) {
-    testenv = env.New()
-    kindClusterName := envconf.RandomName("my-cluster", 16)
-    namespace := envconf.RandomName("myns", 16)
+	testenv = env.New()
+	kindClusterName := envconf.RandomName("my-cluster", 16)
+	namespace := envconf.RandomName("myns", 16)
 
-    // Use pre-defined environment funcs to create a kind cluster prior to test run
-    testenv.Setup(
-        envfuncs.CreateKindCluster(kindClusterName),
-    )
+	// Use pre-defined environment funcs to create a kind cluster prior to test run
+	testenv.Setup(
+		envfuncs.CreateCluster(kind.NewProvider(), kindClusterName),
+		envfuncs.CreateNamespace(namespace),
+	)
 
-    // Use pre-defined environment funcs to teardown kind cluster after tests
-    testenv.Finish(
-        envfuncs.DeleteNamespace(namespace),
-    )
+	// Use pre-defined environment funcs to teardown kind cluster after tests
+	testenv.Finish(
+		envfuncs.DeleteNamespace(namespace),
+		envfuncs.DestroyCluster(kindClusterName),
+	)
 
-    // launch package tests
-    os.Exit(testenv.Run(m))
+	// launch package tests
+	os.Exit(testenv.Run(m))
 }
 ```
 
