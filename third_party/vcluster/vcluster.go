@@ -206,6 +206,10 @@ func (c *Cluster) GetKubeconfig() string {
 	return c.kubecfgFile
 }
 
+func (c *Cluster) GetLiveKubeconfig() (string, error) {
+	return c.getKubeconfig()
+}
+
 type kubeconfig struct {
 	CurrentContext string `json:"current-context"`
 }

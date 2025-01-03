@@ -248,6 +248,10 @@ func (k *Cluster) GetKubeconfig() string {
 	return k.kubecfgFile
 }
 
+func (c *Cluster) GetLiveKubeconfig() (string, error) {
+	return c.getKubeconfig()
+}
+
 func (k *Cluster) SetDefaults() support.E2EClusterProvider {
 	if k.path == "" {
 		k.path = "kwokctl"

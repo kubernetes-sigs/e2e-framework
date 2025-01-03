@@ -223,6 +223,10 @@ func (k *Cluster) GetKubeconfig() string {
 	return k.kubecfgFile
 }
 
+func (c *Cluster) GetLiveKubeconfig() (string, error) {
+	return c.getKubeconfig()
+}
+
 func (k *Cluster) GetKubectlContext() string {
 	return fmt.Sprintf("kind-%s", k.name)
 }
