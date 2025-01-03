@@ -47,6 +47,8 @@ type Cluster struct {
 	version     string
 	image       string
 	rc          *rest.Config
+
+	getKubeconfigArgs []string
 }
 
 // Enforce Type check always to avoid future breaks
@@ -74,6 +76,15 @@ func WithPath(path string) support.ClusterOpts {
 		k, ok := c.(*Cluster)
 		if ok {
 			k.path = path
+		}
+	}
+}
+
+func WithGetKubeConfigArgs(args ...string) support.ClusterOpts {
+	return func(c support.E2EClusterProvider) {
+		k, ok := c.(*Cluster)
+		if ok {
+			k.getKubeconfigArgs = args
 		}
 	}
 }
@@ -111,7 +122,11 @@ func (k *Cluster) getKubeconfig() (string, error) {
 	kubecfg := fmt.Sprintf("%s-kubecfg", k.name)
 
 	var stdout, stderr bytes.Buffer
-	err := utils.RunCommandWithSeperatedOutput(fmt.Sprintf(`%s get kubeconfig --name %s`, k.path, k.name), &stdout, &stderr)
+	cmd := fmt.Sprintf(`%s get kubeconfig --name %s`, k.path, k.name)
+	if len(k.getKubeconfigArgs) > 0 {
+		cmd = fmt.Sprintf("%s %s", cmd, strings.Join(k.getKubeconfigArgs, " "))
+	}
+	err := utils.RunCommandWithSeperatedOutput(cmd, &stdout, &stderr)
 	if err != nil {
 		return "", fmt.Errorf("kind get kubeconfig: stderr: %s: %w", stderr.String(), err)
 	}
@@ -302,6 +317,11 @@ func (k *Cluster) WaitForControlPlane(ctx context.Context, client klient.Client)
 		}
 	}
 	return nil
+}
+
+func (k *Cluster) WithGetKubeConfigArgs(args ...string) support.E2EClusterProvider {
+	k.getKubeconfigArgs = args
+	return k
 }
 
 func (k *Cluster) KubernetesRestConfig() *rest.Config {
