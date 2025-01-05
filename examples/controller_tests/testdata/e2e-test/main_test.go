@@ -37,11 +37,11 @@ var (
 	testEnv env.Environment
 
 	dockerImage  = "cronjob-controller:v0.0.1"
-	kustomizeVer = "v5.1.1"
-	ctrlgenVer   = "v0.13.0"
+	kustomizeVer = "v5.5.0"
+	ctrlGenVer   = "v0.16.4"
 
-	certmgrVer = "v1.13.1"
-	certMgrUrl = fmt.Sprintf("https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml", certmgrVer)
+	certMgrVer = "v1.13.1"
+	certMgrUrl = fmt.Sprintf("https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml", certMgrVer)
 	promVer    = "v0.60.0"
 	promUrl    = fmt.Sprintf("https://github.com/prometheus-operator/prometheus-operator/releases/download/%s/bundle.yaml", promVer)
 
@@ -54,6 +54,7 @@ func TestMain(m *testing.M) {
 	kindCluster := kind.NewCluster(kindClusterName)
 
 	// Use Environment.Setup to configure pre-test setup (i.e. create cluster, build code, allocate resources, etc)
+	log.Println("Creating KinD cluster...")
 	testEnv.Setup(
 		envfuncs.CreateCluster(kindCluster, kindClusterName),
 		envfuncs.CreateNamespace(namespace),
@@ -62,7 +63,7 @@ func TestMain(m *testing.M) {
 		func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 			log.Println("Installing prometheus operator...")
 			if p := utils.RunCommand(fmt.Sprintf("kubectl apply -f %s --server-side", promUrl)); p.Err() != nil {
-				log.Printf("Failed to deploy prometheus: %s", p.Result())
+				log.Printf("Failed to deploy prometheus: %s: %s", p.Err(), p.Out())
 				return ctx, p.Err()
 			}
 
@@ -74,7 +75,7 @@ func TestMain(m *testing.M) {
 				return ctx, p.Err()
 			}
 
-			// wait for certmgr to be ready
+			// wait for CertManager to be ready
 			log.Println("Waiting for cert-manager deployment to be available...")
 			if err := wait.For(
 				conditions.New(client.Resources()).DeploymentAvailable("cert-manager-webhook", "cert-manager"),
@@ -91,11 +92,11 @@ func TestMain(m *testing.M) {
 		func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 			log.Println("Installing bin tools...")
 			if p := utils.RunCommand(fmt.Sprintf("go install sigs.k8s.io/kustomize/kustomize/v5@%s", kustomizeVer)); p.Err() != nil {
-				log.Printf("Failed to install kustomize binary: %s: %s", p.Err(), p.Result())
+				log.Printf("Failed to install kustomize binary: %s: %s", p.Err(), p.Out())
 				return ctx, p.Err()
 			}
-			if p := utils.RunCommand(fmt.Sprintf("go install sigs.k8s.io/controller-tools/cmd/controller-gen@%s", ctrlgenVer)); p.Err() != nil {
-				log.Printf("Failed to install controller-gen binary: %s: %s", p.Err(), p.Result())
+			if p := utils.RunCommand(fmt.Sprintf("go install sigs.k8s.io/controller-tools/cmd/controller-gen@%s", ctrlGenVer)); p.Err() != nil {
+				log.Printf("Failed to install controller-gen binary: %s: %s", p.Err(), p.Out())
 				return ctx, p.Err()
 			}
 			return ctx, nil
@@ -115,21 +116,21 @@ func TestMain(m *testing.M) {
 			// gen manifest files
 			log.Println("Generate manifests...")
 			if p := utils.RunCommand(`controller-gen rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases`); p.Err() != nil {
-				log.Printf("Failed to generate manifests: %s: %s", p.Err(), p.Result())
+				log.Printf("Failed to generate manifests: %s: %s", p.Err(), p.Out())
 				return ctx, p.Err()
 			}
 
 			// gen api objects
 			log.Println("Generate API objects...")
 			if p := utils.RunCommand(`controller-gen object:headerFile="hack/boilerplate.go.txt" paths="./..."`); p.Err() != nil {
-				log.Printf("Failed to generate API objects: %s: %s", p.Err(), p.Result())
+				log.Printf("Failed to generate API objects: %s: %s", p.Err(), p.Out())
 				return ctx, p.Err()
 			}
 
 			// Build docker image
 			log.Println("Building docker image...")
 			if p := utils.RunCommand(fmt.Sprintf("docker build -t %s .", dockerImage)); p.Err() != nil {
-				log.Printf("Failed to build docker image: %s: %s", p.Err(), p.Result())
+				log.Printf("Failed to build docker image: %s: %s", p.Err(), p.Out())
 				return ctx, p.Err()
 			}
 
@@ -143,7 +144,7 @@ func TestMain(m *testing.M) {
 			// Deploy components
 			log.Println("Deploying controller-manager resources...")
 			if p := utils.RunCommand(`bash -c "kustomize build config/default | kubectl apply --server-side -f -"`); p.Err() != nil {
-				log.Printf("Failed to deploy resource configurations: %s: %s", p.Err(), p.Result())
+				log.Printf("Failed to deploy resource configurations: %s: %s", p.Err(), p.Out())
 				return ctx, p.Err()
 			}
 
