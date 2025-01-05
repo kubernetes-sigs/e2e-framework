@@ -18,7 +18,10 @@ package decoder_test
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -37,6 +40,9 @@ const (
 	testLabel            = "labelvalue"
 	serviceAccountPrefix = "example-sa*"
 )
+
+//go:embed testdata/example-multidoc-1.yaml
+var testDataExampleMultiDoc string
 
 func TestDecode(t *testing.T) {
 	testYAML := filepath.Join("testdata", "example-configmap-1.yaml")
@@ -215,6 +221,33 @@ func TestDecodeEach(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDecodeURL(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, testDataExampleMultiDoc)
+	}))
+	defer ts.Close()
+	t.Run("Testing decode with URL", func(t *testing.T) {
+		count := 0
+		err := decoder.DecodeURL(context.TODO(), ts.URL, func(ctx context.Context, obj k8s.Object) error {
+			count++
+			switch cfg := obj.(type) {
+			case *v1.ConfigMap:
+				if _, ok := cfg.Data["foo"]; !ok {
+					t.Fatalf("expected key 'foo' in ConfigMap.Data, got: %v", cfg.Data)
+				}
+			default:
+				t.Fatalf("unexpected type returned not ConfigMap: %T", cfg)
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		} else if count != 2 {
+			t.Fatalf("expected 2 documents, got: %d", count)
+		}
+	})
 }
 
 func TestDecodeAll(t *testing.T) {
