@@ -100,10 +100,7 @@ func (k *Cluster) getKubeconfig() (string, error) {
 	kubecfg := fmt.Sprintf("%s-kubecfg", k.name)
 
 	var stdout, stderr bytes.Buffer
-	cmd := fmt.Sprintf(`%s get kubeconfig --name %s`, k.path, k.name)
-	if len(k.getKubeconfigArgs) > 0 {
-		cmd = fmt.Sprintf("%s %s", cmd, strings.Join(k.getKubeconfigArgs, " "))
-	}
+	cmd := fmt.Sprintf(`%s get kubeconfig %s --name %s`, k.path, strings.Join(k.getKubeconfigArgs, " "), k.name)
 	err := utils.RunCommandWithSeperatedOutput(cmd, &stdout, &stderr)
 	if err != nil {
 		return "", fmt.Errorf("kwokctl get kubeconfig: stderr: %s: %w", stderr.String(), err)
