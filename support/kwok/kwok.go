@@ -43,6 +43,8 @@ type Cluster struct {
 	version      string
 	waitDuration time.Duration
 	rc           *rest.Config
+
+	getKubeconfigArgs []string
 }
 
 var _ support.E2EClusterProvider = &Cluster{}
@@ -60,6 +62,15 @@ func WithPath(path string) support.ClusterOpts {
 		k, ok := c.(*Cluster)
 		if ok {
 			k.path = path
+		}
+	}
+}
+
+func WithGetKubeConfigArgs(args ...string) support.ClusterOpts {
+	return func(c support.E2EClusterProvider) {
+		k, ok := c.(*Cluster)
+		if ok {
+			k.getKubeconfigArgs = args
 		}
 	}
 }
@@ -89,8 +100,8 @@ func (k *Cluster) getKubeconfig() (string, error) {
 	kubecfg := fmt.Sprintf("%s-kubecfg", k.name)
 
 	var stdout, stderr bytes.Buffer
-	err := utils.RunCommandWithSeperatedOutput(fmt.Sprintf(`%s get kubeconfig --name %s`,
-		k.path, k.name), &stdout, &stderr)
+	cmd := fmt.Sprintf(`%s get kubeconfig %s --name %s`, k.path, strings.Join(k.getKubeconfigArgs, " "), k.name)
+	err := utils.RunCommandWithSeperatedOutput(cmd, &stdout, &stderr)
 	if err != nil {
 		return "", fmt.Errorf("kwokctl get kubeconfig: stderr: %s: %w", stderr.String(), err)
 	}
@@ -234,6 +245,10 @@ func (k *Cluster) GetKubeconfig() string {
 	return k.kubecfgFile
 }
 
+func (c *Cluster) GetLiveKubeconfig() (string, error) {
+	return c.getKubeconfig()
+}
+
 func (k *Cluster) SetDefaults() support.E2EClusterProvider {
 	if k.path == "" {
 		k.path = "kwokctl"
@@ -265,6 +280,11 @@ func (k *Cluster) WithPath(path string) support.E2EClusterProvider {
 
 func (k *Cluster) WithVersion(version string) support.E2EClusterProvider {
 	k.version = version
+	return k
+}
+
+func (k *Cluster) WithGetKubeConfigArgs(args ...string) support.E2EClusterProvider {
+	k.getKubeconfigArgs = args
 	return k
 }
 

@@ -54,6 +54,8 @@ type Cluster struct {
 	hostKubeCfg     string // kubeconfig file for the host cluster
 	hostKubeContext string // kubeconfig context for the host cluster
 	rc              *rest.Config
+
+	getKubeconfigArgs []string
 }
 
 // Enforce Type check always to avoid future breaks
@@ -115,6 +117,11 @@ func (c *Cluster) WithVersion(version string) support.E2EClusterProvider {
 
 func (c *Cluster) WithPath(path string) support.E2EClusterProvider {
 	c.path = path
+	return c
+}
+
+func (c *Cluster) WithGetKubeConfigArgs(args ...string) support.E2EClusterProvider {
+	c.getKubeconfigArgs = args
 	return c
 }
 
@@ -197,6 +204,10 @@ func (c *Cluster) CreateWithConfig(ctx context.Context, configFile string) (stri
 
 func (c *Cluster) GetKubeconfig() string {
 	return c.kubecfgFile
+}
+
+func (c *Cluster) GetLiveKubeconfig() (string, error) {
+	return c.getKubeconfig()
 }
 
 type kubeconfig struct {
@@ -308,7 +319,11 @@ func (c *Cluster) getKubeconfig() (string, error) {
 	kubecfg := fmt.Sprintf("%s-kubecfg", c.name)
 
 	var stdout, stderr bytes.Buffer
-	err := utils.RunCommandWithSeperatedOutput(fmt.Sprintf(`%s connect %s --print`, c.path, c.name), &stdout, &stderr)
+	cmd := fmt.Sprintf(`%s connect %s --print`, c.path, c.name)
+	if len(c.getKubeconfigArgs) > 0 {
+		cmd = fmt.Sprintf("%s %s", cmd, strings.Join(c.getKubeconfigArgs, " "))
+	}
+	err := utils.RunCommandWithSeperatedOutput(cmd, &stdout, &stderr)
 	if err != nil {
 		return "", fmt.Errorf("vcluster connect: stderr: %s: %w", stderr.String(), err)
 	}
