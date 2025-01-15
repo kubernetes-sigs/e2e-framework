@@ -64,6 +64,15 @@ func WithPath(path string) support.ClusterOpts {
 	}
 }
 
+func WithWaitDuration(waitDuration time.Duration) support.ClusterOpts {
+	return func(c support.E2EClusterProvider) {
+		k, ok := c.(*Cluster)
+		if ok {
+			k.waitDuration = waitDuration
+		}
+	}
+}
+
 func (k *Cluster) findOrInstallKwokCtl() error {
 	if k.version != "" {
 		kwokVersion = k.version
