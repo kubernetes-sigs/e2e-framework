@@ -317,7 +317,7 @@ func TestEnv_Test(t *testing.T) {
 				})
 
 				out := env.Test(t, f.Feature())
-				return out.Value(&ctxTestKeyString{}).([]string)
+				return out.Value(&ctxTestKeyString{}).([]string) // nolint: errcheck
 			},
 		},
 		{
@@ -392,7 +392,7 @@ func TestEnv_Test(t *testing.T) {
 				}).Feature()
 
 				out := env.Test(t, f1, f2)
-				return out.Value(&ctxTestKeyString{}).([]string)
+				return out.Value(&ctxTestKeyString{}).([]string) // nolint: errcheck
 			},
 		},
 		{
@@ -442,7 +442,7 @@ func TestEnv_Test(t *testing.T) {
 				}).Feature()
 
 				out := env.TestInParallel(t, f1, f2)
-				return out.Value(&ctxTestKeyString{}).([]string)
+				return out.Value(&ctxTestKeyString{}).([]string) // nolint: errcheck
 			},
 		},
 		{
@@ -928,7 +928,7 @@ func getFeaturesForTest() []features.Feature {
 		Assess("log a message", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			t.Log("Running in parallel 1 1")
 			if i := ctx.Value(ctxRunsKeyString{}); i != nil {
-				return context.WithValue(ctx, ctxRunsKeyString{}, i.(int)+1)
+				return context.WithValue(ctx, ctxRunsKeyString{}, i.(int)+1) // nolint: errcheck
 			}
 			return context.WithValue(ctx, ctxRunsKeyString{}, 1)
 		}).Feature()
@@ -936,7 +936,7 @@ func getFeaturesForTest() []features.Feature {
 		Assess("log a message", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			t.Log("Running in parallel 1 2")
 			if i := ctx.Value(ctxRunsKeyString{}); i != nil {
-				return context.WithValue(ctx, ctxRunsKeyString{}, i.(int)+1)
+				return context.WithValue(ctx, ctxRunsKeyString{}, i.(int)+1) // nolint: errcheck
 			}
 			return context.WithValue(ctx, ctxRunsKeyString{}, 1)
 		}).Feature()
