@@ -76,7 +76,7 @@ func TestAction_Run(t *testing.T) {
 			setup: func(ctx context.Context, cfg *envconf.Config) (val int, err error) {
 				funcs := []types.EnvFunc{
 					func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
-						i := ctx.Value(&ctxTestKeyString{}).(int) + 2
+						i := ctx.Value(&ctxTestKeyString{}).(int) + 2 // nolint: errcheck
 						val = i
 						return ctx, nil
 					},

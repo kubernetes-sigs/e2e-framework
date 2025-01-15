@@ -113,7 +113,7 @@ func TestResourceScaled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	err = wait.For(conditions.New(getResourceManager()).ResourceScaled(deployment, func(object k8s.Object) int32 {
-		return object.(*appsv1.Deployment).Status.ReadyReplicas
+		return object.(*appsv1.Deployment).Status.ReadyReplicas // nolint: errcheck
 	}, 2), wait.WithContext(ctx))
 	if err != nil {
 		t.Error("failed waiting for resource to be scaled", err)
@@ -147,7 +147,7 @@ func TestResourceListMatchN(t *testing.T) {
 	createDeployment("d4", 5, t)
 	pods := &v1.PodList{}
 	err = wait.For(conditions.New(getResourceManager()).ResourceListMatchN(pods, 5, func(object k8s.Object) bool {
-		for _, c := range object.(*v1.Pod).Spec.Containers {
+		for _, c := range object.(*v1.Pod).Spec.Containers { // nolint: errcheck
 			if c.Image == "nginx" {
 				return true
 			}
@@ -175,7 +175,7 @@ func TestResourcesMatch(t *testing.T) {
 		},
 	}
 	err = wait.For(conditions.New(getResourceManager()).ResourcesMatch(pods, func(object k8s.Object) bool {
-		return object.(*v1.Pod).Status.Phase == v1.PodRunning
+		return object.(*v1.Pod).Status.Phase == v1.PodRunning // nolint: errcheck
 	}))
 	if err != nil {
 		t.Error("failed waiting for deployment pods to start running", err)
