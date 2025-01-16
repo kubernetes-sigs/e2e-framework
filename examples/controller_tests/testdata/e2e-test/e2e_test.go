@@ -146,7 +146,7 @@ func TestCron(t *testing.T) {
 	feature.Assess("Pod job created", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 		select {
 		case <-time.After(30 * time.Second):
-			t.Error("Timed out wating for job pod creation by cronjob contoller")
+			t.Error("Timed out waiting for job pod creation by cronjob controller")
 		case pod := <-podCreationSig:
 			t.Log("Pod created by cronjob-controller")
 			refname := pod.GetOwnerReferences()[0].Name

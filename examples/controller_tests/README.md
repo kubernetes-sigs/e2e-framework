@@ -1,8 +1,8 @@
 # Testing Kubernetes Controllers with the e2e-framework
 
-This example shows you how to create end-to-end tests to test Kubernetes controller using the [CronJob controller](https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial) example that comes with the The Kubernetes-SIGs [Kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) project. It is based on blog post about the subject on [Medium](https://medium.com/programming-kubernetes/testing-kubernetes-controllers-with-the-e2e-framework-fac232843dc6).
+This example shows you how to create end-to-end tests to test Kubernetes controller using the [CronJob controller](https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial) example that comes with the Kubernetes-SIGs [Kubebuilder](https://github.com/kubernetes-sigs/kubebuilder) project. It is based on blog post about the subject on [Medium](https://medium.com/programming-kubernetes/testing-kubernetes-controllers-with-the-e2e-framework-fac232843dc6).
 
-Find the example end-to-end test source code in [./testdata/e2e-test](./testdata/e2e-test/).
+Find the example end-to-end test source code in [./testdata/e2e-test](./testdata/e2e-test).
 
 ### Infrastructure setup
 
@@ -19,6 +19,7 @@ func TestMain(m *testing.M) {
    kindClusterName := "kind-test"
    kindCluster := kind.NewCluster(kindClusterName)
 
+   log.Println("Creating KinD cluster...")
    testEnv.Setup(
      envfuncs.CreateCluster(kindCluster, kindClusterName),
      envfuncs.CreateNamespace(namespace),
@@ -32,7 +33,7 @@ Next, we will install prometheus and cert-manager and wait for the cert manager 
 ```go
 var (
 ...
-   certmgrVer = "v1.13.1"
+   certMgrVer = "v1.13.1"
    certMgrUrl = fmt.Sprintf("https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml", certmgrVer)
    
    promVer    = "v0.60.0"
@@ -58,7 +59,7 @@ func TestMain(m *testing.M) {
           return ctx, p.Err()
        }
 
-       // wait for certmgr deployment to be ready
+       // wait for CertManager deployment to be ready
        client := cfg.Client()
        if err := wait.For(
           conditions.New(client.Resources()).
@@ -79,8 +80,8 @@ The next function installs `kustomize` and `controller-gen` needed to generate t
 ```go
 var (
 ...
-   kustomizeVer = "v5.1.1"
-   ctrlgenVer   = "v0.13.0"
+   kustomizeVer = "v5.5.0"
+   ctrlgenVer   = "v0.16.4"
 )
 
 func TestMain(m *testing.M) {
@@ -88,7 +89,7 @@ func TestMain(m *testing.M) {
   testEnv.Setup(
     ...
     func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
-       // install kubstomize binary
+       // install kustomize binary
        if p := utils.RunCommand(
           fmt.Sprintf("go install sigs.k8s.io/kustomize/kustomize/v5@%s", kustomizeVer),
        ); p.Err() != nil {
@@ -224,7 +225,7 @@ var (
 )
 ```
 
-Next, let's create a `Feature.Setup` to setup up a `Watcher` to watch for job pods created by our controller and put them on channel `podCreationSig` to be tested later:
+Next, let's create a `Feature.Setup` to setup a `Watcher` to watch for job pods created by our controller and put them on channel `podCreationSig` to be tested later:
 
 ```go
 func TestCron(t *testing.T) {
@@ -273,7 +274,7 @@ func TestCron(t *testing.T) {
 }
 ```
 
-In the next assessment, we will create a new instance of a `CronJob` in the cluster and use the `wait` package to construct a dierctive to wait for API object to be created:
+In the next assessment, we will create a new instance of a `CronJob` in the cluster and use the `wait` package to construct a directive to wait for API object to be created:
 
 ```go
 func TestCron(t *testing.T) {
@@ -312,7 +313,7 @@ func TestCron(t *testing.T) {
    feature.Assess("Watcher received pod job", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
       select {
          case <-time.After(30 * time.Second):
-            t.Error("Timed out wating for job pod creation by cronjob contoller")
+            t.Error("Timed out waiting for job pod creation by cronjob controller")
          case pod := <-podCreationSig:
             t.Log("Pod created by cronjob-controller")
             refname := pod.GetOwnerReferences()[0].Name
@@ -326,14 +327,14 @@ func TestCron(t *testing.T) {
 ```
 
 ### Running the test
-Next, use the `go test` command to run the test. Go will automtomatically pull down all required packages and start the test:
+Next, use the `go test` command to run the test. Go will automatically pull down all required packages and start the test:
 
 ```
 $> cd ./testdata
 $> go test -v ./e2e-test
 
-go: downloading sigs.k8s.io/e2e-framework v0.3.0
-go: downloading k8s.io/api v0.28.3
-go: downloading k8s.io/apimachinery v0.28.3
+go: downloading sigs.k8s.io/e2e-framework v0.5.0
+go: downloading k8s.io/api v0.31.1
+go: downloading k8s.io/apimachinery v0.31.1
 ...
 ```
