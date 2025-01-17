@@ -23,7 +23,8 @@ import (
 type Cluster = tptkwok.Cluster
 
 var (
-	NewCluster  = tptkwok.NewCluster
-	NewProvider = tptkwok.NewProvider
-	WithPath    = tptkwok.WithPath
+	NewCluster       = tptkwok.NewCluster
+	NewProvider      = tptkwok.NewProvider
+	WithPath         = tptkwok.WithPath
+	WithWaitDuration = tptkwok.WithWaitDuration
 )
