@@ -25,6 +25,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/blang/semver/v4"
 	"k8s.io/apimachinery/pkg/util/json"
 
 	"k8s.io/client-go/rest"
@@ -37,7 +38,8 @@ import (
 	log "k8s.io/klog/v2"
 )
 
-var k3dVersion = "v5.7.2"
+var k3dVersion = "v5.8.0"
+var k3dWithExportLogSupport = "v5.8.0"
 
 type Cluster struct {
 	path           string
@@ -88,7 +90,7 @@ func WithImage(image string) support.ClusterOpts {
 }
 
 func NewCluster(name string) *Cluster {
-	return &Cluster{name: name}
+	return &Cluster{name: name, version: k3dVersion}
 }
 
 func NewProvider() support.E2EClusterProvider {
@@ -251,8 +253,25 @@ func (c *Cluster) GetKubectlContext() string {
 }
 
 func (c *Cluster) ExportLogs(ctx context.Context, dest string) error {
-	log.Warning("ExportLogs not implemented for k3d. Please use regular kubectl like commands to extract the logs from the cluster")
-	return nil
+	reqVersion, err := semver.Parse(c.version)
+	supVersion, _ := semver.Parse(k3dWithExportLogSupport)
+	if err != nil {
+		log.ErrorS(err, "failed to determine the k3d version to decide if the current version supporst the log export helpers. Please use regular kubectl like commands to extract the logs from the cluster")
+		return nil
+	}
+	var stdout, stderr bytes.Buffer
+	if reqVersion.GE(supVersion) {
+		p := utils.RunCommandWithCustomWriter(fmt.Sprintf("%s debug export-logs %s --path %s", c.path, c.name, dest), &stdout, &stderr)
+		err = p.Err()
+		if err != nil {
+			log.ErrorS(err, "failed to export cluster logs due to an error", "stdout", stdout.String(), "stderr", stderr.String(), "result", p.Result())
+			return err
+		}
+		return nil
+	} else {
+		log.Warning("ExportLogs not implemented for k3d. Please use regular kubectl like commands to extract the logs from the cluster")
+		return nil
+	}
 }
 
 func (c *Cluster) Destroy(ctx context.Context) error {
