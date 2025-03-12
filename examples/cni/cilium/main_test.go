@@ -63,7 +63,8 @@ func TestMain(m *testing.M) {
 			err = manager.RunInstall(
 				helm.WithChart("cilium/cilium"),
 				helm.WithNamespace("kube-system"),
-				helm.WithArgs("--generate-name", "--set", "image.pullPolicy=IfNotPresent", "--set", "ipam.mode=kubernetes", "--wait"))
+				helm.WithVersion("1.17.1"),
+				helm.WithArgs("--generate-name", "--set", "image.pullPolicy=IfNotPresent", "--set", "ipam.mode=kubernetes", "--set", "ipam.multiPoolPreAllocation=null", "--wait"))
 			if err != nil {
 				return nil, err
 			}
