@@ -112,7 +112,7 @@ func TestUpdate(t *testing.T) {
 	}
 
 	depUpdated := depActual
-	depUpdated.ObjectMeta.Labels["test-key"] = "test-val"
+	depUpdated.Labels["test-key"] = "test-val"
 
 	err = res.Update(context.TODO(), depUpdated)
 	if err != nil {

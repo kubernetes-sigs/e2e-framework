@@ -120,23 +120,23 @@ func TestDecodeFile(t *testing.T) {
 		if !ok {
 			t.Fatalf("unexpected type %T not ConfigMap", o)
 		}
-		if obj.ObjectMeta.Labels == nil {
+		if obj.Labels == nil {
 			obj.Labels = make(map[string]string)
 		}
-		obj.ObjectMeta.Labels["inject-value"] = "test123"
+		obj.Labels["inject-value"] = "test123"
 		return nil
 	})); err != nil {
 		t.Fatal(err)
 	}
-	if cfg.ObjectMeta.Labels["inject-value"] != "test123" {
-		t.Fatal("injected label value not found", cfg.ObjectMeta.Labels)
+	if cfg.Labels["inject-value"] != "test123" {
+		t.Fatal("injected label value not found", cfg.Labels)
 	}
 	cfg = v1.ConfigMap{}
 	if err := decoder.DecodeFile(testdata, testYAML, &cfg, decoder.MutateLabels(map[string]string{"injected": testLabel})); err != nil {
 		t.Fatal(err)
 	}
-	if cfg.ObjectMeta.Labels["injected"] != testLabel {
-		t.Fatal("injected label value not found", cfg.ObjectMeta.Labels)
+	if cfg.Labels["injected"] != testLabel {
+		t.Fatal("injected label value not found", cfg.Labels)
 	}
 }
 
@@ -281,8 +281,8 @@ func TestDecodersWithMutateFunc(t *testing.T) {
 			t.Fatal(err)
 		} else if cfg, ok := obj.(*v1.ConfigMap); !ok && cfg.Data["foo.cfg"] != "" {
 			t.Fatal("key foo.cfg not found in decoded ConfigMap")
-		} else if cfg.ObjectMeta.Labels["injected"] != testLabel {
-			t.Fatal("injected label value not found", cfg.ObjectMeta.Labels)
+		} else if cfg.Labels["injected"] != testLabel {
+			t.Fatal("injected label value not found", cfg.Labels)
 		}
 	})
 	t.Run("DecodeEach", func(t *testing.T) {
