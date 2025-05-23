@@ -1,34 +1,8 @@
----
+version: "2"
 run:
   concurrency: 6
-  timeout: 10m
-
-issues:
-  exclude-rules:
-    # counterfeiter fakes are usually named 'fake_<something>.go'
-    - path: fake_.*\.go
-      linters:
-        - gocritic
-        - golint
-        - dupl
-    - path: examples/*
-      linters:
-        - gocritic
-        - golint
-        - dupl
-        - staticcheck
-        - goconst
-        - errcheck
-        - stylecheck  #Since Example packages have _ in them this will break a bunch of tests unless we rename all of those packages
-  exclude-dirs-use-default: false
-  exclude-dirs:
-    - (^|/)vendor($|/)
-    - (^|/)testdata($|/)
-    - (^|/)Godeps($|/)
-    - (^|/)builtin($|/)
-    - .*.gvm/.*  # This is enabled to avoid linting the gvm install directory
 linters:
-  disable-all: true
+  default: none
   enable:
     - asciicheck
     - bodyclose
@@ -39,81 +13,107 @@ linters:
     - gocritic
     - gocyclo
     - godox
-    - gofmt
-    - gofumpt
     - goheader
-    - goimports
-    - revive
     - gomodguard
     - goprintffuncname
-    - gosimple
     - govet
     - ineffassign
     - misspell
     - nakedret
     - prealloc
+    - revive
     - rowserrcheck
     - sqlclosecheck
     - staticcheck
-    - stylecheck
-    - typecheck
     - unconvert
     - unparam
     - unused
     - whitespace
-
-linters-settings:
-  revive:
-    confidence: 0.01
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    gocritic:
+      enabled-checks:
+        - commentedOutCode
+        - nilValReturn
+        - sloppyReassign
+        - weakCond
+        - octalLiteral
+        - appendCombine
+        - equalFold
+        - hugeParam
+        - indexAlloc
+        - rangeExprCopy
+        - rangeValCopy
+        - boolExprSimplify
+        - commentedOutImport
+        - docStub
+        - emptyFallthrough
+        - emptyStringTest
+        - hexLiteral
+        - methodExprCall
+        - stringXbytes
+        - typeAssertChain
+        - unlabelStmt
+        - yodaStyleExpr
+        - builtinShadow
+        - importShadow
+        - initClause
+        - nestingReduce
+        - paramTypeCombine
+        - ptrToRefParam
+        - typeUnparen
+        - unnamedResult
+        - unnecessaryBlock
+    godox:
+      keywords:
+        - BUG
+        - FIXME
+        - HACK
+    revive:
+      confidence: 0.01
+      rules:
+        - name: duplicated-imports
+          severity: error
+          disabled: false
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     rules:
-      - name: duplicated-imports
-        severity: error
-        disabled: false
-  godox:
-    keywords:
-      - BUG
-      - FIXME
-      - HACK
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
-  gocritic:
-    enabled-checks:
-      # Diagnostic
-      - commentedOutCode
-      - nilValReturn
-      - sloppyReassign
-      - weakCond
-      - octalLiteral
-
-      # Performance
-      - appendCombine
-      - equalFold
-      - hugeParam
-      - indexAlloc
-      - rangeExprCopy
-      - rangeValCopy
-
-      # Style
-      - boolExprSimplify
-      - commentedOutImport
-      - docStub
-      - emptyFallthrough
-      - emptyStringTest
-      - hexLiteral
-      - methodExprCall
-      - stringXbytes
-      - typeAssertChain
-      - unlabelStmt
-      - yodaStyleExpr
-
-      # Opinionated
-      - builtinShadow
-      - importShadow
-      - initClause
-      - nestingReduce
-      - paramTypeCombine
-      - ptrToRefParam
-      - typeUnparen
-      - unnamedResult
-      - unnecessaryBlock
+      - linters:
+          - dupl
+          - gocritic
+          - golint
+        path: fake_.*\.go
+      - linters:
+          - dupl
+          - errcheck
+          - goconst
+          - gocritic
+          - golint
+          - staticcheck
+        path: examples/*
+    paths:
+      - (^|/)vendor($|/)
+      - (^|/)testdata($|/)
+      - (^|/)Godeps($|/)
+      - (^|/)builtin($|/)
+      - .*.gvm/.*
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - (^|/)vendor($|/)
+      - (^|/)testdata($|/)
+      - (^|/)Godeps($|/)
+      - (^|/)builtin($|/)
+      - .*.gvm/.*
