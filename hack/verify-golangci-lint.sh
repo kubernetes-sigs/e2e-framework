@@ -18,7 +18,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-VERSION=v1.63.4
+VERSION=v2.1.6
 URL_BASE=https://raw.githubusercontent.com/golangci/golangci-lint
 URL=$URL_BASE/$VERSION/install.sh
 
