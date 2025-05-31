@@ -22,6 +22,7 @@ import (
 	"errors"
 	"time"
 
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -327,6 +328,39 @@ func (r *Resources) ExecInPod(ctx context.Context, namespaceName, podName, conta
 	}
 
 	return nil
+}
+
+// ExecInDeployment runs the command in the first container of the first pod of the specified deployment,
+// mimicking the behavior of
+//
+// $ kubectl exec -it -n <namespaceName> deploy/<deploymentName> -- <command>
+func (r *Resources) ExecInDeployment(ctx context.Context, namespaceName, deploymentName string, command []string, stdout, stderr *bytes.Buffer) error {
+	var deployment appsv1.Deployment
+	if err := r.Get(ctx, deploymentName, namespaceName, &deployment); err != nil {
+		return err
+	}
+
+	sel, err := metav1.LabelSelectorAsSelector(deployment.Spec.Selector)
+	if err != nil {
+		return err
+	}
+
+	var pods v1.PodList
+	if err := r.client.List(ctx, &pods, cr.InNamespace(namespaceName), cr.MatchingLabelsSelector{Selector: sel}); err != nil {
+		return err
+	}
+
+	if len(pods.Items) == 0 {
+		return errors.New("deployment has no pods")
+	}
+	pod := pods.Items[0]
+
+	if len(pod.Spec.Containers) == 0 {
+		return errors.New("pod has no containers")
+	}
+	container := pod.Spec.Containers[0]
+
+	return r.ExecInPod(ctx, namespaceName, pod.Name, container.Name, command, stdout, stderr)
 }
 
 func init() {
