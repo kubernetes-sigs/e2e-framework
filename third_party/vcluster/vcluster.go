@@ -276,6 +276,10 @@ func (c *Cluster) KubernetesRestConfig() *rest.Config {
 	return c.rc
 }
 
+func (c *Cluster) GetLatestKubeconfig(args ...string) (string, error) {
+	return c.getKubeconfig(args...)
+}
+
 // helpers to implement support.E2EClusterProvider
 func (c *Cluster) findOrInstallVcluster() error {
 	version := c.version
@@ -307,11 +311,12 @@ func (c *Cluster) clusterExists(name string) (string, bool) {
 	return raw, false
 }
 
-func (c *Cluster) getKubeconfig() (string, error) {
+func (c *Cluster) getKubeconfig(args ...string) (string, error) {
 	kubecfg := fmt.Sprintf("%s-kubecfg", c.name)
 
 	var stdout, stderr bytes.Buffer
-	err := utils.RunCommandWithSeperatedOutput(fmt.Sprintf(`%s connect %s --print`, c.path, c.name), &stdout, &stderr)
+	cmd := fmt.Sprintf(`%s connect %s --print %s`, c.path, c.name, strings.Join(args, " "))
+	err := utils.RunCommandWithSeperatedOutput(cmd, &stdout, &stderr)
 	if err != nil {
 		return "", fmt.Errorf("vcluster connect: stderr: %s: %w", stderr.String(), err)
 	}

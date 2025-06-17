@@ -94,12 +94,12 @@ func (k *Cluster) clusterExists(name string) (string, bool) {
 	return clusters, false
 }
 
-func (k *Cluster) getKubeconfig() (string, error) {
+func (k *Cluster) getKubeconfig(args ...string) (string, error) {
 	kubecfg := fmt.Sprintf("%s-kubecfg", k.name)
 
 	var stdout, stderr bytes.Buffer
-	err := utils.RunCommandWithSeperatedOutput(fmt.Sprintf(`%s get kubeconfig --name %s`,
-		k.path, k.name), &stdout, &stderr)
+	cmd := fmt.Sprintf(`%s get kubeconfig %s --name %s`, k.path, strings.Join(args, " "), k.name)
+	err := utils.RunCommandWithSeperatedOutput(cmd, &stdout, &stderr)
 	if err != nil {
 		return "", fmt.Errorf("kwokctl get kubeconfig: stderr: %s: %w", stderr.String(), err)
 	}
@@ -279,4 +279,8 @@ func (k *Cluster) WithVersion(version string) support.E2EClusterProvider {
 
 func (k *Cluster) KubernetesRestConfig() *rest.Config {
 	return k.rc
+}
+
+func (k *Cluster) GetLatestKubeconfig(args ...string) (string, error) {
+	return k.getKubeconfig(args...)
 }
