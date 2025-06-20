@@ -179,6 +179,12 @@ type E2EClusterProvider interface {
 	// PATH variable and you want to use that instead of framework trying to install one on it's own.
 	WithPath(path string) E2EClusterProvider
 
+	// WithGetKubeConfigArgs is used to provide a mechanism where the cluster provider can be configured
+	// to provide additional flags to the get kubeconfig command that is used to extract the kubeconfig
+	// file from the cluster. This can be used to provide additional flags such as --internal for kind.
+	// It is not validated by the framework and is passed as is to the cluster provider.
+	WithGetKubeConfigArgs(args ...string) E2EClusterProvider
+
 	// WithOpts provides a way to customize the options that can be used while setting up the
 	// cluster using the providers such as kind or kwok or anything else. These helpers can be
 	// leveraged to setup arguments or configuration values that can be provided while performing
@@ -195,6 +201,11 @@ type E2EClusterProvider interface {
 	// GetKubeconfig provides a way to extract the kubeconfig file associated with the cluster in question
 	// using the cluster provider native way
 	GetKubeconfig() string
+
+	// GetLiveKubeconfig provides a way to extract the kubeconfig file associated with the cluster in question.
+	// Different from GetKubeconfig, this method is used to extract the kubeconfig live, where the GetKubeconfig is cached.
+	// It is useful in cases where the kubeconfig file is required to be extracted multiple times during the test run with different arguments.
+	GetLiveKubeconfig() (string, error)
 
 	// GetKubectlContext is used to extract the kubectl context to be used while performing the operation
 	GetKubectlContext() string
