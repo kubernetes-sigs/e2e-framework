@@ -43,6 +43,8 @@ type Cluster struct {
 	version      string
 	waitDuration time.Duration
 	rc           *rest.Config
+
+	getKubeConfigArgs []string
 }
 
 var _ support.E2EClusterProvider = &Cluster{}
@@ -73,6 +75,15 @@ func WithWaitDuration(waitDuration time.Duration) support.ClusterOpts {
 	}
 }
 
+func WithGetKubeConfigArgs(args ...string) support.ClusterOpts {
+	return func(c support.E2EClusterProvider) {
+		k, ok := c.(*Cluster)
+		if ok {
+			k.getKubeConfigArgs = args
+		}
+	}
+}
+
 func (k *Cluster) findOrInstallKwokCtl() error {
 	if k.version != "" {
 		kwokVersion = k.version
@@ -98,8 +109,8 @@ func (k *Cluster) getKubeconfig() (string, error) {
 	kubecfg := fmt.Sprintf("%s-kubecfg", k.name)
 
 	var stdout, stderr bytes.Buffer
-	err := utils.RunCommandWithSeperatedOutput(fmt.Sprintf(`%s get kubeconfig --name %s`,
-		k.path, k.name), &stdout, &stderr)
+	cmd := fmt.Sprintf(`%s get kubeconfig %s --name %s`, k.path, strings.Join(k.getKubeConfigArgs, " "), k.name)
+	err := utils.RunCommandWithSeperatedOutput(cmd, &stdout, &stderr)
 	if err != nil {
 		return "", fmt.Errorf("kwokctl get kubeconfig: stderr: %s: %w", stderr.String(), err)
 	}
@@ -279,4 +290,13 @@ func (k *Cluster) WithVersion(version string) support.E2EClusterProvider {
 
 func (k *Cluster) KubernetesRestConfig() *rest.Config {
 	return k.rc
+}
+
+func (c *Cluster) GetLatestKubeconfig() (string, error) {
+	return c.getKubeconfig()
+}
+
+func (k *Cluster) WithGetKubeConfigArgs(args ...string) support.E2EClusterProvider {
+	k.getKubeConfigArgs = args
+	return k
 }

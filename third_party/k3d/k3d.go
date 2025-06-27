@@ -47,6 +47,8 @@ type Cluster struct {
 	image          string
 	rc             *rest.Config
 	args           []string
+
+	getKubeConfigArgs []string
 }
 
 // k3dNode is a struct containing a subset of values that are part of the k3d node list -o json
@@ -110,7 +112,8 @@ func (c *Cluster) getKubeConfig() (string, error) {
 	kubeCfg := fmt.Sprintf("%s-kubecfg", c.name)
 
 	var stdout, stderr bytes.Buffer
-	err := utils.RunCommandWithSeperatedOutput(fmt.Sprintf("%s kubeconfig get %s", c.path, c.name), &stdout, &stderr)
+	cmd := fmt.Sprintf("%s kubeconfig get %s %s", c.path, strings.Join(c.getKubeConfigArgs, " "), c.name)
+	err := utils.RunCommandWithSeperatedOutput(cmd, &stdout, &stderr)
 	if err != nil {
 		return "", fmt.Errorf("failed to get kubeconfig: %s", stderr.String())
 	}
@@ -182,6 +185,11 @@ func (c *Cluster) WithOpts(opts ...support.ClusterOpts) support.E2EClusterProvid
 	return c
 }
 
+func (c *Cluster) WithGetKubeConfigArgs(args ...string) support.E2EClusterProvider {
+	c.getKubeConfigArgs = args
+	return c
+}
+
 func (c *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 	log.V(4).InfoS("Creating k3d cluster", "name", c.name)
 	if err := c.findOrInstallK3D(); err != nil {
@@ -248,6 +256,10 @@ func (c *Cluster) GetKubeconfig() string {
 
 func (c *Cluster) GetKubectlContext() string {
 	return fmt.Sprintf("k3d-%s", c.name)
+}
+
+func (c *Cluster) GetLatestKubeconfig() (string, error) {
+	return c.getKubeConfig()
 }
 
 func (c *Cluster) ExportLogs(ctx context.Context, dest string) error {
