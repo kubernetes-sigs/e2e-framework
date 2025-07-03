@@ -25,6 +25,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -70,10 +71,41 @@ func TestExecInDeployment(t *testing.T) {
 
 			return ctx
 		}).
+		Assess("executes commands in an existing deployment with pod index specified", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
+			deployment := ctx.Value(deploymentCtxKey).(*appsv1.Deployment)
+			message := "foo bar baz"
+
+			var stdout, stderr bytes.Buffer
+			cmd := []string{"echo", "-n", message}
+			if err := c.Client().Resources().ExecInDeployment(ctx, c.Namespace(), deployment.Name, cmd, &stdout, &stderr, resources.WithPodIndex(0)); err != nil {
+				t.Log(stderr.String())
+				t.Fatal(err)
+			}
+
+			if stdout.String() != message {
+				t.Fatalf("Expected %q, got %q", message, stdout.String())
+			}
+
+			return ctx
+		}).
 		Assess("returns error for non-existent deployments", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 			var stdout, stderr bytes.Buffer
-			cmd := []string{"echo", "should not happen"}
-			err := c.Client().Resources().ExecInDeployment(ctx, c.Namespace(), "does-not-exist", cmd, &stdout, &stderr)
+			deploymentName := "does-not-exist"
+			cmd := []string{}
+			err := c.Client().Resources().ExecInDeployment(ctx, c.Namespace(), deploymentName, cmd, &stdout, &stderr)
+
+			if err == nil {
+				t.Fatal("Expected an error, got nil")
+			}
+
+			return ctx
+		}).
+		Assess("returns error if there's no pod for provided index", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
+			deployment := ctx.Value(deploymentCtxKey).(*appsv1.Deployment)
+
+			var stdout, stderr bytes.Buffer
+			cmd := []string{}
+			err := c.Client().Resources().ExecInDeployment(ctx, c.Namespace(), deployment.Name, cmd, &stdout, &stderr, resources.WithPodIndex(42))
 
 			if err == nil {
 				t.Fatal("Expected an error, got nil")

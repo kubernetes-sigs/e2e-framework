@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -330,11 +331,28 @@ func (r *Resources) ExecInPod(ctx context.Context, namespaceName, podName, conta
 	return nil
 }
 
-// ExecInDeployment runs the command in the first container of the first pod of the specified deployment,
-// mimicking the behavior of
+type execInDeploymentOptions struct {
+	PodIndex int
+}
+
+// ExecInDeploymentOption extends the [ExecInDeployment] default behavior.
+type ExecInDeploymentOption func(*execInDeploymentOptions)
+
+// WithPodIndex sets the pod index to select.
+func WithPodIndex(idx int) ExecInDeploymentOption {
+	return func(opts *execInDeploymentOptions) { opts.PodIndex = idx }
+}
+
+// ExecInDeployment selects a pod by index (0 by default) from the specified deployment
+// and runs the command in the first container of that pod.
 //
-// $ kubectl exec -it -n <namespaceName> deploy/<deploymentName> -- <command>
-func (r *Resources) ExecInDeployment(ctx context.Context, namespaceName, deploymentName string, command []string, stdout, stderr *bytes.Buffer) error {
+// Use [WithPodIndex] to specify a different pod index.
+func (r *Resources) ExecInDeployment(ctx context.Context, namespaceName, deploymentName string, command []string, stdout, stderr *bytes.Buffer, opts ...ExecInDeploymentOption) error {
+	options := execInDeploymentOptions{}
+	for _, fn := range opts {
+		fn(&options)
+	}
+
 	var deployment appsv1.Deployment
 	if err := r.Get(ctx, deploymentName, namespaceName, &deployment); err != nil {
 		return err
@@ -350,10 +368,10 @@ func (r *Resources) ExecInDeployment(ctx context.Context, namespaceName, deploym
 		return err
 	}
 
-	if len(pods.Items) == 0 {
-		return errors.New("deployment has no pods")
+	if options.PodIndex >= len(pods.Items) {
+		return fmt.Errorf("pod index %d is out of range (available pods: %d)", options.PodIndex, len(pods.Items))
 	}
-	pod := pods.Items[0]
+	pod := pods.Items[options.PodIndex]
 
 	if len(pod.Spec.Containers) == 0 {
 		return errors.New("pod has no containers")
