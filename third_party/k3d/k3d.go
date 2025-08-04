@@ -251,7 +251,7 @@ func (c *Cluster) GetKubectlContext() string {
 	return fmt.Sprintf("k3d-%s", c.name)
 }
 
-func (c *Cluster) GetLatestKubeconfig(args ...string) (string, error) {
+func (c *Cluster) GenerateKubeconfig(args ...string) (string, error) {
 	return c.getKubeConfig(args...)
 }
 

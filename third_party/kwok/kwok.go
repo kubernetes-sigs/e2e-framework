@@ -281,6 +281,6 @@ func (k *Cluster) KubernetesRestConfig() *rest.Config {
 	return k.rc
 }
 
-func (k *Cluster) GetLatestKubeconfig(args ...string) (string, error) {
+func (k *Cluster) GenerateKubeconfig(args ...string) (string, error) {
 	return k.getKubeconfig(args...)
 }
