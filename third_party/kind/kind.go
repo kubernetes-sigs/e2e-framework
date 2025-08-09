@@ -107,11 +107,11 @@ func (k *Cluster) WithOpts(opts ...support.ClusterOpts) support.E2EClusterProvid
 	return k
 }
 
-func (k *Cluster) getKubeconfig() (string, error) {
+func (k *Cluster) getKubeconfig(args ...string) (string, error) {
 	kubecfg := fmt.Sprintf("%s-kubecfg", k.name)
 
 	var stdout, stderr bytes.Buffer
-	err := utils.RunCommandWithSeperatedOutput(fmt.Sprintf(`%s get kubeconfig --name %s`, k.path, k.name), &stdout, &stderr)
+	err := utils.RunCommandWithSeperatedOutput(fmt.Sprintf(`%s get kubeconfig %s --name %s`, k.path, strings.Join(args, " "), k.name), &stdout, &stderr)
 	if err != nil {
 		return "", fmt.Errorf("kind get kubeconfig: stderr: %s: %w", stderr.String(), err)
 	}
@@ -306,4 +306,8 @@ func (k *Cluster) WaitForControlPlane(ctx context.Context, client klient.Client)
 
 func (k *Cluster) KubernetesRestConfig() *rest.Config {
 	return k.rc
+}
+
+func (k *Cluster) GenerateKubeconfig(args ...string) (string, error) {
+	return k.getKubeconfig(args...)
 }

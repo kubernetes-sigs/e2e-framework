@@ -106,11 +106,12 @@ func (c *Cluster) findOrInstallK3D() error {
 	return err
 }
 
-func (c *Cluster) getKubeConfig() (string, error) {
+func (c *Cluster) getKubeConfig(args ...string) (string, error) {
 	kubeCfg := fmt.Sprintf("%s-kubecfg", c.name)
 
 	var stdout, stderr bytes.Buffer
-	err := utils.RunCommandWithSeperatedOutput(fmt.Sprintf("%s kubeconfig get %s", c.path, c.name), &stdout, &stderr)
+	cmd := fmt.Sprintf("%s kubeconfig get %s %s", c.path, strings.Join(args, " "), c.name)
+	err := utils.RunCommandWithSeperatedOutput(cmd, &stdout, &stderr)
 	if err != nil {
 		return "", fmt.Errorf("failed to get kubeconfig: %s", stderr.String())
 	}
@@ -248,6 +249,10 @@ func (c *Cluster) GetKubeconfig() string {
 
 func (c *Cluster) GetKubectlContext() string {
 	return fmt.Sprintf("k3d-%s", c.name)
+}
+
+func (c *Cluster) GenerateKubeconfig(args ...string) (string, error) {
+	return c.getKubeConfig(args...)
 }
 
 func (c *Cluster) ExportLogs(ctx context.Context, dest string) error {
