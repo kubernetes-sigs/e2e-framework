@@ -74,7 +74,8 @@ import (
 type ListOptions struct{ ... }
 type ListOptFunc func(*ListOptions)
 
-func (_ Resource) List(ctx context.Context, namespace string, l ObjectList, opts ...ListOption) error
+
+func (r *Resources) List(ctx context.Context, objs k8s.ObjectList, opts ...ListOption) error
 ```
 
 Optional parameters can be omitted from the call (as shown below), in which case the framework would use sensible default values where applicable.
@@ -82,11 +83,11 @@ Optional parameters can be omitted from the call (as shown below), in which case
 ```go
 func main() {
     var deps v1.DeploymentList
-    if res.List(
+    if err := res.List(
         context.TODO(), 
-        "default", &deps, 
-        func(opts *metav1.ListOptions){opts.Labels="tier=web"}); err != nil {
-        log.Fatal("unable to list deployments ", err)   
+        &deps,
+        ); err != nil {
+          log.Fatal("unable to list deployments ", err)
     }
 }
 ```
@@ -96,11 +97,11 @@ func main() {
 ```go
 func main() {
     var deps v1.DeploymentList
-    if res.List(
+    if err := res.List(
         context.TODO(), 
-        "default", &deps, 
-        WithLabelSelector("tier=web")); err != nil {
-        log.Fatal("unable to list deployments ", err)   
+        &deps, 
+        resources.WithLabelSelector("tier=web")); err != nil {
+          log.Fatal("unable to list deployments ", err)
     }
 }
 ```
@@ -113,12 +114,12 @@ For instance, if we assume that type `ListOptions` includes a `RetryTimeout` fie
 ```go
 func main() {
     var deps v1.DeploymentList
-    if res.List(
+    if err := res.List(
         context.TODO(), 
-        "default", &deps, 
+        &deps,
         func(opts *ListOptions){opts.Labels="tier=web"}
         func(opts *ListOptions){opts.RetryTimeout=time.Seconds*30}); err != nil {
-        log.Fatal("unable to list deployments ", err)   
+          log.Fatal("unable to list deployments ", err)
     }
 }
 ```
