@@ -27,7 +27,7 @@ import (
 	"sync"
 	"testing"
 
-	klog "k8s.io/klog/v2"
+	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/e2e-framework/klient"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -480,6 +480,7 @@ func (e *testEnv) executeSteps(ctx context.Context, t *testing.T, steps []types.
 func (e *testEnv) execFeature(ctx context.Context, t *testing.T, featName string, f types.Feature) context.Context {
 	t.Helper()
 	// feature-level subtest
+	var failFast bool
 	t.Run(featName, func(newT *testing.T) {
 		newT.Helper()
 
@@ -494,7 +495,6 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, featName string
 		// assessments run as feature/assessment sub level
 		assessments := features.GetStepsByLevel(f.Steps(), types.LevelAssess)
 
-		failed := false
 		for i, assess := range assessments {
 			assessName := assess.Name()
 			if dAssess, ok := assess.(types.DescribableStep); ok && dAssess.Description() != "" {
@@ -503,38 +503,37 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, featName string
 			if assessName == "" {
 				assessName = fmt.Sprintf("Assessment-%d", i+1)
 			}
-			// shouldFailNow catches whether t.FailNow() is called in the assessment.
-			// If it is, we won't proceed with the next assessment.
-			var shouldFailNow bool
 			newT.Run(assessName, func(internalT *testing.T) {
 				internalT.Helper()
 				skipped, message := e.requireAssessmentProcessing(assess, i+1)
 				if skipped {
 					internalT.Skip(message)
 				}
-				// Set shouldFailNow to true before actually running the assessment, because if the assessment
-				// calls t.FailNow(), the function will be abruptly stopped in the middle of `e.executeSteps()`.
-				shouldFailNow = true
+				var finished bool
+				defer func() {
+					if internalT.Skipped() {
+						// The test was skipped, nothing to do
+						return
+					}
+					if !internalT.Failed() {
+						// The test passed, nothing to do
+						return
+					}
+					if !finished && e.cfg.FailFast() {
+						// The test didn't finish, this means t.FailNow was called
+						// or we are in fail fast mode, we should skip the remaining assessments
+						failFast = true
+					}
+				}()
 				ctx = e.executeSteps(ctx, internalT, []types.Step{assess})
-				// If we reach this point, it means the assessment did not call t.FailNow().
-				shouldFailNow = false
+				finished = true
 			})
-			// Check if the Test assessment under question performed either 2 things:
-			// - a t.FailNow() invocation
-			// - a `t.Fail()` or `t.Failed()` invocation
-			// In one of those cases, we need to track that and stop the next set of assessment in the feature
-			// under test from getting executed.
-			if shouldFailNow || (e.cfg.FailFast() && newT.Failed()) {
-				failed = true
-				break
+			if failFast {
+				return // skip remaining assessments
 			}
 		}
-
-		// Let us fail the test fast and not run the teardown in case if the framework specific fail-fast mode is
-		// invoked to make sure we leave the traces of the failed test behind to enable better debugging for the
-		// test developers
-		if e.cfg.FailFast() && failed {
-			newT.FailNow()
+		if failFast {
+			return // skip teardowns
 		}
 
 		// teardowns run at feature-level
