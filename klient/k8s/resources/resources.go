@@ -331,25 +331,94 @@ func (r *Resources) ExecInPod(ctx context.Context, namespaceName, podName, conta
 	return nil
 }
 
-type execInDeploymentOptions struct {
-	PodIndex int
+type matcher[T any] func([]T) (T, error)
+
+type predicate[T any] func(T) bool
+
+func match[T any](pred predicate[T], err error) matcher[T] {
+	return func(values []T) (T, error) {
+		for _, value := range values {
+			if pred(value) {
+				return value, nil
+			}
+		}
+
+		var notFound T
+		return notFound, err
+	}
 }
 
-// ExecInDeploymentOption extends the [ExecInDeployment] default behavior.
-type ExecInDeploymentOption func(*execInDeploymentOptions)
+func matchByIndex[T any](idx int, err error) matcher[T] {
+	return func(items []T) (T, error) {
+		if idx >= len(items) {
+			var notFound T
+			return notFound, fmt.Errorf("%w: index %d is out of range with length %d", err, idx, len(items))
+		}
 
-// WithPodIndex sets the pod index to select.
-func WithPodIndex(idx int) ExecInDeploymentOption {
-	return func(opts *execInDeploymentOptions) { opts.PodIndex = idx }
+		return items[idx], nil
+	}
 }
 
-// ExecInDeployment selects a pod by index (0 by default) from the specified deployment
-// and runs the command in the first container of that pod.
+var (
+	errPodNotFound       = errors.New("pod not found")
+	errContainerNotFound = errors.New("container not found")
+)
+
+type deploymentOptions struct {
+	podMatcher       matcher[v1.Pod]
+	containerMatcher matcher[v1.Container]
+}
+
+// DeploymentOption extends the default behavior of [ExecInDeployment].
+type DeploymentOption func(*deploymentOptions)
+
+// WithDeploymentPod selects the pod that matches the given condition.
+func WithDeploymentPod(pred predicate[v1.Pod]) DeploymentOption {
+	return func(opts *deploymentOptions) {
+		opts.podMatcher = match(pred, errPodNotFound)
+	}
+}
+
+// WithDeploymentPodIndex selects the pod at the given index.
+func WithDeploymentPodIndex(idx int) DeploymentOption {
+	return func(opts *deploymentOptions) {
+		opts.podMatcher = matchByIndex[v1.Pod](idx, errPodNotFound)
+	}
+}
+
+// WithDeploymentContainer selects the container that matches the given condition.
+func WithDeploymentContainer(pred predicate[v1.Container]) DeploymentOption {
+	return func(opts *deploymentOptions) {
+		opts.containerMatcher = match(pred, errContainerNotFound)
+	}
+}
+
+// WithDeploymentContainerIndex selects the container at the given index.
+func WithDeploymentContainerIndex(idx int) DeploymentOption {
+	return func(opts *deploymentOptions) {
+		opts.containerMatcher = matchByIndex[v1.Container](idx, errContainerNotFound)
+	}
+}
+
+// WithDeploymentContainerName selects the container with the given name.
+func WithDeploymentContainerName(name string) DeploymentOption {
+	return func(opts *deploymentOptions) {
+		opts.containerMatcher = match(
+			func(c v1.Container) bool { return c.Name == name },
+			fmt.Errorf("%w: name %q", errContainerNotFound, name),
+		)
+	}
+}
+
+// ExecInDeployment runs the given command in a container belonging to the deployment with the given name.
+// By default, it selects the first container of the first pod.
 //
-// Use [WithPodIndex] to specify a different pod index.
-func (r *Resources) ExecInDeployment(ctx context.Context, namespaceName, deploymentName string, command []string, stdout, stderr *bytes.Buffer, opts ...ExecInDeploymentOption) error {
-	options := execInDeploymentOptions{}
-	for _, fn := range opts {
+// Pod and container selection can be customized using [WithDeploymentPod], [WithDeploymentContainer],
+// or related functions.
+func (r *Resources) ExecInDeployment(ctx context.Context, namespaceName, deploymentName string, command []string, stdout, stderr *bytes.Buffer, opts ...DeploymentOption) error {
+	options := deploymentOptions{}
+	defaultOpts := []DeploymentOption{WithDeploymentPodIndex(0), WithDeploymentContainerIndex(0)}
+	for _, fn := range append(defaultOpts, opts...) {
 		fn(&options)
 	}
 
@@ -368,15 +437,15 @@ func (r *Resources) ExecInDeployment(ctx context.Context, namespaceName, deploym
 		return err
 	}
 
-	if options.PodIndex >= len(pods.Items) {
-		return fmt.Errorf("pod index %d is out of range (available pods: %d)", options.PodIndex, len(pods.Items))
+	pod, err := options.podMatcher(pods.Items)
+	if err != nil {
+		return err
 	}
-	pod := pods.Items[options.PodIndex]
 
-	if len(pod.Spec.Containers) == 0 {
-		return errors.New("pod has no containers")
+	container, err := options.containerMatcher(pod.Spec.Containers)
+	if err != nil {
+		return err
 	}
-	container := pod.Spec.Containers[0]
 
 	return r.ExecInPod(ctx, namespaceName, pod.Name, container.Name, command, stdout, stderr)
 }

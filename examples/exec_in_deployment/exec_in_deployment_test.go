@@ -19,6 +19,7 @@ package exec_in_deployment
 import (
 	"bytes"
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -56,28 +57,49 @@ func TestExecInDeployment(t *testing.T) {
 		}).
 		Assess("executes commands in an existing deployment", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 			deployment := ctx.Value(deploymentCtxKey).(*appsv1.Deployment)
-			message := "foo bar baz"
 
-			var stdout, stderr bytes.Buffer
-			cmd := []string{"echo", "-n", message}
-			if err := c.Client().Resources().ExecInDeployment(ctx, c.Namespace(), deployment.Name, cmd, &stdout, &stderr); err != nil {
-				t.Log(stderr.String())
-				t.Fatal(err)
+			tests := []struct {
+				name string
+				opts []resources.DeploymentOption
+			}{
+				{name: "default options"},
+				{name: "pod index", opts: []resources.DeploymentOption{resources.WithDeploymentPodIndex(0)}},
+				{name: "container index", opts: []resources.DeploymentOption{resources.WithDeploymentContainerIndex(1)}},
+				{name: "container name", opts: []resources.DeploymentOption{resources.WithDeploymentContainerName("sleep-2")}},
+				{
+					name: "predicate rules",
+					opts: []resources.DeploymentOption{
+						resources.WithDeploymentPod(func(p corev1.Pod) bool { return strings.HasPrefix(p.Name, deployment.Name) }),
+						resources.WithDeploymentContainer(func(c corev1.Container) bool { return strings.HasPrefix(c.Name, "sleep-") }),
+					},
+				},
 			}
 
-			if stdout.String() != message {
-				t.Fatalf("Expected %q, got %q", message, stdout.String())
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
+					message := "foo bar baz"
+					var stdout, stderr bytes.Buffer
+					cmd := []string{"echo", "-n", message}
+					if err := c.Client().Resources().ExecInDeployment(ctx, c.Namespace(), deployment.Name, cmd, &stdout, &stderr, tt.opts...); err != nil {
+						t.Log(stderr.String())
+						t.Fatal(err)
+					}
+
+					if stdout.String() != message {
+						t.Fatalf("expected %q, got %q", message, stdout.String())
+					}
+				})
 			}
 
 			return ctx
 		}).
-		Assess("executes commands in an existing deployment with pod index specified", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
+		Assess("uses provided namespace when fetching deployment", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 			deployment := ctx.Value(deploymentCtxKey).(*appsv1.Deployment)
 			message := "foo bar baz"
 
 			var stdout, stderr bytes.Buffer
 			cmd := []string{"echo", "-n", message}
-			if err := c.Client().Resources().ExecInDeployment(ctx, c.Namespace(), deployment.Name, cmd, &stdout, &stderr, resources.WithPodIndex(0)); err != nil {
+			if err := c.Client().Resources("does-not-exist").ExecInDeployment(ctx, c.Namespace(), deployment.Name, cmd, &stdout, &stderr); err != nil {
 				t.Log(stderr.String())
 				t.Fatal(err)
 			}
@@ -88,24 +110,59 @@ func TestExecInDeployment(t *testing.T) {
 
 			return ctx
 		}).
-		Assess("returns error for non-existent deployments", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
+		Assess("reports an error if no pod or container selected", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
+			deployment := ctx.Value(deploymentCtxKey).(*appsv1.Deployment)
+
+			tests := []struct {
+				name string
+				opt  resources.DeploymentOption
+				want string
+			}{
+				{
+					name: "pod index",
+					opt:  resources.WithDeploymentPodIndex(42),
+					want: "pod not found: index 42 is out of range with length 1",
+				},
+				{
+					name: "container index",
+					opt:  resources.WithDeploymentContainerIndex(42),
+					want: "container not found: index 42 is out of range with length 2",
+				},
+				{
+					name: "container name",
+					opt:  resources.WithDeploymentContainerName("does not exist"),
+					want: "container not found: name \"does not exist\"",
+				},
+				{
+					name: "pod predicate",
+					opt:  resources.WithDeploymentPod(func(p corev1.Pod) bool { return p.Kind == "not a pod" }),
+					want: "pod not found",
+				},
+				{
+					name: "container predicate",
+					opt:  resources.WithDeploymentContainer(func(c corev1.Container) bool { return c.Image == "unknown image" }),
+					want: "container not found",
+				},
+			}
+
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
+					var stdout, stderr bytes.Buffer
+					cmd := []string{"true"}
+					got := c.Client().Resources().ExecInDeployment(ctx, c.Namespace(), deployment.Name, cmd, &stdout, &stderr, tt.opt)
+					if got == nil || got.Error() != tt.want {
+						t.Fatalf("got = '%v', want = '%s'", got, tt.want)
+					}
+				})
+			}
+
+			return ctx
+		}).
+		Assess("reports an error for non-existent deployments", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 			var stdout, stderr bytes.Buffer
 			deploymentName := "does-not-exist"
-			cmd := []string{}
+			cmd := []string{"true"}
 			err := c.Client().Resources().ExecInDeployment(ctx, c.Namespace(), deploymentName, cmd, &stdout, &stderr)
-
-			if err == nil {
-				t.Fatal("Expected an error, got nil")
-			}
-
-			return ctx
-		}).
-		Assess("returns error if there's no pod for provided index", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
-			deployment := ctx.Value(deploymentCtxKey).(*appsv1.Deployment)
-
-			var stdout, stderr bytes.Buffer
-			cmd := []string{}
-			err := c.Client().Resources().ExecInDeployment(ctx, c.Namespace(), deployment.Name, cmd, &stdout, &stderr, resources.WithPodIndex(42))
 
 			if err == nil {
 				t.Fatal("Expected an error, got nil")
@@ -131,11 +188,18 @@ func newDeployment(namespace string) *appsv1.Deployment {
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{Labels: labels},
-				Spec: corev1.PodSpec{Containers: []corev1.Container{{
-					Name:    "alpine",
-					Image:   "alpine",
-					Command: []string{"sleep", "infinity"},
-				}}},
+				Spec: corev1.PodSpec{Containers: []corev1.Container{
+					{
+						Name:    "sleep-1",
+						Image:   "alpine",
+						Command: []string{"sleep", "infinity"},
+					},
+					{
+						Name:    "sleep-2",
+						Image:   "alpine",
+						Command: []string{"sleep", "infinity"},
+					},
+				}},
 			},
 		},
 	}
