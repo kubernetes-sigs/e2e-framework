@@ -35,6 +35,8 @@ import (
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources/testdata/projectExample"
+	"sigs.k8s.io/e2e-framework/klient/wait"
+	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 )
 
 func TestCreate(t *testing.T) {
@@ -432,6 +434,50 @@ func TestExecInPod(t *testing.T) {
 
 	hostName := "HOSTNAME=" + pod.Name
 	if !strings.Contains(stdout.String(), hostName) {
+		t.Fatal("Couldn't find proper env")
+	}
+}
+
+func TestExecInDeployment(t *testing.T) {
+	res, err := resources.New(cfg)
+	if err != nil {
+		t.Fatalf("Error initiating runtime controller: %v", err)
+	}
+
+	namespace := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "test-exec-in-deployment-ns"}}
+	if err := res.Create(context.TODO(), namespace); err != nil {
+		t.Fatalf("Error while creating namespace resource: %v", err)
+	}
+
+	matchingLabels := map[string]string{"foo": "bar"}
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-exec-in-deployment", Namespace: namespace.Name},
+		Spec: appsv1.DeploymentSpec{
+			Selector: &metav1.LabelSelector{MatchLabels: matchingLabels},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{Labels: matchingLabels},
+				Spec:       corev1.PodSpec{Containers: []corev1.Container{{Name: "nginx", Image: "nginx"}}},
+			},
+		},
+	}
+	if err := res.Create(context.TODO(), deployment); err != nil {
+		t.Fatalf("Error while creating deployment: %v", err)
+	}
+
+	if err := wait.For(
+		conditions.New(res).DeploymentAvailable(deployment.Name, namespace.Name),
+		wait.WithTimeout(time.Minute*1)); err != nil {
+		t.Fatalf("Error while waiting for deployment to become available: %v", err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	if err := res.ExecInDeployment(context.TODO(), namespace.Name, deployment.Name, []string{"printenv"}, &stdout, &stderr); err != nil {
+		t.Log(stderr.String())
+		t.Fatal(err)
+	}
+
+	hostname := "HOSTNAME=" + deployment.Name
+	if !strings.Contains(stdout.String(), hostname) {
 		t.Fatal("Couldn't find proper env")
 	}
 }
