@@ -28,8 +28,14 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
+var (
+	kubeconfigpath string
+	kubeContext    string
+)
+
 func TestMain(m *testing.M) {
 	setup()
+	setKubeconfigFlags()
 	code := m.Run()
 	teardown()
 	os.Exit(code)
@@ -39,8 +45,8 @@ func setup() {
 	home := homedir.HomeDir()
 
 	kubeconfigdir := filepath.Join(home, "test", ".kube")
-	kubeconfigpath := filepath.Join(kubeconfigdir, "config")
-	kubeContext := "test-context"
+	kubeconfigpath = filepath.Join(kubeconfigdir, "config")
+	kubeContext = "test-context"
 
 	// check if file exists
 	_, err := os.Stat(kubeconfigpath)
@@ -66,17 +72,33 @@ func setup() {
 
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Paths to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&kubeContext, "context", "", "The name of the kubeconfig context to use. Only required if out-of-cluster.")
+}
 
+func setKubeconfigFlags() {
 	// set --kubeconfig flag
-	err = flag.Set("kubeconfig", kubeconfigpath)
-	if err != nil {
+	if err := flag.Set("kubeconfig", kubeconfigpath); err != nil {
 		log.ErrorS(err, "unexpected error while setting kubeconfig flag value")
 		return
 	}
 
 	// set --context flag
-	err = flag.Set("context", kubeContext)
-	if err != nil {
+	if err := flag.Set("context", kubeContext); err != nil {
+		log.ErrorS(err, "unexpected error while setting context flag value")
+		return
+	}
+
+	flag.Parse()
+}
+
+func clearKubeconfigFlags() {
+	// clear --kubeconfig flag
+	if err := flag.Set("kubeconfig", ""); err != nil {
+		log.ErrorS(err, "unexpected error while setting kubeconfig flag value")
+		return
+	}
+
+	// clear --context flag
+	if err := flag.Set("context", ""); err != nil {
 		log.ErrorS(err, "unexpected error while setting context flag value")
 		return
 	}
