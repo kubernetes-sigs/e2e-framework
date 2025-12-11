@@ -28,6 +28,11 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
+// unexported key type to avoid collisions in context (SA1029)
+type depKeyType struct{}
+
+var depKey depKeyType
+
 func TestKindCluster(t *testing.T) {
 	deploymentFeature := features.New("appsv1/deployment").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -44,13 +49,11 @@ func TestKindCluster(t *testing.T) {
 			if err := cfg.Client().Resources().Get(ctx, "test-deployment", cfg.Namespace(), &dep); err != nil {
 				t.Fatal(err)
 			}
-			if &dep != nil {
-				t.Logf("deployment found: %s", dep.Name)
-			}
-			return context.WithValue(ctx, "test-deployment", &dep)
+			t.Logf("deployment found: %s", dep.Name)
+			return context.WithValue(ctx, depKey, &dep)
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			dep := ctx.Value("test-deployment").(*appsv1.Deployment)
+			dep := ctx.Value(depKey).(*appsv1.Deployment)
 			if err := cfg.Client().Resources().Delete(ctx, dep); err != nil {
 				t.Fatal(err)
 			}
