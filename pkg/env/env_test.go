@@ -942,3 +942,160 @@ func getFeaturesForTest() []features.Feature {
 		}).Feature()
 	return []features.Feature{f1, f2}
 }
+
+// TestEnv_FailFast_WithSkip tests that skip does not trigger fail-fast behavior.
+func TestEnv_FailFast_WithSkip(t *testing.T) {
+	tests := []struct {
+		name     string
+		setup    func(*testing.T) []string
+		expected []string
+	}{
+		{
+			name: "skip via skip-assessment flag with fail-fast should continue",
+			expected: []string{
+				"assess-2",
+			},
+			setup: func(t *testing.T) (val []string) {
+				// Configure fail-fast and skip first assessment via regex
+				env := NewWithConfig(envconf.New().WithFailFast().WithSkipAssessmentRegex("assess-1"))
+				f := features.New("test-feat").
+					Assess("assess-1", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+						val = append(val, "assess-1")
+						return ctx
+					}).
+					Assess("assess-2", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+						val = append(val, "assess-2")
+						return ctx
+					})
+				_ = env.Test(t, f.Feature())
+				return
+			},
+		},
+		{
+			name: "skip via t.Skip in assessment with fail-fast should continue",
+			expected: []string{
+				"assess-2",
+			},
+			setup: func(t *testing.T) (val []string) {
+				// Configure fail-fast, user calls t.Skip() in first assessment
+				env := NewWithConfig(envconf.New().WithFailFast())
+				f := features.New("test-feat").
+					Assess("assess-1", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+						t.Skip("skipping this assessment")
+						val = append(val, "assess-1")
+						return ctx
+					}).
+					Assess("assess-2", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+						val = append(val, "assess-2")
+						return ctx
+					})
+				_ = env.Test(t, f.Feature())
+				return
+			},
+		},
+		{
+			name: "multiple skips with fail-fast should continue to all non-skipped",
+			expected: []string{
+				"assess-2",
+				"assess-4",
+			},
+			setup: func(t *testing.T) (val []string) {
+				// Configure fail-fast, skip assessments 1 and 3
+				env := NewWithConfig(envconf.New().WithFailFast().WithSkipAssessmentRegex("assess-[13]"))
+				f := features.New("test-feat").
+					Assess("assess-1", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+						val = append(val, "assess-1")
+						return ctx
+					}).
+					Assess("assess-2", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+						val = append(val, "assess-2")
+						return ctx
+					}).
+					Assess("assess-3", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+						val = append(val, "assess-3")
+						return ctx
+					}).
+					Assess("assess-4", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+						val = append(val, "assess-4")
+						return ctx
+					})
+				_ = env.Test(t, f.Feature())
+				return
+			},
+		},
+		{
+			name: "pass without fail-fast continues normally",
+			expected: []string{
+				"assess-1",
+				"assess-2",
+			},
+			setup: func(t *testing.T) (val []string) {
+				// No fail-fast, both assessments should run
+				env := newTestEnv()
+				f := features.New("test-feat").
+					Assess("assess-1", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+						val = append(val, "assess-1")
+						return ctx
+					}).
+					Assess("assess-2", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+						val = append(val, "assess-2")
+						return ctx
+					})
+				_ = env.Test(t, f.Feature())
+				return
+			},
+		},
+		{
+			name: "skip in first feature with fail-fast should continue to second feature",
+			expected: []string{
+				"feat1-assess-2",
+				"feat2-assess-1",
+				"feat2-assess-2",
+			},
+			setup: func(t *testing.T) (val []string) {
+				// Configure fail-fast, first feature has skipped assessment
+				env := NewWithConfig(envconf.New().WithFailFast())
+				feat1 := features.New("skip").
+					Assess("Assess 1", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+						t.Skipf("skipping Assess 1")
+						val = append(val, "feat1-assess-1")
+						return ctx
+					}).
+					Assess("Assess 2", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+						val = append(val, "feat1-assess-2")
+						return ctx
+					}).
+					Feature()
+
+				feat2 := features.New("succeed").
+					Assess("Assess 1", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+						val = append(val, "feat2-assess-1")
+						return ctx
+					}).
+					Assess("Assess 2", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+						val = append(val, "feat2-assess-2")
+						return ctx
+					}).
+					Feature()
+
+				_ = env.Test(t, feat1, feat2)
+				return
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := test.setup(t)
+			if len(test.expected) != len(result) {
+				t.Fatalf("Expected:\n%v but got result:\n%v", test.expected, result)
+			}
+			for i := range test.expected {
+				if result[i] != test.expected[i] {
+					t.Errorf("Expected:\n%v but got result:\n%v", test.expected, result)
+					break
+				}
+			}
+		})
+	}
+}

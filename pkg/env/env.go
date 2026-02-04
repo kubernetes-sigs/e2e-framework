@@ -507,8 +507,12 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, f types.Feature
 		// shouldFailNow catches whether t.FailNow() is called in the assessment.
 		// If it is, we won't proceed with the next assessment.
 		var shouldFailNow bool
+		var wasSkipped bool
 		t.Run(assessName, func(internalT *testing.T) {
 			internalT.Helper()
+			defer func() {
+				wasSkipped = internalT.Skipped()
+			}()
 			skipped, message := e.requireAssessmentProcessing(assess, i+1)
 			if skipped {
 				internalT.Skip(message)
@@ -524,8 +528,8 @@ func (e *testEnv) execFeature(ctx context.Context, t *testing.T, f types.Feature
 		// - a t.FailNow() invocation
 		// - a `t.Fail()` or `t.Failed()` invocation
 		// In one of those cases, we need to track that and stop the next set of assessment in the feature
-		// under test from getting executed.
-		if shouldFailNow || (e.cfg.FailFast() && t.Failed()) {
+		// under test from getting executed. Skipped tests should not trigger this.
+		if !wasSkipped && (shouldFailNow || (e.cfg.FailFast() && t.Failed())) {
 			failed = true
 			break
 		}

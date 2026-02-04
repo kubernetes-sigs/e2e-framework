@@ -26,6 +26,8 @@ There are certain caveats to how this feature works.
 1. The `fail-fast` mode doesn't work in conjunction with the `parallel` test mode
 2. Test developers have to explicitly invoke the `t.Fail()` or `t.FailNow()` handlers in the assessment to inform
    the framework that the fail-fast mode needs to be triggered
+3. Skipped tests (via `t.Skip()` or `--skip-assessment` regex) do **not** trigger fail-fast behavior - 
+   subsequent assessments and features will continue to execute normally
 
 ## Example Assessment
 Below section shows a simple example of how the feature can be leveraged in the assessment. This should be combined with `--fail-fast` argument while invoking the test to leverage the full feature.
