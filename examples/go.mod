@@ -1,16 +1,13 @@
-module sigs.k8s.io/e2e-framework
+module sigs.k8s.io/e2e-framework/examples
 
 go 1.24.0
 
 require (
-	github.com/vladimirvivien/gexe v0.5.0
+	github.com/stretchr/testify v1.11.1
 	k8s.io/api v0.34.3
 	k8s.io/apimachinery v0.34.3
-	k8s.io/client-go v0.34.3
-	k8s.io/component-base v0.34.3
 	k8s.io/klog/v2 v2.130.1
-	sigs.k8s.io/controller-runtime v0.22.4
-	sigs.k8s.io/yaml v1.6.0
+	sigs.k8s.io/e2e-framework v0.6.0
 )
 
 require (
@@ -44,6 +41,7 @@ require (
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
+	github.com/vladimirvivien/gexe v0.5.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opentelemetry.io/otel v1.35.0 // indirect
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
@@ -59,9 +57,19 @@ require (
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	k8s.io/client-go v0.34.3 // indirect
+	k8s.io/component-base v0.34.3 // indirect
 	k8s.io/kube-openapi v0.0.0-20250710124328-f3f2b991d03b // indirect
 	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397 // indirect
+	sigs.k8s.io/controller-runtime v0.22.4 // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
+	sigs.k8s.io/yaml v1.6.0 // indirect
 )
+
+// This replace directive is needed during development because the parent
+// module (sigs.k8s.io/e2e-framework) at v0.6.0 still contains the examples/
+// directory. Once a new release is tagged with examples/ carved out as its own
+// module, this replace can be removed and the version above updated.
+replace sigs.k8s.io/e2e-framework => ../
