@@ -312,8 +312,7 @@ func (c *Condition) DaemonSetReady(daemonset k8s.Object) apimachinerywait.Condit
 		}
 		ds := daemonset.(*appsv1.DaemonSet) // nolint: errcheck
 		if ds.Status.NumberReady == ds.Status.DesiredNumberScheduled &&
-			ds.Status.UpdatedNumberScheduled == ds.Status.DesiredNumberScheduled &&
-			ds.Status.ObservedGeneration >= ds.Generation {
+			ds.Status.UpdatedNumberScheduled == ds.Status.DesiredNumberScheduled {
 			done = true
 		}
 		return
