@@ -651,7 +651,7 @@ func (e *testEnv) deepCopyConfig() *envconf.Config {
 
 	labels := make(map[string][]string, len(e.cfg.Labels()))
 	for k, vals := range e.cfg.Labels() {
-		copyVals := make([]string, len(vals))
+		copyVals := make([]string, 0, len(vals))
 		copyVals = append(copyVals, vals...)
 		labels[k] = copyVals
 	}
@@ -659,7 +659,7 @@ func (e *testEnv) deepCopyConfig() *envconf.Config {
 
 	skipLabels := make(map[string][]string, len(e.cfg.SkipLabels()))
 	for k, vals := range e.cfg.SkipLabels() {
-		copyVals := make([]string, len(vals))
+		copyVals := make([]string, 0, len(vals))
 		copyVals = append(copyVals, vals...)
 		skipLabels[k] = copyVals
 	}
