@@ -161,7 +161,7 @@ func (r *Resources) Delete(ctx context.Context, obj k8s.Object, opts ...DeleteOp
 }
 
 func WithGracePeriod(gpt time.Duration) DeleteOption {
-	t := gpt.Milliseconds()
+	t := int64(gpt.Seconds())
 	return func(do *metav1.DeleteOptions) { do.GracePeriodSeconds = &t }
 }
 
@@ -211,7 +211,7 @@ func WithFieldSelector(sel string) ListOption {
 }
 
 func WithTimeout(to time.Duration) ListOption {
-	t := to.Milliseconds()
+	t := int64(to.Seconds())
 	return func(lo *metav1.ListOptions) { lo.TimeoutSeconds = &t }
 }
 
