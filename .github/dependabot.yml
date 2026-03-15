@@ -13,6 +13,19 @@ updates:
         update-types:
           - "minor"
           - "patch"
+  - package-ecosystem: gomod
+    directory: /examples
+    schedule:
+      interval: daily
+    labels:
+      - "area/dependency"
+      - "release-note-none"
+      - "ok-to-test"
+    groups:
+      all:
+        update-types:
+          - "minor"
+          - "patch"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

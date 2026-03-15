@@ -55,9 +55,10 @@ func TestResolveKubeConfigFileEnv(t *testing.T) {
 
 		filename := ResolveKubeConfigFile()
 
-		// this will fallback to the true home directory.
-		if filename != filepath.Join(homedir.HomeDir(), ".kube", "config") {
-			t.Errorf("unexpected config path: %s", filename)
+		// When KUBECONFIG is empty, fallback is either default path (if it exists) or "" (in-cluster).
+		defaultPath := filepath.Join(homedir.HomeDir(), ".kube", "config")
+		if filename != defaultPath && filename != "" {
+			t.Errorf("unexpected config path: %s (expected %s or empty)", filename, defaultPath)
 		}
 	})
 

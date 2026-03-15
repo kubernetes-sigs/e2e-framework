@@ -18,5 +18,14 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+REPO_ROOT=$(git rev-parse --show-toplevel)
+
+# Verify root module
+cd "${REPO_ROOT}"
+go mod tidy
+git diff --exit-code
+
+# Verify examples module
+cd "${REPO_ROOT}/examples"
 go mod tidy
 git diff --exit-code
