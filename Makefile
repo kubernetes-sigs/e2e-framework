@@ -50,6 +50,7 @@ update-deps-go: ## Update all golang dependencies for this repo
 	go get -u -t ./...
 	go mod tidy
 	go mod verify
+	cd examples && go get -u -t ./... && go mod tidy && go mod verify
 	$(MAKE) test-go-unit
 	./hack/update-all.sh
 
