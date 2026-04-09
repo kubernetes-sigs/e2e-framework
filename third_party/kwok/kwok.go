@@ -94,12 +94,12 @@ func (k *Cluster) clusterExists(name string) (string, bool) {
 	return clusters, false
 }
 
-func (k *Cluster) getKubeconfig(args ...string) (string, error) {
+func (k *Cluster) getKubeconfig(ctx context.Context, args ...string) (string, error) {
 	kubecfg := fmt.Sprintf("%s-kubecfg", k.name)
 
 	var stdout, stderr bytes.Buffer
 	cmd := fmt.Sprintf(`%s get kubeconfig %s --name %s`, k.path, strings.Join(args, " "), k.name)
-	err := utils.RunCommandWithSeperatedOutput(cmd, &stdout, &stderr)
+	err := utils.RunCommandWithSeperatedOutputContext(ctx, cmd, &stdout, &stderr)
 	if err != nil {
 		return "", fmt.Errorf("kwokctl get kubeconfig: stderr: %s: %w", stderr.String(), err)
 	}
@@ -135,7 +135,7 @@ func (k *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 	}
 	if _, ok := k.clusterExists(k.name); ok {
 		klog.V(4).Info("Skipping Kwok Cluster creation. Cluster already created ", k.name)
-		kConfig, err := k.getKubeconfig()
+		kConfig, err := k.getKubeconfig(ctx)
 		if err != nil {
 			return "", err
 		}
@@ -162,7 +162,7 @@ func (k *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 	}
 	klog.V(4).Info("kwok cluster available: ", clusters)
 
-	kConfig, err := k.getKubeconfig()
+	kConfig, err := k.getKubeconfig(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -282,5 +282,5 @@ func (k *Cluster) KubernetesRestConfig() *rest.Config {
 }
 
 func (k *Cluster) GenerateKubeconfig(args ...string) (string, error) {
-	return k.getKubeconfig(args...)
+	return k.getKubeconfig(context.Background(), args...)
 }

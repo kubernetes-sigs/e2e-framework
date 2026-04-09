@@ -111,8 +111,16 @@ func RunCommandContext(ctx context.Context, command string) *exec.Proc {
 
 // RunCommandWithSeperatedOutput run command and returns the results to the provided
 // stdout and stderr io.Writer.
+//
+// Deprecated: Use RunCommandWithSeperatedOutputContext instead and provide a context to.
 func RunCommandWithSeperatedOutput(command string, stdout, stderr io.Writer) error {
-	p := commandRunner.NewProc(command)
+	return RunCommandWithSeperatedOutputContext(context.Background(), command, stdout, stderr)
+}
+
+// RunCommandWithSeperatedOutputContext run command with the provided context
+// and returns the results to the provided stdout and stderr io.Writer.
+func RunCommandWithSeperatedOutputContext(ctx context.Context, command string, stdout, stderr io.Writer) error {
+	p := commandRunner.NewProcWithContext(ctx, command)
 	p.SetStdout(stdout)
 	p.SetStderr(stderr)
 	result := p.Run()

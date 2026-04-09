@@ -107,11 +107,11 @@ func (k *Cluster) WithOpts(opts ...support.ClusterOpts) support.E2EClusterProvid
 	return k
 }
 
-func (k *Cluster) getKubeconfig(args ...string) (string, error) {
+func (k *Cluster) getKubeconfig(ctx context.Context, args ...string) (string, error) {
 	kubecfg := fmt.Sprintf("%s-kubecfg", k.name)
 
 	var stdout, stderr bytes.Buffer
-	err := utils.RunCommandWithSeperatedOutput(fmt.Sprintf(`%s get kubeconfig %s --name %s`, k.path, strings.Join(args, " "), k.name), &stdout, &stderr)
+	err := utils.RunCommandWithSeperatedOutputContext(ctx, fmt.Sprintf(`%s get kubeconfig %s --name %s`, k.path, strings.Join(args, " "), k.name), &stdout, &stderr)
 	if err != nil {
 		return "", fmt.Errorf("kind get kubeconfig: stderr: %s: %w", stderr.String(), err)
 	}
@@ -158,7 +158,7 @@ func (k *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 
 	if _, ok := k.clusterExists(k.name); ok {
 		log.V(4).Info("Skipping Kind Cluster.Create: cluster already created: ", k.name)
-		kConfig, err := k.getKubeconfig()
+		kConfig, err := k.getKubeconfig(ctx)
 		if err != nil {
 			return "", err
 		}
@@ -188,7 +188,7 @@ func (k *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 	}
 	log.V(4).Info("kind clusters available: ", clusters)
 
-	kConfig, err := k.getKubeconfig()
+	kConfig, err := k.getKubeconfig(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -309,5 +309,5 @@ func (k *Cluster) KubernetesRestConfig() *rest.Config {
 }
 
 func (k *Cluster) GenerateKubeconfig(args ...string) (string, error) {
-	return k.getKubeconfig(args...)
+	return k.getKubeconfig(context.Background(), args...)
 }

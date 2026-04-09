@@ -106,12 +106,12 @@ func (c *Cluster) findOrInstallK3D() error {
 	return err
 }
 
-func (c *Cluster) getKubeConfig(args ...string) (string, error) {
+func (c *Cluster) getKubeConfig(ctx context.Context, args ...string) (string, error) {
 	kubeCfg := fmt.Sprintf("%s-kubecfg", c.name)
 
 	var stdout, stderr bytes.Buffer
 	cmd := fmt.Sprintf("%s kubeconfig get %s %s", c.path, strings.Join(args, " "), c.name)
-	err := utils.RunCommandWithSeperatedOutput(cmd, &stdout, &stderr)
+	err := utils.RunCommandWithSeperatedOutputContext(ctx, cmd, &stdout, &stderr)
 	if err != nil {
 		return "", fmt.Errorf("failed to get kubeconfig: %s", stderr.String())
 	}
@@ -197,7 +197,7 @@ func (c *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 			return "", err
 		}
 		log.V(4).InfoS("Skipping k3d cluster creation. Cluster already exists", "name", c.name)
-		kConfig, err := c.getKubeConfig()
+		kConfig, err := c.getKubeConfig(ctx)
 		if err != nil {
 			return "", err
 		}
@@ -228,7 +228,7 @@ func (c *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 	}
 	log.V(4).Info("k3d clusters available: ", clusters)
 
-	kConfig, err := c.getKubeConfig()
+	kConfig, err := c.getKubeConfig(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -252,7 +252,7 @@ func (c *Cluster) GetKubectlContext() string {
 }
 
 func (c *Cluster) GenerateKubeconfig(args ...string) (string, error) {
-	return c.getKubeConfig(args...)
+	return c.getKubeConfig(context.Background(), args...)
 }
 
 func (c *Cluster) ExportLogs(ctx context.Context, dest string) error {
