@@ -174,7 +174,7 @@ func (k *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 		command = fmt.Sprintf("%s %s", command, strings.Join(args, " "))
 	}
 	log.V(4).Info("Launching:", command)
-	p := utils.RunCommand(command)
+	p := utils.RunCommandContext(ctx, command)
 	if p.Err() != nil {
 		outBytes, err := io.ReadAll(p.Out())
 		if err != nil {
@@ -219,7 +219,7 @@ func (k *Cluster) ExportLogs(ctx context.Context, dest string) error {
 		return err
 	}
 
-	p := utils.RunCommand(fmt.Sprintf(`%s export logs %s --name %s`, k.path, dest, k.name))
+	p := utils.RunCommandContext(ctx, fmt.Sprintf(`%s export logs %s --name %s`, k.path, dest, k.name))
 	if p.Err() != nil {
 		return fmt.Errorf("kind: export cluster %v logs failed: %s: %s", k.name, p.Err(), p.Result())
 	}
@@ -233,7 +233,7 @@ func (k *Cluster) Destroy(ctx context.Context) error {
 		return err
 	}
 
-	p := utils.RunCommand(fmt.Sprintf(`%s delete cluster --name %s`, k.path, k.name))
+	p := utils.RunCommandContext(ctx, fmt.Sprintf(`%s delete cluster --name %s`, k.path, k.name))
 	if p.Err() != nil {
 		outBytes, err := io.ReadAll(p.Out())
 		if err != nil {
@@ -262,7 +262,7 @@ func (k *Cluster) findOrInstallKind() error {
 }
 
 func (k *Cluster) LoadImage(ctx context.Context, image string, args ...string) error {
-	p := utils.RunCommand(fmt.Sprintf(`%s load docker-image --name %s %s`, k.path, k.name, image))
+	p := utils.RunCommandContext(ctx, fmt.Sprintf(`%s load docker-image --name %s %s`, k.path, k.name, image))
 	if p.Err() != nil {
 		return fmt.Errorf("kind: load docker-image %v failed: %s: %s", image, p.Err(), p.Result())
 	}
@@ -270,7 +270,7 @@ func (k *Cluster) LoadImage(ctx context.Context, image string, args ...string) e
 }
 
 func (k *Cluster) LoadImageArchive(ctx context.Context, imageArchive string, args ...string) error {
-	p := utils.RunCommand(fmt.Sprintf(`%s load image-archive --name %s %s`, k.path, k.name, imageArchive))
+	p := utils.RunCommandContext(ctx, fmt.Sprintf(`%s load image-archive --name %s %s`, k.path, k.name, imageArchive))
 	if p.Err() != nil {
 		return fmt.Errorf("kind: load image-archive %v failed: %s: %s", imageArchive, p.Err(), p.Result())
 	}

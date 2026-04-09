@@ -18,6 +18,7 @@ package utils
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 
@@ -93,9 +94,19 @@ func FindOrInstallGoBasedProvider(pPath, provider, module, version string) (stri
 	return "", fmt.Errorf("%s not available even after installation", provider)
 }
 
-// RunCommand run command and returns an *exec.Proc with information about the executed process.
+// RunCommand runs the command and returns an *exec.Proc with information about the executed process.
+//
+// Deprecated: Please use RunCommandContext instead and provide a context to
+// make sure the command execution can be cancelled if needed.
 func RunCommand(command string) *exec.Proc {
-	return commandRunner.RunProc(command)
+	ctx := context.Background()
+	return RunCommandContext(ctx, command)
+}
+
+// RunCommand runs the command with the provided context and returns an
+// *exec.Proc with information about the executed process.
+func RunCommandContext(ctx context.Context, command string) *exec.Proc {
+	return commandRunner.RunProcWithContext(ctx, command)
 }
 
 // RunCommandWithSeperatedOutput run command and returns the results to the provided
@@ -109,10 +120,19 @@ func RunCommandWithSeperatedOutput(command string, stdout, stderr io.Writer) err
 	return result.Err()
 }
 
-// RunCommandWithCustomWriter run command and returns an *exec.Proc with information about the executed process.
+// RunCommandWithCustomWriterContext run command and returns an *exec.Proc with information about the executed process.
 // This helps map the STDOUT/STDERR to custom writer to extract data from the output.
+//
+// Deprecated: Use RunCommandWithCustomWriterContext instead and provide a
+// context to make sure the command execution can be cancelled if needed.
 func RunCommandWithCustomWriter(command string, stdout, stderr io.Writer) *exec.Proc {
-	p := commandRunner.NewProc(command)
+	return RunCommandWithCustomWriterContext(context.Background(), command, stdout, stderr)
+}
+
+// RunCommandWithCustomWriterContext run command and returns an *exec.Proc with information about the executed process.
+// This helps map the STDOUT/STDERR to custom writer to extract data from the output.
+func RunCommandWithCustomWriterContext(ctx context.Context, command string, stdout, stderr io.Writer) *exec.Proc {
+	p := commandRunner.NewProcWithContext(ctx, command)
 	p.SetStdout(stdout)
 	p.SetStderr(stderr)
 	return p.Run()

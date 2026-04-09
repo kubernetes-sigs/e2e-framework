@@ -147,7 +147,7 @@ func (k *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 		command = fmt.Sprintf("%s %s", command, strings.Join(args, " "))
 	}
 	klog.V(4).Info("Launching:", command)
-	p := utils.RunCommand(command)
+	p := utils.RunCommandContext(ctx, command)
 	if p.Err() != nil {
 		outBytes, err := io.ReadAll(p.Out())
 		if err != nil {
@@ -183,7 +183,7 @@ func (k *Cluster) Destroy(ctx context.Context) error {
 		return err
 	}
 
-	p := utils.RunCommand(fmt.Sprintf(`%s delete cluster --name %s`, k.path, k.name))
+	p := utils.RunCommandContext(ctx, fmt.Sprintf(`%s delete cluster --name %s`, k.path, k.name))
 	if p.Err() != nil {
 		outBytes, err := io.ReadAll(p.Out())
 		if err != nil {
@@ -206,15 +206,15 @@ func (k *Cluster) ExportLogs(ctx context.Context, dest string) error {
 	// In kwokctl 0.3.0 and above, there is a new kwokctl export logs feature that has been added which can
 	// simplify the workf of exporting the logs for us. Let us check if the CLI has that command and if so
 	// let us use that to export logs. Otherwise, we can fallback to exporting individual items.
-	p := utils.RunCommand(fmt.Sprintf("%s export logs --help", k.path))
+	p := utils.RunCommandContext(ctx, fmt.Sprintf("%s export logs --help", k.path))
 	if p.ExitCode() == 0 {
-		return utils.RunCommand(fmt.Sprintf("%s --name %s export logs %s", k.path, k.name, dest)).Err()
+		return utils.RunCommandContext(ctx, fmt.Sprintf("%s --name %s export logs %s", k.path, k.name, dest)).Err()
 	}
 
 	// TODO: Get Rid of this if we decide to enforce a min version of the kwokctl at some point
 	for _, component := range []string{"audit", "etcd", "kube-apiserver", "kube-controller-manager", "kube-scheduler", "kwok-controller", "prometheus"} {
 		command := fmt.Sprintf("%s logs %s", k.path, component)
-		p := utils.RunCommand(command)
+		p := utils.RunCommandContext(ctx, command)
 		if p.Err() != nil {
 			klog.ErrorS(p.Err(), "ran into an error trying to export the log", "component", component)
 			continue
