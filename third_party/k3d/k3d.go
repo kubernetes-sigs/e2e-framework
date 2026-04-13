@@ -106,12 +106,12 @@ func (c *Cluster) findOrInstallK3D() error {
 	return err
 }
 
-func (c *Cluster) getKubeConfig(args ...string) (string, error) {
+func (c *Cluster) getKubeConfig(ctx context.Context, args ...string) (string, error) {
 	kubeCfg := fmt.Sprintf("%s-kubecfg", c.name)
 
 	var stdout, stderr bytes.Buffer
 	cmd := fmt.Sprintf("%s kubeconfig get %s %s", c.path, strings.Join(args, " "), c.name)
-	err := utils.RunCommandWithSeperatedOutput(cmd, &stdout, &stderr)
+	err := utils.RunCommandWithSeperatedOutputContext(ctx, cmd, &stdout, &stderr)
 	if err != nil {
 		return "", fmt.Errorf("failed to get kubeconfig: %s", stderr.String())
 	}
@@ -142,10 +142,10 @@ func (c *Cluster) clusterExists(name string) (string, bool) {
 	return clusters, false
 }
 
-func (c *Cluster) startCluster(name string) error {
+func (c *Cluster) startCluster(ctx context.Context, name string) error {
 	cmd := fmt.Sprintf("%s cluster start %s", c.path, name)
 	log.V(4).InfoS("Starting k3d cluster", "command", cmd)
-	p := utils.RunCommand(cmd)
+	p := utils.RunCommandContext(ctx, cmd)
 	if p.Err() != nil {
 		return fmt.Errorf("k3d: failed to start cluster %q: %s: %s", name, p.Err(), p.Result())
 	}
@@ -193,11 +193,11 @@ func (c *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 		// This is being done as an extra step to ensure that in case you have the cluster by the same name, but it is not up.
 		// Starting an already started cluster won't cause any harm. So, we will just start it once before continuing
 		// further down the line and process rest of the workflows
-		if err := c.startCluster(c.name); err != nil {
+		if err := c.startCluster(ctx, c.name); err != nil {
 			return "", err
 		}
 		log.V(4).InfoS("Skipping k3d cluster creation. Cluster already exists", "name", c.name)
-		kConfig, err := c.getKubeConfig()
+		kConfig, err := c.getKubeConfig(ctx)
 		if err != nil {
 			return "", err
 		}
@@ -218,7 +218,7 @@ func (c *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 
 	var stdout, stderr bytes.Buffer
 
-	p := utils.RunCommandWithCustomWriter(cmd, &stdout, &stderr)
+	p := utils.RunCommandWithCustomWriterContext(ctx, cmd, &stdout, &stderr)
 	if p.Err() != nil {
 		return "", fmt.Errorf("k3d: failed to create cluster %q: %s: %s: %s %s", c.name, p.Err(), p.Result(), stdout.String(), stderr.String())
 	}
@@ -228,7 +228,7 @@ func (c *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 	}
 	log.V(4).Info("k3d clusters available: ", clusters)
 
-	kConfig, err := c.getKubeConfig()
+	kConfig, err := c.getKubeConfig(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -252,7 +252,7 @@ func (c *Cluster) GetKubectlContext() string {
 }
 
 func (c *Cluster) GenerateKubeconfig(args ...string) (string, error) {
-	return c.getKubeConfig(args...)
+	return c.getKubeConfig(context.Background(), args...)
 }
 
 func (c *Cluster) ExportLogs(ctx context.Context, dest string) error {
@@ -273,7 +273,7 @@ func (c *Cluster) Destroy(ctx context.Context) error {
 
 	cmd := fmt.Sprintf("%s cluster delete %s", c.path, c.name)
 	log.V(4).InfoS("Destroying k3d cluster", "command", cmd)
-	p := utils.RunCommand(cmd)
+	p := utils.RunCommandContext(ctx, cmd)
 	if p.Err() != nil {
 		outBytes, err := io.ReadAll(p.Out())
 		if err != nil {
@@ -307,7 +307,7 @@ func (c *Cluster) KubernetesRestConfig() *rest.Config {
 
 func (c *Cluster) LoadImage(ctx context.Context, image string, args ...string) error {
 	log.V(4).InfoS("Performing Image load operation", "cluster", c.name, "image", image, "args", args)
-	p := utils.RunCommand(fmt.Sprintf("%s image import --cluster %s %s %s", c.path, c.name, strings.Join(args, " "), image))
+	p := utils.RunCommandContext(ctx, fmt.Sprintf("%s image import --cluster %s %s %s", c.path, c.name, strings.Join(args, " "), image))
 	if p.Err() != nil {
 		return fmt.Errorf("k3d: load docker-image %v failed: %s: %s", image, p.Err(), p.Result())
 	}
@@ -383,7 +383,7 @@ func (c *Cluster) StopNode(ctx context.Context, node *support.Node, args ...stri
 
 func (c *Cluster) ListNode(ctx context.Context, args ...string) ([]support.Node, error) {
 	cmd := fmt.Sprintf("%s node list -o json", c.path)
-	p := utils.RunCommand(cmd)
+	p := utils.RunCommandContext(ctx, cmd)
 	if p.Err() != nil || (p.Exited() && p.ExitCode() != 0) {
 		return nil, fmt.Errorf("k3d: failed to list nodes: %s: %s", p.Err(), p.Result())
 	}

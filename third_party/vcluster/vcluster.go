@@ -140,7 +140,7 @@ func (c *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 
 	if _, exists := c.clusterExists(c.name); exists {
 		log.V(4).Info("Skipping vcluster Cluster.Create: cluster already created: ", c.name)
-		kConfig, err := c.getKubeconfig()
+		kConfig, err := c.getKubeconfig(ctx)
 		if err != nil {
 			return "", err
 		}
@@ -179,7 +179,7 @@ func (c *Cluster) Create(ctx context.Context, args ...string) (string, error) {
 	}
 	log.V(4).Info("vcluster clusters available: ", clusters)
 
-	kConfig, err := c.getKubeconfig()
+	kConfig, err := c.getKubeconfig(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -227,7 +227,7 @@ func (c *Cluster) Destroy(ctx context.Context) error {
 	}
 
 	command := fmt.Sprintf("%s delete %s", c.path, c.name)
-	p := utils.RunCommand(command)
+	p := utils.RunCommandContext(ctx, command)
 	if p.Err() != nil {
 		outBytes, err := io.ReadAll(p.Out())
 		if err != nil {
@@ -277,7 +277,7 @@ func (c *Cluster) KubernetesRestConfig() *rest.Config {
 }
 
 func (c *Cluster) GenerateKubeconfig(args ...string) (string, error) {
-	return c.getKubeconfig(args...)
+	return c.getKubeconfig(context.Background(), args...)
 }
 
 // helpers to implement support.E2EClusterProvider
@@ -311,12 +311,12 @@ func (c *Cluster) clusterExists(name string) (string, bool) {
 	return raw, false
 }
 
-func (c *Cluster) getKubeconfig(args ...string) (string, error) {
+func (c *Cluster) getKubeconfig(ctx context.Context, args ...string) (string, error) {
 	kubecfg := fmt.Sprintf("%s-kubecfg", c.name)
 
 	var stdout, stderr bytes.Buffer
 	cmd := fmt.Sprintf(`%s connect %s --print %s`, c.path, c.name, strings.Join(args, " "))
-	err := utils.RunCommandWithSeperatedOutput(cmd, &stdout, &stderr)
+	err := utils.RunCommandWithSeperatedOutputContext(ctx, cmd, &stdout, &stderr)
 	if err != nil {
 		return "", fmt.Errorf("vcluster connect: stderr: %s: %w", stderr.String(), err)
 	}
