@@ -23,6 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/klient"
+	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
@@ -73,7 +74,7 @@ func CreateNamespace(name string, opts ...CreateNamespaceOpts) env.Func {
 // DeleteNamespace provides an Environment.Func that deletes the named
 // namespace. It first searches for the ns in its context, if not found then
 // attempt to retrieve it from the API server. Then deletes it.
-func DeleteNamespace(name string) env.Func {
+func DeleteNamespace(name string, opts ...resources.DeleteOption) env.Func {
 	return func(ctx context.Context, cfg *envconf.Config) (context.Context, error) {
 		var namespace *corev1.Namespace
 
@@ -105,7 +106,7 @@ func DeleteNamespace(name string) env.Func {
 		}
 
 		// remove namespace api object
-		if err := client.Resources().Delete(ctx, namespace); err != nil {
+		if err := client.Resources().Delete(ctx, namespace, opts...); err != nil {
 			return ctx, fmt.Errorf("delete namespace func: %w", err)
 		}
 
