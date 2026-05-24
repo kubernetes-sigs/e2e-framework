@@ -97,7 +97,7 @@ func TestNetworkPolicies(t *testing.T) {
 
 			return ctx
 		}).
-		Assess("Nginx pod can call github api", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
+		Assess("Nginx pod cannot call wikipedia", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
 			client, err := c.NewClient()
 			if err != nil {
 				t.Fatal(err)
