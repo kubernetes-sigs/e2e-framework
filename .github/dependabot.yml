@@ -1,7 +1,9 @@
 version: 2
 updates:
   - package-ecosystem: gomod
-    directory: /
+    directories:
+      - /
+      - /examples
     schedule:
       interval: daily
     labels:
@@ -13,19 +15,7 @@ updates:
         update-types:
           - "minor"
           - "patch"
-  - package-ecosystem: gomod
-    directory: /examples
-    schedule:
-      interval: daily
-    labels:
-      - "area/dependency"
-      - "release-note-none"
-      - "ok-to-test"
-    groups:
-      all:
-        update-types:
-          - "minor"
-          - "patch"
+        group-by: dependency-name
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
