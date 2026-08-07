@@ -78,6 +78,22 @@ func New(cfg *rest.Config) (*Resources, error) {
 	return res, nil
 }
 
+// NewFromClient creates a Resources value backed by an existing
+// controller-runtime client. This is useful for unit testing with
+// fake.NewClientBuilder().Build() where no *rest.Config is available.
+//
+// ExecInPod will return a clear error when config is nil.
+// Watch will succeed, but EventHandlerFuncs.Start() will return an error.
+func NewFromClient(cl cr.Client) *Resources {
+	if cl == nil {
+		panic("NewFromClient: cr.Client must not be nil")
+	}
+	return &Resources{
+		client: cl,
+		scheme: scheme.Scheme,
+	}
+}
+
 // GetConfig hepls to get config type *rest.Config
 func (r *Resources) GetConfig() *rest.Config {
 	return r.config
@@ -293,6 +309,9 @@ func (r *Resources) Watch(object k8s.ObjectList, opts ...ListOption) *watcher.Ev
 }
 
 func (r *Resources) ExecInPod(ctx context.Context, namespaceName, podName, containerName string, command []string, stdout, stderr *bytes.Buffer) error {
+	if r.config == nil {
+		return errors.New("ExecInPod requires a REST config; Resources created via NewFromClient cannot exec in pods")
+	}
 	clientset, err := kubernetes.NewForConfig(r.config)
 	if err != nil {
 		return err

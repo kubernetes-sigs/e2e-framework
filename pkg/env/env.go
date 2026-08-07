@@ -630,11 +630,17 @@ func (e *testEnv) deepCopyConfig() *envconf.Config {
 	if client := e.cfg.GetClient(); client != nil {
 		// Need to recreate the underlying client because client.Resource is not thread safe
 		// Panic on error because this should never happen since the client was built once already
-		clientCopy, err := klient.New(client.RESTConfig())
-		if err != nil {
-			panic(err)
+		if client.RESTConfig() != nil {
+			clientCopy, err := klient.New(client.RESTConfig())
+			if err != nil {
+				panic(err)
+			}
+			configCopy.WithClient(clientCopy)
+		} else {
+			configCopy.WithClient(klient.NewFromCRClient(
+				client.Resources().GetControllerRuntimeClient(),
+			))
 		}
-		configCopy.WithClient(clientCopy)
 	}
 	if e.cfg.AssessmentRegex() != nil {
 		configCopy.WithAssessmentRegex(e.cfg.AssessmentRegex().String())
