@@ -193,8 +193,8 @@ func TestNewFromCRClient_ExecInPodReturnsError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected ExecInPod to return an error, got nil")
 	}
-	if !strings.Contains(err.Error(), "REST config") {
-		t.Errorf("expected error about REST config, got: %v", err)
+	if !strings.Contains(err.Error(), "is not supported without rest.Config") {
+		t.Errorf("expected error about missing rest.Config, got: %v", err)
 	}
 }
 
@@ -233,7 +233,7 @@ func TestNewFromCRClient_WatchStartReturnsError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected Watch.Start to return an error, got nil")
 	}
-	if !strings.Contains(err.Error(), "REST config") {
-		t.Errorf("expected error about REST config, got: %v", err)
+	if !strings.Contains(err.Error(), "is not supported without rest.Config") {
+		t.Errorf("expected error about missing rest.Config, got: %v", err)
 	}
 }

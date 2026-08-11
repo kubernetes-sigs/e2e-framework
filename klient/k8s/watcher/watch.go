@@ -58,7 +58,7 @@ func (e *EventHandlerFuncs) Start(ctx context.Context) error {
 	}
 
 	if e.Cfg == nil {
-		return errors.New("Watch requires a REST config; Resources created via NewFromClient cannot watch")
+		return errors.New("the watch feature is not supported without rest.Config")
 	}
 
 	cl, err := cr.NewWithWatch(e.Cfg, cr.Options{})
