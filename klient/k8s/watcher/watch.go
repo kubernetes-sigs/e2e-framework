@@ -18,6 +18,7 @@ package watcher
 
 import (
 	"context"
+	"errors"
 
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/rest"
@@ -54,6 +55,10 @@ func (e *EventHandlerFuncs) Start(ctx context.Context) error {
 	// check if context is valid and that it has not been cancelled.
 	if ctx.Err() != nil {
 		return ctx.Err()
+	}
+
+	if e.Cfg == nil {
+		return errors.New("the watch feature is not supported without rest.Config")
 	}
 
 	cl, err := cr.NewWithWatch(e.Cfg, cr.Options{})

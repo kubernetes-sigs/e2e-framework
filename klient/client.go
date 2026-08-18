@@ -57,6 +57,17 @@ func New(cfg *rest.Config) (Client, error) {
 	return &client{cfg: cfg, resources: res}, nil
 }
 
+// NewFromCRClient creates a Client backed by an existing controller-runtime
+// client. RESTConfig() returns nil for clients created this way.
+// Useful for unit testing with fake.NewClientBuilder().Build().
+//
+// The provided cr.Client must be goroutine-safe if the returned Client
+// is used with parallel tests (e.g. env.TestInParallel).
+// Clients from fake.NewClientBuilder().Build() satisfy this requirement.
+func NewFromCRClient(cl cr.Client) Client {
+	return &client{resources: resources.NewFromClient(cl)}
+}
+
 // NewWithKubeConfigFile creates a client using the kubeconfig filePath
 func NewWithKubeConfigFile(filePath string) (Client, error) {
 	cfg, err := conf.New(filePath)
