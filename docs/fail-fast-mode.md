@@ -49,6 +49,6 @@ func TestFeatureOne(t *testing.T) {
 			return ctx
 		}).
         Feature()
-    testenv.Test(t, failFeature, nextFeature)
+    testenv.Test(t, featureOne)
 }
 ```
