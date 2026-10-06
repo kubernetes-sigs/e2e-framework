@@ -99,9 +99,14 @@ func (r *Resources) GetConfig() *rest.Config {
 	return r.config
 }
 
+// WithNamespace returns a copy of r scoped to the given namespace. It does
+// not mutate the receiver, so it is safe to call concurrently on a shared
+// *Resources value, such as the one klient.Client.Resources() holds
+// internally. See https://github.com/kubernetes-sigs/e2e-framework/issues/589.
 func (r *Resources) WithNamespace(ns string) *Resources {
-	r.namespace = ns
-	return r
+	rc := *r
+	rc.namespace = ns
+	return &rc
 }
 
 func (r *Resources) Get(ctx context.Context, name, namespace string, obj k8s.Object) error {
