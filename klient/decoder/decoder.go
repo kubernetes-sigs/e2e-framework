@@ -221,7 +221,7 @@ func DecodeFile(fsys fs.FS, manifestPath string, obj k8s.Object, options ...Deco
 // DecodeURL decodes a document from the URL of any Kind using either the innate typing of the scheme.
 // Falls back to the unstructured.Unstructured type if a matching type cannot be found for the Kind.
 func DecodeURL(ctx context.Context, url string, handlerFn HandlerFunc, options ...DecodeOption) error {
-	resp := http.Get(url).Do()
+	resp := http.Get(url).WithContext(ctx).Do()
 	if resp.Err() != nil {
 		return resp.Err()
 	}
