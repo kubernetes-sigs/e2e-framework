@@ -189,7 +189,7 @@ func (c *Condition) ResourcesDeleted(list k8s.ObjectList) apimachinerywait.Condi
 func (c *Condition) ResourceDeleted(obj k8s.Object) apimachinerywait.ConditionWithContextFunc {
 	return func(ctx context.Context) (done bool, err error) {
 		log.V(4).InfoS("Checking for resource to be garbage collected", "resource", c.namespacedName(obj))
-		if err := c.resources.Get(context.Background(), obj.GetName(), obj.GetNamespace(), obj); err != nil {
+		if err := c.resources.Get(ctx, obj.GetName(), obj.GetNamespace(), obj); err != nil {
 			if errors.IsNotFound(err) {
 				return true, nil
 			}
@@ -259,7 +259,7 @@ func (c *Condition) PodConditionMatch(pod k8s.Object, conditionType v1.PodCondit
 func (c *Condition) PodPhaseMatch(pod k8s.Object, phase v1.PodPhase) apimachinerywait.ConditionWithContextFunc {
 	return func(ctx context.Context) (done bool, err error) {
 		log.V(4).InfoS("Checking for phase match", "resource", c.namespacedName(pod), "phase", phase)
-		if err := c.resources.Get(context.Background(), pod.GetName(), pod.GetNamespace(), pod); err != nil {
+		if err := c.resources.Get(ctx, pod.GetName(), pod.GetNamespace(), pod); err != nil {
 			return false, err
 		}
 		log.V(4).InfoS("Current phase", "phase", pod.(*v1.Pod).Status.Phase) // nolint: errcheck
