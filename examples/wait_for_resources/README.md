@@ -9,8 +9,8 @@ The wait package has built-in with utilities for waiting on Pods, Jobs, and Depl
 ```go
 func TestPodRunning(t *testing.T) {
 	var err error
-	pod := v1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "my-pod"}}
-	err = wait.For(conditions.New(client.Resources()).PodRunning(pod), WithImmediate())
+	pod := &v1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "my-pod"}}
+	err = wait.For(conditions.New(client.Resources()).PodRunning(pod), wait.WithImmediate())
 	if err != nil {
 		t.Error(err)
 	}
@@ -22,7 +22,7 @@ Additionally, it is easy to wait for changes to any resource type with the `Reso
 ```go
 func TestResourceMatch(t *testing.T) {
 	...
-	deployment := appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "deploy-name"}}
+	deployment := &appsv1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: "deploy-name"}}
 	err = wait.For(conditions.New(client.Resources()).ResourceMatch(deployment, func(object k8s.Object) bool {
 		d := object.(*appsv1.Deployment)
 		return d.Status.AvailableReplicas == 2 && d.Status.ReadyReplicas == 2
