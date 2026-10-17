@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"strings"
+	"sync"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -236,4 +237,57 @@ func TestNewFromCRClient_WatchStartReturnsError(t *testing.T) {
 	if !strings.Contains(err.Error(), "is not supported without rest.Config") {
 		t.Errorf("expected error about missing rest.Config, got: %v", err)
 	}
+}
+
+// TestClient_Resources_DoesNotShareNamespaceAcrossCalls guards against a
+// regression of https://github.com/kubernetes-sigs/e2e-framework/issues/589:
+// Resources.WithNamespace used to mutate its receiver in place and
+// klient.Client keeps a single, shared *Resources value internally, so a
+// later Resources(ns2) call would silently repoint an earlier Resources(ns1)
+// handle at ns2 as well.
+func TestClient_Resources_DoesNotShareNamespaceAcrossCalls(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().Build()
+	klClient := klient.NewFromCRClient(fakeClient)
+
+	res1 := klClient.Resources("ns1")
+	res2 := klClient.Resources("ns2")
+
+	if res1 == res2 {
+		t.Fatal("Resources() returned the same *Resources pointer for two different namespaces; WithNamespace must return a copy, not mutate the shared receiver")
+	}
+
+	// Get takes its namespace explicitly, so use it (rather than List, whose
+	// namespace scoping depends on the field WithNamespace sets) to confirm
+	// res1 and res2 are independently namespace-scoped, not aliases of a
+	// value one call's WithNamespace could still repoint.
+	cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "cm1", Namespace: "ns1"}}
+	if err := res1.Create(context.TODO(), cm); err != nil {
+		t.Fatalf("Create via res1 failed: %v", err)
+	}
+	got := &corev1.ConfigMap{}
+	if err := res2.Get(context.TODO(), "cm1", "ns1", got); err != nil {
+		t.Fatalf("expected res2 to still reach ns1 via an explicit namespace argument: %v", err)
+	}
+}
+
+// TestClient_Resources_ConcurrentUseIsRaceFree exercises the exact scenario
+// from issue #589: concurrent goroutines calling client.Resources() with
+// different namespaces on a shared klient.Client. Run with -race.
+func TestClient_Resources_ConcurrentUseIsRaceFree(t *testing.T) {
+	fakeClient := fake.NewClientBuilder().Build()
+	klClient := klient.NewFromCRClient(fakeClient)
+
+	var wg sync.WaitGroup
+	for i := 0; i < 100; i++ {
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			_ = klClient.Resources("ns1")
+		}()
+		go func() {
+			defer wg.Done()
+			_ = klClient.Resources("ns2")
+		}()
+	}
+	wg.Wait()
 }
