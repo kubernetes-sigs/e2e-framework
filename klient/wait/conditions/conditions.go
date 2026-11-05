@@ -311,6 +311,11 @@ func (c *Condition) DaemonSetReady(daemonset k8s.Object) apimachinerywait.Condit
 			return false, err
 		}
 		ds := daemonset.(*appsv1.DaemonSet) // nolint: errcheck
+		// Until the controller has observed the latest spec, the counters below
+		// still describe the previous rollout.
+		if ds.Status.ObservedGeneration < ds.Generation {
+			return false, nil
+		}
 		if ds.Status.NumberReady == ds.Status.DesiredNumberScheduled &&
 			ds.Status.UpdatedNumberScheduled == ds.Status.DesiredNumberScheduled {
 			done = true
