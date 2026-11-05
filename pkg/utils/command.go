@@ -21,6 +21,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/vladimirvivien/gexe"
 	"github.com/vladimirvivien/gexe/exec"
@@ -63,28 +66,13 @@ func FindOrInstallGoBasedProvider(pPath, provider, module, version string) (stri
 		return provider, nil
 	}
 
-	p = commandRunner.NewProc("ls $GOPATH/bin")
-	stdout.Reset()
-	stderr.Reset()
-	p.SetStdout(&stdout)
-	p.SetStderr(&stderr)
-	result = p.Run()
-	if result.Err() != nil {
-		return "", fmt.Errorf("failed to install %s: %s \n %ss", pPath, result.Result(), stderr.String())
+	binDir := goBinDir()
+	if binDir == "" {
+		return "", fmt.Errorf("failed to install %s: could not determine the go install directory", pPath)
 	}
-
-	p = commandRunner.NewProc("echo $PATH:$GOPATH/bin")
-	stdout.Reset()
-	stderr.Reset()
-	p.SetStdout(&stdout)
-	p.SetStderr(&stderr)
-	result = p.Run()
-	if result.Err() != nil {
-		return "", fmt.Errorf("failed to install %s: %s \n %s", pPath, result.Result(), stderr.String())
-	}
-
-	log.V(4).Info(`Setting path to include $GOPATH/bin:`, result.Result())
-	commandRunner.SetEnv("PATH", result.Result())
+	newPath := commandRunner.Val("PATH") + string(os.PathListSeparator) + binDir
+	log.V(4).Info("Setting path to include the go install directory: ", newPath)
+	commandRunner.SetEnv("PATH", newPath)
 
 	if providerPath := gexe.ProgAvail(provider); providerPath != "" {
 		log.V(4).Infof("Installed %s at %s", pPath, providerPath)
@@ -92,6 +80,21 @@ func FindOrInstallGoBasedProvider(pPath, provider, module, version string) (stri
 	}
 
 	return "", fmt.Errorf("%s not available even after installation", provider)
+}
+
+// goBinDir returns the directory where "go install" places binaries:
+// GOBIN if set, otherwise the bin directory of the first GOPATH entry.
+// It asks the go command so that the default GOPATH is honored when the
+// GOPATH environment variable is not set.
+func goBinDir() string {
+	if gobin := strings.TrimSpace(commandRunner.Run("go env GOBIN")); gobin != "" {
+		return gobin
+	}
+	gopath := strings.TrimSpace(commandRunner.Run("go env GOPATH"))
+	if gopath == "" {
+		return ""
+	}
+	return filepath.Join(filepath.SplitList(gopath)[0], "bin")
 }
 
 // RunCommand runs the command and returns an *exec.Proc with information about the executed process.
