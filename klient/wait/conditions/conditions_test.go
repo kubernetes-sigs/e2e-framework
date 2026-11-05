@@ -24,6 +24,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimachinerywait "k8s.io/apimachinery/pkg/util/wait"
@@ -93,6 +94,54 @@ func TestPodConditionsRespectContext(t *testing.T) {
 			done, err = condition(ctx)
 			if done || !errors.Is(err, context.Canceled) {
 				t.Fatalf("canceled context: got (%v, %v), want (false, context.Canceled)", done, err)
+			}
+		})
+	}
+}
+
+func TestDaemonSetReadyWaitsForObservedGeneration(t *testing.T) {
+	for _, tc := range []struct {
+		name               string
+		generation         int64
+		observedGeneration int64
+		want               bool
+	}{
+		{name: "spec change not observed yet", generation: 2, observedGeneration: 1, want: false},
+		{name: "spec change observed", generation: 2, observedGeneration: 2, want: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			body := fmt.Sprintf(`{"kind":"DaemonSet","apiVersion":"apps/v1",`+
+				`"metadata":{"name":"test","namespace":"default","generation":%d},`+
+				`"status":{"observedGeneration":%d,"desiredNumberScheduled":2,"numberReady":2,"updatedNumberScheduled":2}}`,
+				tc.generation, tc.observedGeneration)
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				switch r.URL.Path {
+				case "/api":
+					_, _ = fmt.Fprint(w, `{"kind":"APIVersions","versions":["v1"]}`)
+				case "/apis":
+					_, _ = fmt.Fprint(w, `{"kind":"APIGroupList","groups":[{"name":"apps","versions":[{"groupVersion":"apps/v1","version":"v1"}],"preferredVersion":{"groupVersion":"apps/v1","version":"v1"}}]}`)
+				case "/apis/apps/v1":
+					_, _ = fmt.Fprint(w, `{"kind":"APIResourceList","groupVersion":"apps/v1","resources":[{"name":"daemonsets","namespaced":true,"kind":"DaemonSet","verbs":["get"]}]}`)
+				case "/apis/apps/v1/namespaces/default/daemonsets/test":
+					_, _ = fmt.Fprint(w, body)
+				default:
+					http.NotFound(w, r)
+				}
+			}))
+			defer server.Close()
+
+			res, err := resources.New(&rest.Config{Host: server.URL})
+			if err != nil {
+				t.Fatal(err)
+			}
+			ds := &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"}}
+			done, err := conditions.New(res).DaemonSetReady(ds)(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if done != tc.want {
+				t.Fatalf("got done=%v, want %v", done, tc.want)
 			}
 		})
 	}
