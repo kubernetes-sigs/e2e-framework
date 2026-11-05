@@ -74,39 +74,39 @@ func (e *EventHandlerFuncs) Start(ctx context.Context) error {
 	// set watcher object
 	e.watcher = w
 
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				if ctx.Err() != nil {
-					return
-				}
-			case event := <-e.watcher.ResultChan():
-				// retrieve the event type
-				eventType := event.Type
+	go e.handleEvents(ctx, w.ResultChan())
 
-				switch eventType {
-				case watch.Added:
-					// calls AddFunc if it's not nil.
-					if e.addFunc != nil {
-						e.addFunc(event.Object)
-					}
-				case watch.Modified:
-					// calls UpdateFunc if it's not nil.
-					if e.updateFunc != nil {
-						e.updateFunc(event.Object)
-					}
-				case watch.Deleted:
-					// calls DeleteFunc if it's not nil.
-					if e.deleteFunc != nil {
-						e.deleteFunc(event.Object)
-					}
+	return nil
+}
+
+// handleEvents dispatches events to the registered functions until the
+// context is done or the result channel is closed, which happens when the
+// watch is stopped or ends on the server side.
+func (e *EventHandlerFuncs) handleEvents(ctx context.Context, events <-chan watch.Event) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case event, ok := <-events:
+			if !ok {
+				return
+			}
+			switch event.Type {
+			case watch.Added:
+				if e.addFunc != nil {
+					e.addFunc(event.Object)
+				}
+			case watch.Modified:
+				if e.updateFunc != nil {
+					e.updateFunc(event.Object)
+				}
+			case watch.Deleted:
+				if e.deleteFunc != nil {
+					e.deleteFunc(event.Object)
 				}
 			}
 		}
-	}()
-
-	return nil
+	}
 }
 
 // Stop triggers stopping a particular k8s watch resources
