@@ -35,7 +35,7 @@ ExecInDeployment(...,
 
 Fetch metrics from the `http://localhost:8080/metrics` endpoint from the deployment `controller` in the `default` namespace:
 ```go
-var stdout, stderr *bytes.Buffer
+var stdout, stderr bytes.Buffer
 cmd := []string{"wget", "-qO-", "http://localhost:8080/metrics"}
 if err := c.Client().Resources().ExecInDeployment(ctx, "default", "controller", cmd, &stdout, &stderr); err != nil {
   t.Log(stderr.String())
