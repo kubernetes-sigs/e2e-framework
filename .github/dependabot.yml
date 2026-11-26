@@ -4,6 +4,7 @@ updates:
     directories:
       - /
       - /examples
+      - /examples/testcontainers
     schedule:
       interval: daily
     labels:
